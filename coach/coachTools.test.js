@@ -254,12 +254,25 @@ test("stepping through the mixed route in every mode ends cleanly", async () => 
 
 test("works on the real contract examples when they exist", { skip: !existsSync(join(CONTRACT, "solve.json")) }, async () => {
   const solve = JSON.parse(readFileSync(join(CONTRACT, "solve.json"), "utf8"));
-  const analyze = existsSync(join(CONTRACT, "analyze.json"))
-    ? JSON.parse(readFileSync(join(CONTRACT, "analyze.json"), "utf8"))
-    : { image: { w: 1920, h: 1440 }, holds: [] };
-  const request = { image: analyze.image, holds: analyze.holds, climber_height_m: 1.75, wall_height_m: 4.0 };
-  const r = describeRoute(request, solve);
+  const read = (f) => JSON.parse(readFileSync(join(CONTRACT, f), "utf8"));
+  let request;
+  if (existsSync(join(CONTRACT, "solve_request.json"))) {
+    request = read("solve_request.json"); // the body solve.json answers
+  } else {
+    const analyze = existsSync(join(CONTRACT, "analyze.json")) ? read("analyze.json") : { image: { w: 1920, h: 1440 }, holds: [] };
+    request = { image: analyze.image, holds: analyze.holds, climber_height_m: 1.75, wall_height_m: 4.0 };
+  }
+  const holdTypes = existsSync(join(CONTRACT, "hold_types.json")) ? read("hold_types.json") : undefined;
+  const r = describeRoute(request, solve, holdTypes);
   assert.equal(r.total_moves, solve.moves.length);
   for (const say of r.moves) assert.match(say, /^((Left|Right) (hand|foot)|Feet|Adjust your feet|Move your)/);
   for (const say of r.moves) assert.doesNotMatch(say, /undefined|null|NaN/);
+  // Every move that names a route hold should be described with a target.
+  const ids = new Set(request.holds.map((h) => h.id));
+  solve.moves.forEach((m, i) => {
+    if (m.hold != null && ids.has(m.hold) && m.limb.endsWith("H")) {
+      const call = describeMove(request, solve, i, holdTypes);
+      assert.ok(call.say.includes(" to the ") || call.is_match || /match/i.test(call.say), call.say);
+    }
+  });
 });

@@ -2,7 +2,7 @@
 //
 //   node try_coach.mjs
 //
-// Uses contract/solve.json and contract/analyze.json if they exist, otherwise
+// Uses contract/solve.json and contract/solve_request.json if they exist, otherwise
 // the test fixture. Type a command at the prompt:
 //   enter / next   climber finished the move, give the next one
 //   again          repeat the current move
@@ -30,13 +30,13 @@ let state;
 if (MIXED) {
   state = { request: fixtureMixedRequest, solve: fixtureMixedSolve, holdTypes: fixtureHoldTypes };
   console.log(`Using the mixed hand/foot test route, footMoves: ${FEET}.`);
-} else if (existsSync(join(CONTRACT, "solve.json")) && existsSync(join(CONTRACT, "analyze.json"))) {
-  const analyze = read("analyze.json");
+} else if (existsSync(join(CONTRACT, "solve.json")) && existsSync(join(CONTRACT, "solve_request.json"))) {
   state = {
-    request: { image: analyze.image, holds: analyze.holds, climber_height_m: 1.75, wall_height_m: 4.0 },
+    request: read("solve_request.json"),
     solve: read("solve.json"),
+    holdTypes: existsSync(join(CONTRACT, "hold_types.json")) ? read("hold_types.json") : undefined,
   };
-  console.log("Using contract/solve.json and contract/analyze.json (wall height assumed 4.0 m).");
+  console.log("Using contract/solve_request.json and contract/solve.json.");
 } else {
   state = { request: fixtureRequest, solve: fixtureSolve, holdTypes: fixtureHoldTypes };
   console.log("Contract files not found; using the test fixture.");

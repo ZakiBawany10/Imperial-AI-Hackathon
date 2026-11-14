@@ -114,14 +114,13 @@ async function loadState(choice) {
   }
   if (choice === "auto") {
     try {
-      const [solve, analyze] = await Promise.all([fetchJson("../contract/solve.json"), fetchJson("../contract/analyze.json")]);
-      routeLabel = "contract/solve.json + analyze.json (wall height assumed 4.0 m)";
-      return {
-        request: { image: analyze.image, holds: analyze.holds, climber_height_m: 1.75, wall_height_m: 4.0 },
-        solve,
-      };
+      const [request, solve] = await Promise.all([fetchJson("../contract/solve_request.json"), fetchJson("../contract/solve.json")]);
+      let holdTypes;
+      try { holdTypes = await fetchJson("../contract/hold_types.json"); } catch { holdTypes = undefined; }
+      routeLabel = "contract/solve_request.json + solve.json";
+      return { request, solve, holdTypes };
     } catch {
-      log("contract/solve.json or analyze.json not found; using the test fixture.");
+      log("contract/solve_request.json or solve.json not found; using the test fixture.");
     }
   }
   routeLabel = "test fixture, hands only";
