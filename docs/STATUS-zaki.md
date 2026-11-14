@@ -1,9 +1,106 @@
 # Status: Zaki's lane
 
-Saturday 14 November, 18:40. Written by Zaki's agent while Zaki was away.
-Second block of work; the first block's status (18:00) is summarised at the end.
+Saturday 14 November, about 20:30. Fourth block: the coach re-tested with feet
+against Krishna's live backend. Earlier blocks follow below.
 
-## What changed in this block
+## Fourth block: coach tested with feet on the live backend
+
+- **Krishna's backend runs locally, unchanged**, on 127.0.0.1:8001. Its
+  virtualenv is in `~/.cache/betacrux-backend` (Python 3.13 via uv, since this
+  Mac only has 3.15), with bytecode writing off. Nothing was written into
+  `backend/`. Steps are in `coach/README.md`.
+  - **One missing system library:** LightGBM needs `libomp`. The proper fix is
+    `brew install libomp`. I didn't install anything system-wide; instead the
+    server uses the copy that ships with PyTorch, which works.
+  - `/solve` didn't need the detector weights. I started it with
+    `BETACRUX_WARM=0` so it skipped loading the 2 GB detector.
+- **Live `/solve` on `contract/solve_request.json`:** 6 moves, `LH 166, LF 176,
+  RH 53, LH 53, LF 146, LH 2`; crux is move 2; grade 6a+ (V3), range 6a to
+  6b+.
+- **Coach bug found and fixed.** The first move (left hand onto hold 166, where
+  the right hand starts) was called "Left hand, up and right, about 80
+  centimetres, to the jug." It's a match. `moves` doesn't say which start hold
+  each hand is on, so the coach now reads that from the start pose,
+  `keyframes[0]`. A regression test covers it. 21 tests pass.
+- **What the coach says on the live route**, default merge mode:
+  1. "Left hand, match on the jug."
+  2. "Left foot up, then right hand, up, about 1.4 metres, to the jug." (crux)
+  3. "Left hand, match on the jug."
+  4. "Left foot up, then left hand, up and left, about 1.3 metres, to the jug."
+  5. "That's the top. Route finished."
+  In "call" mode the two foot moves are their own calls: "Left foot, up and
+  left, about 60 centimetres, to the jug." and "Left foot, up, about 1.1
+  metres, to the foot chip."
+- **`talk_test.html`** now coaches from the live route when a backend address
+  is filled in (or `?backend=http://127.0.0.1:8001`), and logs which source it
+  used. The browser's CORS check passes: `server.py` allows any origin, so no
+  fallback file and no fix for Krishna were needed. **Not yet tried with a
+  real microphone.**
+- **`node try_coach.mjs --live=http://127.0.0.1:8001`** rehearses the live
+  route in the terminal.
+- **Krishna's message:** the two resolved items are removed. New asks:
+  re-commit `solve.json` and `solve_request.json` from the current solver;
+  check the 1.37 m crux move (is `wall_height_m: 4.0` right for `wall.jpg`?);
+  confirm `span_m` is the hand gap after the move. **Adam's message:** the
+  "agent doesn't exist yet" line is now "live, I'll send the id", and there is
+  a note on foot moves.
+- **Root README:** the agent is live (id not in the repo), and moves include
+  feet.
+- The backend server is stopped.
+
+## Third block: voice coach live
+
+Pushed as `e998f12` and `74455aa`, `coach/` only.
+
+- **Key.** It was in `coach/.env.example`, which git tracks, not in
+  `coach/.env`. I moved it to `coach/.env` (gitignored, permissions 600) and
+  put the example back to blank. It was never committed: a search of all git
+  history finds it nowhere. The key check returned **200**.
+- **Agent created** on the first `--apply`, with no errors or retries:
+  - The agent id is in the gitignored `coach/agent_ids.json` and nowhere else
+    (the repo is public). Send it to Adam directly.
+  - Checked by GET: name "BetaCrux coach", all 3 client tools attached
+    (`get_route`, `get_next_move`, `set_climber_height`), English, auth off.
+  - Default voice (`ELEVENLABS_VOICE_ID` is blank), TTS model `eleven_v4_turbo`.
+- **`coach/talk_test.html`:** talk to the agent in the browser, with Start and
+  Stop buttons, a status line, and a live log of every tool call, its result
+  and the transcript. To open it:
+
+  ```bash
+  python3 -m http.server 8000 --bind 127.0.0.1   # from the repo root
+  # open http://localhost:8000/coach/talk_test.html
+  ```
+
+  Keep `--bind 127.0.0.1`. Without it anyone on the venue Wi-Fi could download
+  `coach/.env`. The agent id fills in by itself from `agent_ids.json`. Not yet
+  tried with a real microphone: **that's yours to do.**
+- **Krishna's update answered two open questions.**
+  - She committed `contract/` examples (`solve_request.json`, `solve.json`,
+    `analyze.json`, `hold_types.json`, `wall.jpg`). The contract test now runs
+    and passes: **20 of 20 tests pass, none skipped.** The coach, the
+    rehearsal and the talk page now use her real route.
+  - Wall feet are `"hold": null` (her commit `d795f56`), which the coach
+    already handled.
+  - I ran her solver on her example request (in a scratch environment, nothing
+    written to `backend/`). It gives 6 moves, 2 of them feet. The coach turns
+    them into 4 calls, for example "Left foot up, then right hand, up, about
+    1.4 metres, to the jug." The crux lands on the right call in all three
+    foot-move modes.
+
+### Now out of date in the 18:40 status below
+
+- The wall-feet question and the `contract/` request to Krishna are both done.
+  Remove them from her message in `docs/messages_for_team.md` before sending.
+- "ElevenLabs paused" is over.
+- The root `README.md` still says "the ElevenLabs agent hasn't been created
+  yet" and "moves are hand moves only". I didn't touch it this block (you said
+  `coach/` only). Say if you want those two lines updated.
+- Krishna added `backend/BENCHMARKS.md` with new numbers, such as 87% of holds
+  found on 19 hand-labelled gym photos. Those walls overlap her training
+  photos, so the numbers aren't independent. `docs/numbers.md` doesn't include
+  them yet.
+
+## Second block (18:40)
 
 Pushed as `c49c594`. Only `coach/`, `adaption/`, `docs/` and the root
 `README.md` were touched. No ElevenLabs or Adaption API was called.

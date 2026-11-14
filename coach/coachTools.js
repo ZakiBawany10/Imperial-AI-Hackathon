@@ -86,8 +86,32 @@ function holdPoint(hold) {
  * Used to detect matches. Start holds are not assigned to a specific limb by
  * the contract, so limbs start as null.
  */
-function limbHoldsBefore(moves, i) {
+// The route hold a point is on: the nearest hold whose centre is within its own
+// size (max of w, h) of the point. null if none, for example a foot on the wall.
+function holdIdAt(point, holds) {
+  if (!isPoint(point)) return null;
+  let best = null;
+  let bestD = Infinity;
+  for (const h of holds || []) {
+    if (!Number.isFinite(h.x) || !Number.isFinite(h.y)) continue;
+    const d = Math.hypot(point[0] - h.x, point[1] - h.y);
+    const reach = Math.max(h.w || 0, h.h || 0, 1);
+    if (d <= reach && d < bestD) { best = h.id; bestD = d; }
+  }
+  return best;
+}
+
+const JOINT_OF = { LH: "lh", RH: "rh", LF: "lf", RF: "rf" };
+
+// Which hold each limb is on before move i. The start pose (keyframes[0]) says
+// where each limb begins, which `moves` alone doesn't: a first move onto the
+// other hand's start hold is a match.
+function limbHoldsBefore(moves, i, request, solve) {
   const at = { LH: null, RH: null, LF: null, RF: null };
+  const start = solve && solve.keyframes && solve.keyframes[0] && solve.keyframes[0].joints;
+  if (start && request) {
+    for (const limb of Object.keys(at)) at[limb] = holdIdAt(start[JOINT_OF[limb]], request.holds);
+  }
   for (let k = 0; k < i && k < moves.length; k++) at[moves[k].limb] = moves[k].hold;
   return at;
 }
@@ -118,7 +142,7 @@ export function describeMove(request, solve, i, holdTypes) {
   const imageH = request.image && request.image.h;
   const metresPerPx = imageH && request.wall_height_m ? request.wall_height_m / imageH : null;
 
-  const before = limbHoldsBefore(moves, i);
+  const before = limbHoldsBefore(moves, i, request, solve);
   const isMatch = hold != null && limb.other != null && before[limb.other] === move.hold;
   const isCrux = solve.crux === i;
 

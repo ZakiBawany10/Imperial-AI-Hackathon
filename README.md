@@ -20,13 +20,15 @@ Media).
    the app shows a close-up and its top three guesses. That's a few taps, not
    the whole wall.
 4. **Solve.** Given the climber's height and the wall's height, a solver finds
-   the cheapest sequence of hand moves. Change the height and the sequence
+   the cheapest sequence of hand moves, then places the feet for each one, so
+   the sequence includes foot moves. Change the height and the sequence
    changes: it's a solver, not a lookup.
 5. **Animate and grade.** Each move becomes a stick-figure pose drawn over the
    photo, the hardest move is marked as the crux, and a grade model turns the
    solved sequence into a grade with a likely range.
 6. **Coach.** A voice agent reads the solved route and calls the next move
-   while you climb: "Right hand, up, about 50 centimetres, to the crimp."
+   while you climb: "Left foot up, then right hand, up, about 1.4 metres, to
+   the jug."
 
 ## How it fits together
 
@@ -57,7 +59,10 @@ photo ─► POST /analyze ─► holds (pixels, type, colour, confidence)
 From `backend/README.md`:
 
 - **The solver** is a shortest-path search (Dijkstra) over left-hand and
-  right-hand positions. A move costs more the further the hand travels and the
+  right-hand positions. The feet are added afterwards (`backend/limbs.py`):
+  for each hand move, a statics model compares footholds, or feet on the bare
+  wall, and each foot change becomes its own move just before the hand move it
+  is for. A move costs more the further the hand travels and the
   worse the holds are.
 - **The grade model** is LightGBM on 24 numbers from the solved sequence, plus
   wall angle and the count of foot-only holds. It never sees which board a climb
@@ -112,7 +117,9 @@ node setup_agent.mjs --apply    # creates the agent (needs ELEVENLABS_API_KEY in
 
 The frontend passes `createCoachTools(...).clientTools` from
 `coach/coachTools.js` to the ElevenLabs session; see `coach/README.md`.
-**TODO:** the ElevenLabs agent hasn't been created yet (API key pending).
+The ElevenLabs agent is live. Its id isn't in the repo: the repo is public, and
+anyone with the id could use our credits, so ask Zaki for it.
+`coach/talk_test.html` talks to it from a browser; see `coach/README.md`.
 
 ### Adaption dataset
 
@@ -147,7 +154,8 @@ gym routes against the gym's own grades).
 ### APIs and services
 
 - [ElevenLabs Agents](https://elevenlabs.io/docs) — the voice coach, with
-  client tools that run in the browser. **TODO:** agent not yet created.
+  client tools that run in the browser. Live; the agent id is kept out of the
+  repo.
 - [Adaption](https://docs.adaptionlabs.ai/) (Adaptive Data, AutoScientist) — the
   "description → grade" fine-tune. **TODO:** dataset prepared, nothing uploaded
   or run yet.

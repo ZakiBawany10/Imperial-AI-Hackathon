@@ -276,3 +276,28 @@ test("works on the real contract examples when they exist", { skip: !existsSync(
     }
   });
 });
+
+test("a first move onto the other hand's start hold is a match", () => {
+  // Start pose: left hand on hold 3, right hand on hold 7, feet on the bare wall.
+  const j = (lh, rh) => ({ head: [620, 950], hip: [620, 1250], lh, rh, l_elbow: [560, 1150], r_elbow: [690, 1140],
+    lf: [580, 1400], rf: [660, 1400], l_knee: [590, 1330], r_knee: [650, 1330] });
+  const solve = {
+    grade: { font: "5c", v: "V1", low: "5b", high: "6a" },
+    crux: 1,
+    moves: [
+      { i: 0, limb: "LH", hold: 7, load: 0.1, span_m: 0 },
+      { i: 1, limb: "RH", hold: 12, load: 0.5, span_m: 0.5 },
+    ],
+    keyframes: [
+      { move: 0, joints: j([540, 1100], [700, 1080]) },
+      { move: 1, joints: j([692, 1080], [708, 1080]) },
+      { move: 2, joints: j([692, 1080], [760, 900]) },
+    ],
+  };
+  const first = describeMove(fixtureRequest, solve, 0, fixtureHoldTypes);
+  assert.equal(first.is_match, true);
+  assert.equal(first.say, "Left hand, match on the jug.");
+  assert.equal(describeMove(fixtureRequest, solve, 1, fixtureHoldTypes).is_match, false);
+  // Without keyframes the coach can't know the start holds, so it doesn't claim a match.
+  assert.equal(describeMove(fixtureRequest, { ...solve, keyframes: [] }, 0, fixtureHoldTypes).is_match, false);
+});

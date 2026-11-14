@@ -37,21 +37,66 @@ saved in `agent_ids.json`, so it updates those instead of creating duplicates.
 
 `talk_test.html` connects to the live agent by voice, with Start and Stop
 buttons, a status line, and a live log of every tool call, its result and the
-transcript. It uses the contract examples when they exist (see above), and the
-test fixture otherwise. The microphone needs `http://localhost`,
-not `file://`, so serve the repo root:
+transcript. Where the route comes from (the log says which):
+
+1. With a backend address filled in: the page posts
+   `contract/solve_request.json` to that backend's `/solve` and coaches from
+   the live answer, which includes foot moves.
+2. Otherwise `contract/solve.json`, the committed example. It predates foot
+   moves, so it is hands only.
+3. Otherwise the test fixture.
+
+The microphone needs `http://localhost`, not `file://`. Use two terminals, both
+bound to 127.0.0.1. The backend is run unchanged, with its virtualenv outside
+the repo so nothing is written into `backend/`.
+
+**Terminal 1: backend on port 8001.** The first time, set up a Python 3.13 venv
+outside the repo:
 
 ```bash
-python3 -m http.server 8000 --bind 127.0.0.1   # from the repo root; open http://localhost:8000/coach/talk_test.html
+B=~/.cache/betacrux-backend
+python3 -m venv $B/uvtool && $B/uvtool/bin/pip install uv
+UV_PYTHON_INSTALL_DIR=$B/pythons $B/uvtool/bin/uv venv $B/venv --python 3.13
+$B/uvtool/bin/uv pip install --python $B/venv/bin/python -r backend/requirements.txt   # from the repo root
 ```
 
-Keep `--bind 127.0.0.1`. Without it the server is reachable from the whole
-network, and it serves every file in the repo, including `coach/.env`.
+LightGBM needs `libomp`. Either `brew install libomp`, or point it at the copy
+PyTorch ships (no system change):
+
+```bash
+mkdir -p $B/omp && ln -sf $B/venv/lib/python3.13/site-packages/torch/lib/libomp.dylib $B/omp/libomp.dylib
+```
+
+Then start it. `BETACRUX_WARM=0` skips loading the 2 GB hold detector, which
+`/solve` doesn't use:
+
+```bash
+B=~/.cache/betacrux-backend
+cd $B && PYTHONDONTWRITEBYTECODE=1 BETACRUX_WARM=0 DYLD_LIBRARY_PATH=$B/omp \
+  $B/venv/bin/uvicorn server:app --app-dir "/path/to/repo/backend" --host 127.0.0.1 --port 8001
+```
+
+**Terminal 2: the page on port 8000**, from the repo root:
+
+```bash
+python3 -m http.server 8000 --bind 127.0.0.1
+```
+
+Then open
+`http://localhost:8000/coach/talk_test.html?backend=http://127.0.0.1:8001` and
+press Start.
+
+Keep `--bind 127.0.0.1` on both. Without it they are reachable from the whole
+network, and the page server serves every file in the repo, including
+`coach/.env`.
 
 The agent id fills in from `?agent=...`, from the last id typed, or from the
-local `agent_ids.json`. Height changes only re-label the route unless you give
-a backend URL (for example `http://localhost:8010`), in which case the page
-calls `/solve` again.
+local `agent_ids.json`. With a backend, a height change calls `/solve` again;
+without one it only re-labels the route.
+
+To rehearse the live route in the terminal instead:
+`node try_coach.mjs --live=http://127.0.0.1:8001` (add `--feet=call` or
+`--feet=skip` for the other foot-move modes).
 
 The tests, `try_coach.mjs` and `talk_test.html` use `contract/solve_request.json`,
 `contract/solve.json` and `contract/hold_types.json` when they exist, and the
@@ -116,7 +161,15 @@ Checked against Krishna's backend code (`backend/route.py`, `analyze.py`, `pose.
   answer). The committed `contract/solve.json` is still hands-only. Run on the
   same request, her solver gives 6 moves, 2 of them feet, and the coach merges
   them into 4 calls: "Left foot up, then right hand, up, about 1.4 metres, to
-  the jug." `node try_coach.mjs --mixed` rehearses a mixed route.
+  the jug." `node try_coach.mjs --mixed` rehearses a mixed route without a
+  backend.
+- **Start holds.** `moves` doesn't say which start hold each hand begins on, so
+  the coach reads it from the start pose, `keyframes[0]`: a limb is on a hold
+  if it is within the hold's size of its centre. A first move onto the other
+  hand's start hold is then called as a match.
+- `span_m` appears to be the gap between the two hands (or feet) after the
+  move, not how far the limb travelled: it is 0 for a match. The coach
+  measures travel from the keyframes instead.
 - **Wall feet** are `"hold": null` (same commit). They are described without a
   target ("Right foot, up, about 40 centimetres."), never as a match. A `hold`
   that is missing or not a route hold is treated the same way.

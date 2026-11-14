@@ -36,7 +36,7 @@
   <br>
   <label>Route
     <select id="route">
-      <option value="auto">contract/ files if present, else test fixture</option>
+      <option value="auto">live /solve if a backend is given, else contract/ files, else test fixture</option>
       <option value="fixture">test fixture (hands only)</option>
       <option value="mixed">test fixture (hands and feet)</option>
     </select>
@@ -49,8 +49,8 @@
     </select>
   </label>
   <br>
-  <label>Backend for height changes (optional)
-    <input id="backend" type="text" placeholder="http://localhost:8010">
+  <label>Backend (optional: live route and height changes)
+    <input id="backend" type="text" placeholder="http://127.0.0.1:8001">
   </label>
 </fieldset>
 
@@ -110,7 +110,26 @@ async function fillAgentId() {
 async function loadState(choice) {
   if (choice === "mixed") {
     routeLabel = "test fixture, hands and feet";
+    log("Route source: test fixture, hands and feet.");
     return { request: fixtureMixedRequest, solve: fixtureMixedSolve, holdTypes: fixtureHoldTypes };
+  }
+  const backend = $("backend").value.trim().replace(/\/$/, "");
+  if (choice === "auto" && backend) {
+    // Live: POST the contract's example request to the backend and coach from its answer.
+    const request = await fetchJson("../contract/solve_request.json");
+    const r = await fetch(`${backend}/solve`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(request),
+    });
+    if (!r.ok) throw new Error(`POST ${backend}/solve returned ${r.status}: ${await r.text()}`);
+    const solve = await r.json();
+    let holdTypes;
+    try { holdTypes = await fetchJson(`${backend}/hold-types`); } catch { holdTypes = undefined; }
+    routeLabel = `live /solve from ${backend}`;
+    log(`Route source: live POST ${backend}/solve with contract/solve_request.json. ` +
+        `Moves: ${solve.moves.map((m) => `${m.limb}->${m.hold}`).join(", ")}; crux index ${solve.crux}.`);
+    return { request, solve, holdTypes };
   }
   if (choice === "auto") {
     try {
@@ -118,12 +137,14 @@ async function loadState(choice) {
       let holdTypes;
       try { holdTypes = await fetchJson("../contract/hold_types.json"); } catch { holdTypes = undefined; }
       routeLabel = "contract/solve_request.json + solve.json";
+      log("Route source: contract/solve.json (committed example, no backend given).");
       return { request, solve, holdTypes };
     } catch {
       log("contract/solve_request.json or solve.json not found; using the test fixture.");
     }
   }
   routeLabel = "test fixture, hands only";
+  log("Route source: test fixture, hands only.");
   return { request: fixtureRequest, solve: fixtureSolve, holdTypes: fixtureHoldTypes };
 }
 
@@ -223,6 +244,10 @@ function finish() {
 
 if (location.protocol === "file:") {
   log("Opened from file://. The microphone and module imports need http://localhost; see the command above.", "err");
+}
+{
+  const b = new URLSearchParams(location.search).get("backend");
+  if (b) $("backend").value = b;
 }
 await fillAgentId();
 showStatus();

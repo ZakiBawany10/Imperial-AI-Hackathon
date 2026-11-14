@@ -1,14 +1,14 @@
 # Messages for the team
 
-Ready to paste. Written Saturday 14 November; Krishna's message updated about 18:45 after reading the backend again.
+Ready to paste. Written Saturday 14 November; Krishna's message updated about 20:30 after running her current backend locally.
 
-## For Krishna: foot moves, test rows, and two asks
+## For Krishna: foot moves, test rows, and four asks
 
-Zaki: the earlier contract questions are answered by Krishna's code, so they appear as confirmations. The new question is how wall feet will appear in `moves`. The Kilter ask is gone too: the backend README says the data is the public Vilin97/KilterBoard dataset on Hugging Face.
+Zaki: the wall-feet question and the request for `contract/` files are resolved (her commit `d795f56` and the committed examples), so they're gone. New: re-commit the examples from the current solver, and a sanity check on one long move.
 
 > Hi Krishna, a few things from the coach and Adaption side.
 >
-> **Foot moves.** I hear `/solve` will start returning `LF`/`RF` moves. The coach is ready: by default it folds foot moves into the next hand call ("Feet up, then right hand, up, about 50 centimetres, to the crimp"). One question: today `pose.py` can put a foot on the wall rather than on a hold. **How will a wall foot appear in `moves`?** `"hold": null`, no `hold` key, a special id, or never as a move? I haven't guessed a shape. For now the coach just describes any move whose `hold` isn't a route hold as "Right foot, up, about 40 centimetres", with no target, and it doesn't crash on any of those three shapes.
+> **Foot moves.** Thanks for `d795f56`. I ran your backend locally, unchanged, and posted `contract/solve_request.json` to `/solve`. It returns 6 moves (`LH 166, LF 176, RH 53, LH 53, LF 146, LH 2`), and the coach handles them. By default it folds each foot move into the next hand call: "Left foot up, then right hand, up, about 1.4 metres, to the jug." Wall feet as `"hold": null` work too.
 >
 > **Same test rows as your grade model.** I rebuilt the Adaption dataset to use exactly your MoonBoard filter and split from `test_thesis.py` / `train_grade.py`:
 > - grade 6B to 8B+, start and finish holds, repeats ≥ 2, no hold listed twice, in the pickle's order;
@@ -21,7 +21,9 @@ Zaki: the earlier contract questions are answered by Krishna's code, so they app
 > **Confirmed from your code, shout if any changes:** `crux` indexes `moves`; hold `x`, `y` are the box centre; image left is the climber's left.
 >
 > **Asks:**
-> - Could you commit `contract/solve.json`, `contract/analyze.json` and `contract/wall.jpg`? Your backend README's `curl` examples also point at `contract/wall.jpg` and `contract/solve_request.json`. My coach tests pick the files up automatically.
+> - **Could you re-commit `contract/solve.json` and `contract/solve_request.json` from the current solver?** The committed `solve.json` predates foot moves: it has 4 hand moves and no `physics` field, while the live answer to the same request has 6 moves including `LF`. Adam and the coach both build against these files.
+> - **Could you sanity-check the 1.37 m hand move in that example?** Move 2 (`RH` to hold 53, the crux) has `span_m: 1.37`. The request says `wall_height_m: 4.0` for the 1440 px photo, so 360 px per metre, and the hand travels from y 1020 to 528, about 490 px. If the photo shows less than the full 4 m of wall, every distance is overstated, and the coach says "about 1.4 metres" aloud. Is 4.0 m right for `wall.jpg`, or is it just the default?
+> - Small one: I read `span_m` as the gap between the two hands (or feet) after the move, not how far the limb travelled, because it's 0 for a match. Right? The coach measures travel from the keyframes, so either way is fine.
 > - The slide numbers in `Documents/PLAN.md` are the pre-reach-penalty ones (0.98 and 1.39). I've listed the current ones from your results files in `docs/numbers.md`. Could you check it and update the plan's rigour table, since that file is shared?
 
 ## For Adam: wiring the voice coach
@@ -42,7 +44,8 @@ Zaki: the earlier contract questions are answered by Krishna's code, so they app
 > await Conversation.startSession({ agentId: AGENT_ID, connectionType: "webrtc", clientTools: coach.clientTools });
 > ```
 >
-> - **Agent ID comes later.** I'm still waiting on an ElevenLabs API key, so the agent doesn't exist yet. I'll send you the ID directly once it does. Please keep it out of the repo (the repo and the agent are both public); a gitignored `.env.local` in `frontend/` is fine.
+> - **Agent ID:** the agent is live; I'll send you the ID directly. Please keep it out of the repo (the repo and the agent are both public); a gitignored `.env.local` in `frontend/` is fine. `coach/talk_test.html` shows the whole loop working in a browser, with a log of every tool call.
+> - **Foot moves:** `/solve` now returns them, and the coach folds them into hand calls by default. `onStepChange` still gives an index into `solve.moves`, foot moves included.
 > - You can build and test everything except the voice now: the tool functions are plain async functions, so you can call `coach.clientTools.get_next_move({ climber_finished_last_move: true })` from a button and check what it returns.
 > - **Request: a demo-mode `getProgress`.** For demo step 4 (filmed climb with the coach calling moves), please add a demo mode where `getProgress` returns how many moves are done based on the video's current time and a list of timestamps, something like:
 >

@@ -12,6 +12,9 @@
 //
 //   node try_coach.mjs --mixed                 test route with foot moves (default merge mode)
 //   node try_coach.mjs --mixed --feet=call     or --feet=skip
+//   node try_coach.mjs --live=http://127.0.0.1:8001
+//                         POST contract/solve_request.json to a running backend
+//                         and coach from its live /solve answer (with foot moves)
 
 import { existsSync, readFileSync } from "node:fs";
 import { createInterface } from "node:readline/promises";
@@ -25,9 +28,23 @@ const read = (f) => JSON.parse(readFileSync(join(CONTRACT, f), "utf8"));
 
 const MIXED = process.argv.includes("--mixed");
 const FEET = (process.argv.find((a) => a.startsWith("--feet=")) || "--feet=merge").slice(7);
+const LIVE = (process.argv.find((a) => a.startsWith("--live=")) || "").slice(7).replace(/\/$/, "");
 
 let state;
-if (MIXED) {
+if (LIVE) {
+  const request = read("solve_request.json");
+  const r = await fetch(`${LIVE}/solve`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(request),
+  });
+  if (!r.ok) throw new Error(`POST ${LIVE}/solve returned ${r.status}: ${await r.text()}`);
+  const solve = await r.json();
+  const holdTypes = existsSync(join(CONTRACT, "hold_types.json")) ? read("hold_types.json") : undefined;
+  state = { request, solve, holdTypes };
+  console.log(`Using the live /solve answer from ${LIVE} for contract/solve_request.json, footMoves: ${FEET}.`);
+  console.log(`Moves: ${solve.moves.map((m) => `${m.limb}->${m.hold}`).join(", ")}; crux index ${solve.crux}.`);
+} else if (MIXED) {
   state = { request: fixtureMixedRequest, solve: fixtureMixedSolve, holdTypes: fixtureHoldTypes };
   console.log(`Using the mixed hand/foot test route, footMoves: ${FEET}.`);
 } else if (existsSync(join(CONTRACT, "solve.json")) && existsSync(join(CONTRACT, "solve_request.json"))) {
