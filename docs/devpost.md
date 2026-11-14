@@ -29,8 +29,9 @@ a coach.
   lookup.
 - **Animates a stick figure** climbing the route over your photo, marks the crux
   move, and gives a grade with a likely range.
-- **Coaches you by voice** while you climb, calling one move at a time: "Right
-  hand, up, about 50 centimetres, to the crimp."
+- **Coaches you by voice** while you climb, calling one move at a time the way a
+  coach on the mat would: "High left foot, then big move, right hand to the
+  next jug up, up high, way out to your right."
 
 ## How we built it
 

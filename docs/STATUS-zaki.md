@@ -1,9 +1,44 @@
 # Status: Zaki's lane
 
-Saturday 14 November, about 20:30. Fourth block: the coach re-tested with feet
-against Krishna's live backend. Earlier blocks follow below.
+Saturday 14 November, evening. Fifth block: the coach talks like a coach.
+Earlier blocks follow below.
+
+## Fifth block: coach wording reworked
+
+- **No more tape measure.** `coachTools.js` now describes:
+  - reach sized against the climber ("long reach", "big move", "jump for
+    it");
+  - where the hold is from their body in the pose before the move ("up high to
+    your left", "by your left knee");
+  - the hold relative to the others ("big", "small", colour only when it sets
+    the hold apart);
+  - landmarks ("the jug your hands started on", "the next jug up", "the finish
+    jug");
+  - feet in coach terms ("High left foot", "Smear your right foot").
+- Every move comes with facts plus 2 or 3 phrasings. Metres are only in
+  `how_far`, for "how far?". Details are in `coach/README.md`, "How the coach
+  talks".
+- **Prompt rewritten** as a friendly coach spotting from below: short turns,
+  contractions, varied wording, a quick "Nice." after each move, and one crux
+  tip from `crux_tips`. The hard rule: it never adds a hold, direction or fact
+  the tool didn't give.
+- **Live agent updated in place** with `setup_agent.mjs --apply`. Checked by
+  GET: the new prompt, the same 3 tool ids, still one agent and one of each
+  tool. The `get_next_move` description was updated to match.
+- **Tests:** 24 pass, including `get_route`, the height change, and a check
+  that nothing spoken unprompted contains a number or a unit.
+- **Before and after** on Krishna's current live route (9 moves, crux = left
+  hand to the finish):
+  - Before: "Left foot up, then right hand, up, about 1.4 metres, to the jug."
+  - After: "High left foot, then big move, right hand to the next jug up, up
+    high, way out to your right."
+- **Not done (outside this round's folders):** the root `README.md` still
+  quotes the old "about 1.4 metres" line (line 30).
+- **Not yet heard aloud.** Try `coach/talk_test.html` to hear how the agent
+  actually varies it.
 
 ## Fourth block: coach tested with feet on the live backend
+
 
 - **Krishna's backend runs locally, unchanged**, on 127.0.0.1:8001. Its
   virtualenv is in `~/.cache/betacrux-backend` (Python 3.13 via uv, since this

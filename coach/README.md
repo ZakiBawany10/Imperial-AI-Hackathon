@@ -132,8 +132,9 @@ const conversation = await Conversation.startSession({
 ```
 
 - **Foot moves.** Calling every foot move is too much talk on the wall. By
-  default (`"merge"`) foot moves are folded into the next hand move: "Feet up,
-  then right hand, up, about 50 centimetres, to the crimp." `"skip"` calls hand
+  default (`"merge"`) foot moves are folded into the next hand move: "High left
+  foot, then big move, right hand to the next jug up, up high, way out to your
+  right." `"skip"` calls hand
   moves only; `"call"` calls every move. One coaching turn can therefore cover
   several entries of `solve.moves`; `onStepChange` and `getProgress` always use
   indices into `solve.moves`, so the UI doesn't need to know about this.
@@ -145,6 +146,45 @@ const conversation = await Conversation.startSession({
   Keep it in a gitignored env file in `frontend/`, for example `.env.local`.
 - Every tool returns a JSON string. On a missing route it returns
   `{"error": ...}` and the coach says it can't see the route yet.
+
+## How the coach talks
+
+Like a coach on the mat, not a tape measure. For every move `get_next_move`
+returns structured facts, a main sentence (`say`) and two or three
+`phrasings`. The agent rotates between them, and the prompt forbids it from
+adding any hold, direction or fact that isn't in the facts.
+
+- **Reach** is sized against the climber's height (`climber_height_m`, and the
+  photo's scale from `wall_height_m`). By hand travel as a fraction of height:
+  under 0.2 "short reach", under 0.4 "reach", under 0.6 "long reach", under
+  0.85 "big move", otherwise "jump for it".
+- **Where:** placed against the body in the pose before the move (head, neck
+  as the shoulder line, hip, knees, the other hand). For example "just above
+  your head", "out to your right at shoulder height", "by your left knee",
+  "just above your right hand".
+- **Which hold:** the type, plus "big" or "small" ("little" for a crimp) when
+  the hold's box is at least 1.6 times, or at most 0.6 times, the route's
+  median. A colour is named only when it differs from most route holds, or
+  from a nearby hold of the same type.
+- **Landmarks:** "the finish jug", "the start jug", "the jug your right hand's
+  on", "the jug your hands started on", "the next jug up" (hands only: no
+  other hold of that type in between), and "just past the sloper" as an
+  alternative phrasing.
+- **Feet:** "High left foot", "Left foot up by your knee", "Drop your right
+  foot", and "Smear" for a foot on the bare wall. Merged into a hand call, only
+  the short form is used.
+- **Crux:** `crux_tips` offers up to three short tips that fit the move (a big
+  move gets "commit to it"; a wide one gets "hips in to the wall"). The agent
+  says one.
+- **Distance** is only in `how_far` ("about 1.4 metres"), for when the climber
+  asks.
+
+On Krishna's current example route, the coach now says: "Match hands on the
+jug." / "High left foot, then big move, right hand to the next jug up, up
+high, way out to your right." / "Match hands on the jug." / "Left foot up by
+your knee, then long reach, right hand to the next jug up, up high, way out to
+your right." / "Left foot up by your knee, then big move, left hand to the
+finish jug, up high to your left." (crux) / "Match hands on the finish jug."
 
 ## How the coach reads the contract
 
@@ -158,11 +198,9 @@ Checked against Krishna's backend code (`backend/route.py`, `analyze.py`, `pose.
 - `keyframes[i]` is the pose before `moves[i]` (`contract/README.md`).
 - **Foot moves.** `/solve` now returns `LF`/`RF` moves as well as hands
   (Krishna's commit `d795f56`; `"limbs": "hands"` gives the old hands-only
-  answer). The committed `contract/solve.json` is still hands-only. Run on the
-  same request, her solver gives 6 moves, 2 of them feet, and the coach merges
-  them into 4 calls: "Left foot up, then right hand, up, about 1.4 metres, to
-  the jug." `node try_coach.mjs --mixed` rehearses a mixed route without a
-  backend.
+  answer). The committed `contract/solve.json` is still hands-only.
+  `node try_coach.mjs --live=http://127.0.0.1:8001` rehearses the live route;
+  `--mixed` rehearses a mixed test route without a backend.
 - **Start holds.** `moves` doesn't say which start hold each hand begins on, so
   the coach reads it from the start pose, `keyframes[0]`: a limb is on a hold
   if it is within the hold's size of its centre. A first move onto the other
@@ -170,8 +208,8 @@ Checked against Krishna's backend code (`backend/route.py`, `analyze.py`, `pose.
 - `span_m` appears to be the gap between the two hands (or feet) after the
   move, not how far the limb travelled: it is 0 for a match. The coach
   measures travel from the keyframes instead.
-- **Wall feet** are `"hold": null` (same commit). They are described without a
-  target ("Right foot, up, about 40 centimetres."), never as a match. A `hold`
+- **Wall feet** are `"hold": null` (same commit). They are called as a smear
+  ("Smear your right foot up, by your right knee."), never as a match. A `hold`
   that is missing or not a route hold is treated the same way.
 - `load` (relative effort, 0 to 1), `span_m` and the new `physics` field are
   not used yet.

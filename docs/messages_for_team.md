@@ -8,7 +8,7 @@ Zaki: the wall-feet question and the request for `contract/` files are resolved 
 
 > Hi Krishna, a few things from the coach and Adaption side.
 >
-> **Foot moves.** Thanks for `d795f56`. I ran your backend locally, unchanged, and posted `contract/solve_request.json` to `/solve`. It returns 6 moves (`LH 166, LF 176, RH 53, LH 53, LF 146, LH 2`), and the coach handles them. By default it folds each foot move into the next hand call: "Left foot up, then right hand, up, about 1.4 metres, to the jug." Wall feet as `"hold": null` work too.
+> **Foot moves.** Thanks for `d795f56`. I ran your backend locally, unchanged, and posted `contract/solve_request.json` to `/solve`. It returns 6 moves (`LH 166, LF 176, RH 53, LH 53, LF 146, LH 2`), and the coach handles them. By default it folds each foot move into the next hand call: "High left foot, then big move, right hand to the next jug up, up high, way out to your right." Wall feet as `"hold": null` work too.
 >
 > **Same test rows as your grade model.** I rebuilt the Adaption dataset to use exactly your MoonBoard filter and split from `test_thesis.py` / `train_grade.py`:
 > - grade 6B to 8B+, start and finish holds, repeats ≥ 2, no hold listed twice, in the pickle's order;

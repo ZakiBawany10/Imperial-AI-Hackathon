@@ -14,7 +14,7 @@
   {
     "type": "client",
     "name": "get_next_move",
-    "description": "Get the move the climber should do now: which limb, which direction, how far, which hold type, and whether it is the crux. Set climber_finished_last_move to true when the climber has just completed the move you last called, so the coach moves on to the following one.",
+    "description": "Get the move the climber should do now: which limb, how big a reach it is for them, where the hold is relative to their body, which hold (with landmarks like 'the jug your hands started on'), any foot moves first, whether it is the crux (with short tips), and two or three ready phrasings. how_far gives metres, for when the climber asks. Set climber_finished_last_move to true when the climber has just completed the move you last called, so the coach moves on to the following one.",
     "expects_response": true,
     "response_timeout_secs": 10,
     "parameters": {

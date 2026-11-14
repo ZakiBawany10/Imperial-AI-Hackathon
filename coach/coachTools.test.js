@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { createCoachTools, describeMove, describeRoute, directionWords, distanceWords, planCalls } from "./coachTools.js";
+import { colourName, createCoachTools, describeMove, describeRoute, directionWords, distanceWords, planCalls, reachWords } from "./coachTools.js";
 import { fixtureRequest, fixtureSolve, fixtureHoldTypes, fixtureMixedRequest, fixtureMixedSolve } from "./test_fixture.js";
 
 const CONTRACT = join(dirname(fileURLToPath(import.meta.url)), "..", "contract");
@@ -27,24 +27,78 @@ test("direction and distance words", () => {
   assert.equal(distanceWords(1.98), "about 2 metres");
 });
 
-test("describeMove reads limb, direction, distance and hold type", () => {
+test("reach size and colour words", () => {
+  assert.equal(reachWords(0.1), "short reach");
+  assert.equal(reachWords(0.3), "reach");
+  assert.equal(reachWords(0.5), "long reach");
+  assert.equal(reachWords(0.7), "big move");
+  assert.equal(reachWords(0.9), "jump for it");
+  assert.equal(colourName("#2050c0"), "blue");
+  assert.equal(colourName("#efda4e"), "yellow");
+  assert.equal(colourName("#d02020"), "red");
+  assert.equal(colourName("#f4f4f4"), "white");
+  assert.equal(colourName("nope"), null);
+});
+
+test("describeMove talks like a coach: reach, body position, hold, landmark", () => {
   const m0 = describeMove(fixtureRequest, fixtureSolve, 0, fixtureHoldTypes);
-  assert.equal(m0.say, "Right hand, up, about 50 centimetres, to the crimp.");
+  assert.equal(m0.say, "Reach, right hand to the next little crimp up, out to your right at head height.");
+  assert.equal(m0.reach, "reach");
+  assert.equal(m0.hold_description, "little crimp");
+  assert.equal(m0.how_far, "about 50 centimetres"); // only for "how far?"
   assert.equal(m0.is_crux, false);
+  assert.ok(m0.phrasings.length >= 2 && m0.phrasings.length <= 3);
+  assert.equal(m0.phrasings[0], m0.say);
 
   const m1 = describeMove(fixtureRequest, fixtureSolve, 1, fixtureHoldTypes);
-  assert.equal(m1.say, "Left hand, up, about 90 centimetres, to the sloper.");
+  assert.equal(m1.say, "Long reach, left hand to the next big sloper up, straight up, well above your head.");
   assert.equal(m1.is_crux, true);
+  assert.ok(m1.crux_tips.length >= 1);
 
   const m2 = describeMove(fixtureRequest, fixtureSolve, 2, fixtureHoldTypes);
-  assert.equal(m2.say, "Right hand, up and right, about a metre, to the jug.");
+  // Sizes are relative to the route's other holds: here the jug is ordinary ("big" in the mixed route, next to small footholds).
+  assert.equal(m2.say, "Long reach, right hand to the finish jug, up high, way out to your right.");
+  assert.equal(m2.is_finish_hold, true);
 
   const m3 = describeMove(fixtureRequest, fixtureSolve, 3, fixtureHoldTypes);
   assert.equal(m3.is_match, true);
   assert.equal(m3.is_last_move, true);
-  assert.equal(m3.say, "Left hand, match on the jug.");
+  assert.equal(m3.say, "Match hands on the finish jug.");
+
+  // No centimetres or metres in anything the coach says unprompted.
+  for (const m of [m0, m1, m2, m3]) for (const p of m.phrasings) assert.doesNotMatch(p, /metre|centimetre|\d/);
 
   assert.equal(describeMove(fixtureRequest, fixtureSolve, 4), null);
+});
+
+test("colour is said only when it sets a hold apart", () => {
+  const holds = fixtureRequest.holds.map((h) => (h.id === 12 ? { ...h, color: "#d02020" } : h));
+  const req = { ...fixtureRequest, holds };
+  assert.equal(describeMove(req, fixtureSolve, 0, fixtureHoldTypes).hold_description, "little red crimp");
+  assert.equal(describeMove(fixtureRequest, fixtureSolve, 0, fixtureHoldTypes).hold_description, "little crimp");
+});
+
+test("a foot onto a hold a hand used is pointed out by that hand", () => {
+  // Start: left hand on 3, right hand on 7. Hands go up, then the left foot steps onto 3.
+  const j = (lh, rh, lf) => ({ head: [620, 950], hip: [620, 1250], lh, rh, lf, rf: [660, 1400],
+    l_knee: [590, 1330], r_knee: [650, 1330] });
+  const solve = {
+    grade: fixtureSolve.grade,
+    crux: 0,
+    moves: [
+      { i: 0, limb: "LH", hold: 15 },
+      { i: 1, limb: "LF", hold: 3 },
+    ],
+    keyframes: [
+      { move: 0, joints: j([540, 1100], [700, 1080], [580, 1400]) },
+      { move: 1, joints: j([560, 760], [700, 1080], [580, 1400]) },
+      { move: 2, joints: j([560, 760], [700, 1080], [540, 1100]) },
+    ],
+  };
+  const foot = describeMove(fixtureRequest, solve, 1, fixtureHoldTypes);
+  assert.equal(foot.hold_reference, "the jug your left hand started on");
+  assert.equal(foot.short, "High left foot");
+  assert.match(foot.say, /^High left foot, onto the jug your left hand started on\.$/);
 });
 
 test("describeRoute summarises grade, crux and moves", () => {
@@ -163,11 +217,9 @@ test("planCalls merges, skips or calls foot moves", () => {
 test("merged calls lead in with the feet, then the hand move", () => {
   const state = { request: footRequest, solve: footSolve };
   const route = describeRoute(state.request, state.solve, null, "merge");
-  assert.deepEqual(route.moves, [
-    "Left foot up, then right hand, up, about 50 centimetres, to the crimp.",
-    "Feet up, then left hand, up, about 90 centimetres, to the sloper.",
-    "Right foot, up, about 50 centimetres, to the foothold.",
-  ]);
+  assert.match(route.moves[0], /^Left foot up.*, then reach, right hand to the next crimp up/);
+  assert.match(route.moves[1], /^Feet up, then long reach, left hand to the next (big )?sloper up/);
+  assert.match(route.moves[2], /^Right foot.*onto the (small )?foothold/);
   assert.equal(route.total_moves, 3);
   assert.equal(route.crux_move_number, 2);
 });
@@ -176,14 +228,14 @@ test("footMoves is merge by default; skip calls hands only", async () => {
   const state = { request: footRequest, solve: footSolve };
   const merged = createCoachTools({ getState: () => state });
   const first = await call(merged.clientTools.get_next_move, { climber_finished_last_move: false });
-  assert.match(first.say, /^Left foot up, then right hand/);
+  assert.match(first.say, /^Left foot up, then reach, right hand/);
   assert.deepEqual(first.move_indices, [0, 1]);
 
   const skip = createCoachTools({ getState: () => state, footMoves: "skip" });
   const s1 = await call(skip.clientTools.get_next_move, { climber_finished_last_move: false });
   const s2 = await call(skip.clientTools.get_next_move, { climber_finished_last_move: true });
   const s3 = await call(skip.clientTools.get_next_move, { climber_finished_last_move: true });
-  assert.equal(s1.say, "Right hand, up, about 50 centimetres, to the crimp.");
+  assert.match(s1.say, /^Reach, right hand to the next (little )?crimp up/);
   assert.equal(s2.is_crux, true);
   assert.equal(s3.status, "finished");
 
@@ -210,10 +262,10 @@ test("progress and step hooks use move indices, not call numbers", async () => {
 test("mixed hand and foot moves read naturally in the default merge mode", () => {
   const route = describeRoute(fixtureMixedRequest, fixtureMixedSolve, fixtureHoldTypes);
   assert.deepEqual(route.moves, [
-    "Right foot up, then right hand, up, about 50 centimetres, to the crimp.",
-    "Feet up, then left hand, up, about 90 centimetres, to the sloper.",
-    "Feet up, then right hand, up and right, about a metre, to the jug.",
-    "Left hand, match on the jug.",
+    "High right foot, then reach, right hand to the next little crimp up, out to your right at head height.",
+    "Feet up, then long reach, left hand to the next big sloper up, straight up, well above your head.",
+    "Feet up, then long reach, right hand to the big finish jug, up high, way out to your right.",
+    "Match hands on the finish jug.",
   ]);
   assert.equal(route.crux_move_number, 2);
 });
@@ -225,9 +277,10 @@ test("a foot whose hold isn't in the request doesn't crash or claim a hold", () 
     assert.equal(m.on_route_hold, false);
     assert.equal(m.hold_type, null);
     assert.equal(m.is_match, false);
-    assert.doesNotMatch(m.say, /to the|undefined|null/);
+    assert.doesNotMatch(m.say, /to the|onto|undefined|null/);
+    assert.match(m.say, /^Smear your right foot|^Smear your left foot/);
   }
-  assert.equal(describeMove(fixtureMixedRequest, fixtureMixedSolve, 3).say, "Right foot, up, about 40 centimetres.");
+  assert.equal(describeMove(fixtureMixedRequest, fixtureMixedSolve, 3).say, "Smear your right foot up, out to your right at chest height.");
 
   // With no keyframes either, it still says something sensible.
   const bare = { ...fixtureMixedSolve, keyframes: [] };
@@ -265,14 +318,14 @@ test("works on the real contract examples when they exist", { skip: !existsSync(
   const holdTypes = existsSync(join(CONTRACT, "hold_types.json")) ? read("hold_types.json") : undefined;
   const r = describeRoute(request, solve, holdTypes);
   assert.equal(r.total_moves, solve.moves.length);
-  for (const say of r.moves) assert.match(say, /^((Left|Right) (hand|foot)|Feet|Adjust your feet|Move your)/);
-  for (const say of r.moves) assert.doesNotMatch(say, /undefined|null|NaN/);
+  for (const say of r.moves) assert.ok(say.length > 5, say);
+  for (const say of r.moves) assert.doesNotMatch(say, /undefined|null|NaN|metre|centimetre/);
   // Every move that names a route hold should be described with a target.
   const ids = new Set(request.holds.map((h) => h.id));
   solve.moves.forEach((m, i) => {
     if (m.hold != null && ids.has(m.hold) && m.limb.endsWith("H")) {
       const call = describeMove(request, solve, i, holdTypes);
-      assert.ok(call.say.includes(" to the ") || call.is_match || /match/i.test(call.say), call.say);
+      assert.ok(call.hold_reference && (call.say.includes(call.hold_reference) || call.is_match), call.say);
     }
   });
 });
@@ -296,7 +349,7 @@ test("a first move onto the other hand's start hold is a match", () => {
   };
   const first = describeMove(fixtureRequest, solve, 0, fixtureHoldTypes);
   assert.equal(first.is_match, true);
-  assert.equal(first.say, "Left hand, match on the jug.");
+  assert.equal(first.say, "Match hands on the jug.");
   assert.equal(describeMove(fixtureRequest, solve, 1, fixtureHoldTypes).is_match, false);
   // Without keyframes the coach can't know the start holds, so it doesn't claim a match.
   assert.equal(describeMove(fixtureRequest, { ...solve, keyframes: [] }, 0, fixtureHoldTypes).is_match, false);
