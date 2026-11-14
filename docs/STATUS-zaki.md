@@ -1,84 +1,111 @@
 # Status: Zaki's lane
 
-Saturday 14 November, 18:00. Written by Zaki's agent while Zaki was away.
+Saturday 14 November, 18:40. Written by Zaki's agent while Zaki was away.
+Second block of work; the first block's status (18:00) is summarised at the end.
 
-## Finished
+## What changed in this block
 
-All six tasks are done and pushed to `main`. Only `coach/`, `adaption/` and
-`docs/` were touched. No ElevenLabs or Adaption API was called.
+Pushed as `c49c594`. Only `coach/`, `adaption/`, `docs/` and the root
+`README.md` were touched. No ElevenLabs or Adaption API was called.
 
-1. **Setup script saves ids as it goes.** `coach/setup_agent.mjs` writes
-   `agent_ids.json` after every successful create or update. If `--apply` fails
-   halfway, re-running updates what exists instead of creating duplicate tools.
-   Four tests use a fake API, including a failure on the third request followed
-   by a re-run. The dry run still prints all four requests and writes nothing.
-2. **Agent id kept off GitHub.** `coach/.gitignore` ignores `agent_ids.json`.
-   The coach README says Adam gets the id from you directly.
-3. **Foot moves.** New `footMoves` option in `coach/coachTools.js`. The default,
-   `"merge"`, folds foot moves into the next hand move: "Feet up, then right
-   hand, up, about 50 centimetres, to the crimp." `"skip"` calls hand moves only;
-   `"call"` calls every move. Live-mode progress and the step hook still use
-   move indices, so Adam's side doesn't change. This also fixed a bug where the
-   step hook fired twice per advance.
-4. **Team messages.** `docs/messages_for_team.md` has one for Krishna and one
-   for Adam (wiring the coach, agent id to follow, demo-mode `getProgress` from
-   video timestamps). Krishna pushed his backend while I worked, and his code
-   answers all four contract questions:
-   - `crux` indexes `moves`.
-   - Hold `x`, `y` is the box centre.
-   - Image left is the climber's left.
-   - `/solve` returns hand moves only.
+1. **Coach ready for foot moves.**
+   - On a test route mixing hands and feet, the default "merge" mode says:
+     "Right foot up, then right hand, up, about 50 centimetres, to the crimp. /
+     Feet up, then left hand, up, about 90 centimetres, to the sloper. / Feet up,
+     then right hand, up and right, about a metre, to the jug. / Left hand, match
+     on the jug." Rehearse it with `node try_coach.mjs --mixed`.
+   - **Wall feet:** a foot move whose hold is `null`, missing, or not a route
+     hold is described without a target ("Right foot, up, about 40
+     centimetres."). It never crashes and is never counted as a match. I didn't
+     invent a shape; the question is in Krishna's message.
+   - **Fixed** a bug where two wall-foot moves in a row would have been
+     announced as a "match", and changed "about 1.0 metres" to "about a metre".
+   - **Contract test still skipped:** `contract/solve.json` still doesn't exist,
+     so there was nothing to run it against.
+   - Tests: 19 pass, 1 skipped.
+2. **Adaption test rows now identical to Krishna's.** The builder copies her
+   filter and split from `backend/test_thesis.py` and `train_grade.py`. That
+   gives 20,710 problems, 16,568 train rows and 4,142 test rows. The proof: the
+   median-guess baseline comes out at exactly her 1.674 / 14.4% / 66.7%. The
+   ids are in `adaption/test_split_ids.csv` (problem id and grade only).
+   - **Fixed a real bug:** my hold difficulty ran the wrong way. Krishna's code
+     shows a high expert score means a good hold. All descriptions are now
+     correct.
+   - The baseline moved from 1.838 to 1.674 because the rows changed.
+   - The split needs numpy and scikit-learn, installed in a gitignored
+     `adaption/.venv`.
+   - Tests: 9 pass.
+3. **`docs/numbers.md`:** every measured result in `backend/results*.json` and
+   `grade_meta.json`, with its source, compared against the plan's rigour slide.
+4. **Root `README.md` draft:** what it does, architecture, how to run each part,
+   results (from `numbers.md` only), and "Built with" with licences. Unconfirmed
+   items are marked TODO.
+5. **`docs/devpost.md` draft:** draws only on the README and `numbers.md`. One
+   claim I'd first written wasn't backed by the numbers, so I replaced it.
+6. **Krishna's message updated** in `docs/messages_for_team.md`: the wall-feet
+   question, the test-row note, a caveat about her retrained model, and a
+   request to update the plan's slide numbers.
 
-   So his message is now a short confirmation plus two asks: commit the
-   `contract/` example files, and say where the Kilter data is.
-5. **Adaption dataset (prep only).** `adaption/build_dataset.py` turns 30,642
-   MoonBoard 2016 problems into 22,236 training and 2,841 test rows of
-   "description → Font grade". Setter names, cities, profile pictures and
-   problem URLs are dropped, and a test checks for leaks. The test split includes
-   all 367 benchmarks. Guessing the median grade misses by 1.84 grade steps,
-   which is the number to beat. The README lists what I confirmed in Adaption's
-   docs versus what I assumed.
-6. **Committed and pushed** as one commit after checking `git status` and
-   running `git pull --rebase`. It rebased cleanly onto Krishna's four backend
-   commits, and all tests still passed. This status file goes in a second small
-   commit.
+## Slide numbers are stale
 
-Tests: coach 16 pass, 1 skipped (it runs once `contract/solve.json` exists);
-adaption 5 pass.
+The rigour table in `Documents/PLAN.md` doesn't match the results files.
+Details are in `docs/numbers.md`.
 
-## What failed or is blocked
+| Slide says | Files say | Why |
+|---|---|---|
+| MoonBoard 0.98 | 0.94 (solver features) | 0.98 was before the solver's reach penalty |
+| Kilter 1.39 | 1.30 | Same reason |
+| Without hold quality: 1.29 / 1.92 | 1.28 / 1.85 | Off by a little; "about half the signal" holds for MoonBoard (46%) but not Kilter (23%) |
+| Zero-shot 15–35% by eye | 38%, measured on 50 photos | Now properly measured |
+| Trained detector (pending) | 95% found | Now backed |
+| Gym-route grade error (pending) | Nothing | **Not measured.** No number on the slide until it is |
 
-- **ElevenLabs:** paused as instructed. The agent doesn't exist yet.
-- **The contract-example test is still skipped.** Krishna hasn't committed
-  `contract/solve.json` or `analyze.json`. Nothing has been tested against real
-  `/solve` output yet, only against code reading and test data.
-- **Adaption details I couldn't find in their docs:** run time, credit cost,
-  and how to score the result. They give a downloadable checkpoint and a "win
-  rate", not a hosted model, so measuring grade error on our test split needs
-  somewhere to run it. Worth asking at their table.
-- **Pickle safety:** the MoonBoard file is a Python pickle, which can run code
-  when loaded. I checked its contents without loading it (no class imports), and
-  the builder loads it with all class imports blocked. No issue found.
-- **Pull with rebase:** blocked once by my own uncommitted changes. Resolved by
-  committing first, as the rules require.
+`Documents/PLAN.md` is a shared file, so I didn't edit it. Either Krishna
+updates it, or you name that file and ask me to.
 
-## Decisions waiting for you
+## Waiting on you
 
-1. **Foot-move default:** I chose `"merge"` over `"skip"`. It's one word in
-   Adam's setup if you prefer skip. It doesn't matter until `/solve` returns foot
-   moves.
-2. **Adaption model:** pick one, or let AutoScientist choose. Our 22k rows clear
-   every model's minimum, including the 10k-row large models. A small model such
-   as Qwen 3.5 0.8B or Llama 3.2 3B is likely quickest, but run time isn't
-   documented.
-3. **Training data filter:** I dropped problems nobody repeated (5,525), since
-   their grade is only the setter's opinion. Re-run with `--min-repeats 0` to
-   keep them, or raise it for cleaner but fewer rows.
-4. **Send the team messages:** both are ready to paste from
-   `docs/messages_for_team.md`.
-5. **Agent auth:** the agent is planned as public (no token server). Anyone with
-   the id could spend your ElevenLabs credits. That's fine for the weekend while
-   the id stays out of the repo.
+1. **Send Krishna's message**, from `docs/messages_for_team.md`. It asks how wall
+   feet will appear in `moves`, asks her to commit the `contract/` examples, and
+   asks her to update the plan's slide numbers. Adam's message is unchanged and
+   still to send.
+2. **Check the README's TODOs.** Frontend run instructions and Figma (Adam);
+   repo licence; MoonBoard data terms. Also confirm the team names and roles.
+   I took the surnames from the git history.
+3. **Adaption:** pick a model, and decide whether to let their augmentation top
+   up 16,568 rows past their recommended 20,000. Then the upload and run, once
+   you have a key.
+4. **ElevenLabs:** still paused; steps below.
+5. **Devpost:** fill the TODOs (Adaption result or "prepared", repo and video
+   links, tags) before the freeze.
+
+## Waiting on Krishna
+
+- How a wall foot will appear in `moves` (`hold: null`, no `hold`, a special id,
+  or never).
+- `contract/solve.json`, `analyze.json` and `wall.jpg`. Her own README's `curl`
+  examples point at `contract/wall.jpg` and `contract/solve_request.json`, which
+  don't exist yet.
+- Confirm that the Adaption comparison should use her held-out 0.942.
+  `models/grade.txt` was retrained on all rows, test rows included, so scoring
+  it on those rows would flatter it.
+- Update the rigour table in `Documents/PLAN.md` (her file to edit, or yours to
+  ask for).
+
+## Things to know
+
+- **Repo structure.** Adam committed 897 photos in a top-level
+  `wall training images/` folder. It's outside every owned folder in
+  `CLAUDE.md`, and no code uses it yet. I didn't touch it. Worth deciding
+  whether it should move into `frontend/` or `backend/`. Note too that the
+  repo is public and those photos carry a ShareAlike licence whose
+  non-commercial status is disputed (see the README).
+- **Licences.** The hold detector's training data, ClimbInst, is CC BY-NC-SA
+  4.0 (non-commercial), and Ultralytics YOLO is AGPL-3.0. Fine for a hackathon
+  demo, but the README says so plainly.
+- **The served grade model has seen the MoonBoard test rows** (it was retrained
+  on everything after the comparison). The held-out numbers in `numbers.md` are
+  the right ones to present.
 
 ## Finishing ElevenLabs setup once you have a key
 
@@ -102,3 +129,11 @@ Then:
   coach should then say it can't see the route. The full test is in Adam's app.
 - After changing `prompt.md` or `tools.json`, run `--apply` again. It updates the
   same agent and tools in place.
+
+## Earlier (first block, 18:00)
+
+- The setup script saves ids after every API call.
+- `coach/.gitignore` keeps `agent_ids.json` off GitHub.
+- Foot-move modes: merge (default), skip, call.
+- First team messages written.
+- First Adaption dataset built (since replaced by the version above).
