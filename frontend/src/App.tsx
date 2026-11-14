@@ -8,6 +8,7 @@ import {
   type ReactNode,
 } from "react";
 import { PHOTOS } from "./lib/wall";
+import { EXAMPLE_WALL, prepare } from "./lib/contract";
 import { MONO } from "./ui/kit";
 import { UploadScreen } from "./screens/Upload";
 import { ReviewScreen, type ReviewPreset } from "./screens/Review";
@@ -15,6 +16,8 @@ import { RouteScreen, type Angle } from "./screens/Route";
 import { LiveScreen, PlayScreen, type Voice } from "./screens/Play";
 
 const WALL = PHOTOS.wall01;
+// Until /analyze is wired up (A3+), every photo shows the contract example.
+const REAL = prepare(EXAMPLE_WALL.photo, EXAMPLE_WALL.analyze);
 
 function useMedia(q: string) {
   const [m, setM] = useState(() => window.matchMedia(q).matches);
@@ -55,7 +58,7 @@ function Flow() {
         />
       );
     case "review":
-      return <ReviewScreen photo={photo} onNext={() => setStep("route")} />;
+      return <ReviewScreen photo={REAL.photo} data={REAL} onNext={() => setStep("route")} />;
     case "route":
     case "solving":
       return (

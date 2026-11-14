@@ -13,15 +13,17 @@ export const C = {
   green: "#2E8B57",
 } as const;
 
-export const HOLD_COLOURS = {
+export const HOLD_COLOURS: Record<string, string> = {
   blue: C.blue,
   yellow: C.yellow,
   green: C.green,
   red: C.accent,
   black: C.ink,
   white: C.surface,
-} as const;
-export type HoldColour = keyof typeof HOLD_COLOURS;
+};
+// Colour group of a hold. Mock holds use the names above; real holds use
+// groups made by lib/contract.ts from the detector's per-hold hex.
+export type HoldColour = string;
 
 export const HOLD_TYPES = ["jug", "crimp", "sloper", "pinch", "pocket", "volume", "foot"] as const;
 export type HoldType = (typeof HOLD_TYPES)[number];
@@ -47,6 +49,8 @@ export type Hold = {
   sx?: number;
   sy?: number;
   rot?: number;
+  /** Real holds carry their own display colour (the group's average hex). */
+  hex?: string;
   guesses?: [HoldType, number][];
   added?: boolean;
 };

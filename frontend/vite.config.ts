@@ -30,12 +30,15 @@ react(),
     resolve: {
       alias: {
         '@': path.resolve(__dirname, './src'),
+        // Read-only: the shared API contract examples (owned by Krishna).
+        '@contract': path.resolve(__dirname, '../contract'),
       },
     },
     server: {
       host: process.env.FIGMA_DEV_SERVER_HOST || '0.0.0.0',
       port: parseInt(process.env.PORT || '8443'),
       strictPort: true,
+      fs: { allow: ['.', '../contract'] },
       watch: {
         ignored: [
           '**/.figma/**',

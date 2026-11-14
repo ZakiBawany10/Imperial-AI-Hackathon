@@ -138,13 +138,41 @@ export function WallPhoto({
   children,
   dim = 0,
   name = "photo/wall",
+  aspect,
 }: {
   photo: string;
   children?: ReactNode;
   dim?: number;
   name?: string;
+  /** height / width of a real photo. Shows the whole photo (no crop) and
+   *  makes the overlay 1000 wide by 1000 * aspect high. */
+  aspect?: number;
 }) {
-  const src = photo.startsWith("blob:") || photo.startsWith("http") ? photo : unsplash(photo);
+  const src =
+    photo.startsWith("blob:") ||
+    photo.startsWith("http") ||
+    photo.startsWith("/") ||
+    photo.startsWith("data:")
+      ? photo
+      : unsplash(photo);
+  if (aspect)
+    return (
+      <div data-name={name} className="absolute inset-0 flex items-center bg-ink">
+        <div className="relative w-full overflow-hidden" style={{ aspectRatio: `${1 / aspect}` }}>
+          <img
+            src={src}
+            alt="Bouldering wall"
+            draggable={false}
+            className="absolute inset-0 h-full w-full"
+            style={{ filter: "saturate(0.85) contrast(0.95)" }}
+          />
+          {dim > 0 && <div className="absolute inset-0 bg-ink" style={{ opacity: dim }} />}
+          <svg viewBox={`0 0 1000 ${1000 * aspect}`} className="absolute inset-0 h-full w-full">
+            {children}
+          </svg>
+        </div>
+      </div>
+    );
   return (
     <div data-name={name} className="absolute inset-0 overflow-hidden bg-hairline">
       <img
@@ -183,7 +211,7 @@ export function HoldShape({
   return (
     <path
       d={holdPath(hold, scale)}
-      fill={HOLD_COLOURS[hold.colour]}
+      fill={hold.hex ?? HOLD_COLOURS[hold.colour]}
       fillOpacity={0.88}
       stroke={stroke}
       strokeWidth={strokeWidth}

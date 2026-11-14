@@ -8,7 +8,8 @@
     "moduleResolution": "bundler",
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@contract/*": ["../contract/*"]
     },
     "allowImportingTsExtensions": true,
     "resolveJsonModule": true,

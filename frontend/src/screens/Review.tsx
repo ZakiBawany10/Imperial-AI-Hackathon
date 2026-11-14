@@ -18,6 +18,7 @@ import {
   type HoldColour,
   type HoldType,
 } from "../lib/wall";
+import type { Prepared } from "../lib/contract";
 import {
   BottomSheet,
   Btn,
@@ -41,7 +42,8 @@ type State = {
   confirmed: Record<string, HoldType>;
 };
 
-function presetState(p: ReviewPreset): State {
+function presetState(p: ReviewPreset, data?: Prepared): State {
+  if (data) return { holds: data.holds, route: null, start: [], finish: [], confirmed: {} };
   const base: State = { holds: HOLDS, route: null, start: [], finish: [], confirmed: {} };
   if (p === "empty") return base;
   const routed = { ...base, route: "blue" as HoldColour, start: ["y1", "y2"], finish: ["y8"] };
@@ -61,19 +63,22 @@ function autoEnds(holds: Hold[], c: HoldColour) {
 export function ReviewScreen({
   photo,
   preset = "empty",
+  data,
   onNext,
 }: {
   photo: string;
   preset?: ReviewPreset;
+  /** Real detector output (contract/analyze.json). Without it, the design mock is shown. */
+  data?: Prepared;
   onNext?: () => void;
 }) {
-  const [s, setS] = useState<State>(() => presetState(preset));
+  const [s, setS] = useState<State>(() => presetState(preset, data));
   const [tool, setTool] = useState<Tool>(null);
   const [sheet, setSheet] = useState<null | "confirm" | "other">(
     preset === "confirm" ? "confirm" : preset === "other" ? "other" : null,
   );
   const [current, setCurrent] = useState<string>(
-    preset === "confirm" || preset === "other" ? "yA" : UNSURE_ORDER[0],
+    data ? (data.unsure[0] ?? "") : preset === "confirm" || preset === "other" ? "yA" : UNSURE_ORDER[0],
   );
 
   const routeHolds = useMemo(
@@ -81,8 +86,12 @@ export function ReviewScreen({
     [s.holds, s.route],
   );
   const routeIds = new Set(routeHolds.map((h) => h.id));
-  const unsure = UNSURE_ORDER.filter((id) => s.holds.some((h) => h.id === id));
-  const isOpenQ = (id: string) => unsure.includes(id) && !s.confirmed[id];
+  // Real data: only holds on the chosen route are asked about (PLAN.md step 3).
+  const unsure = data
+    ? routeHolds.filter((h) => data.unsure.includes(h.id)).map((h) => h.id)
+    : UNSURE_ORDER.filter((id) => s.holds.some((h) => h.id === id));
+  const isOpenQ = (id: string) =>
+    (data ? s.route !== null : true) && unsure.includes(id) && !s.confirmed[id];
   const routeLeft = routeHolds.filter((h) => isOpenQ(h.id)).length;
   const ready = !!s.route && routeLeft === 0;
 
@@ -163,7 +172,7 @@ export function ReviewScreen({
     <Screen name="screen/2-review">
       <TopBar step={2} />
       <ZoomPhoto onTapHold={tapHold} onTapEmpty={tapEmpty}>
-        <WallPhoto photo={photo} name="review/photo">
+        <WallPhoto photo={photo} name="review/photo" aspect={data?.aspect}>
           <HoldsOverlay
             holds={s.holds}
             route={s.route}
@@ -257,6 +266,7 @@ export function ReviewScreen({
           <ConfirmHold
             hold={currentHold}
             photo={photo}
+            aspect={data?.aspect}
             index={unsure.indexOf(current)}
             total={unsure.length}
             confirmed={s.confirmed}
@@ -531,7 +541,7 @@ function ZoomPhoto({
   );
 }
 
-function Closeup({ hold, photo }: { hold: Hold; photo: string }) {
+function Closeup({ hold, photo, aspect }: { hold: Hold; photo: string; aspect?: number }) {
   const span = Math.max(hold.r * (hold.sx ?? 1), hold.r * (hold.sy ?? 1)) * 3.4;
   return (
     <div
@@ -543,16 +553,17 @@ function Closeup({ hold, photo }: { hold: Hold; photo: string }) {
       <div className="absolute inset-0 overflow-hidden rounded-[4px] border border-ink bg-hairline">
         <img
           src={
-            photo.startsWith("blob:") || photo.startsWith("http")
+            photo.startsWith("blob:") || photo.startsWith("http") || photo.startsWith("/")
               ? photo
               : `https://images.unsplash.com/photo-${photo}?fit=crop&w=600&q=80`
           }
           alt=""
-          className="absolute h-[600%] w-[600%] max-w-none object-cover"
+          className="absolute w-[600%] max-w-none object-cover"
           style={{
+            height: aspect ? `${600 * aspect}%` : "600%",
             left: `${50 - (hold.x / 1000) * 600}%`,
             top: `${50 - (hold.y / 1000) * 600}%`,
-            filter: "grayscale(0.75) contrast(0.92)",
+            filter: aspect ? "saturate(0.85)" : "grayscale(0.75) contrast(0.92)",
           }}
         />
         <svg
@@ -561,7 +572,7 @@ function Closeup({ hold, photo }: { hold: Hold; photo: string }) {
         >
           <path
             d={holdPath(hold)}
-            fill={HOLD_COLOURS[hold.colour]}
+            fill={hold.hex ?? HOLD_COLOURS[hold.colour]}
             fillOpacity={0.9}
             stroke={C.accent}
             strokeWidth={3}
@@ -581,6 +592,7 @@ function Closeup({ hold, photo }: { hold: Hold; photo: string }) {
 function ConfirmHold({
   hold,
   photo,
+  aspect,
   index,
   total,
   confirmed,
@@ -590,6 +602,7 @@ function ConfirmHold({
 }: {
   hold: Hold;
   photo: string;
+  aspect?: number;
   index: number;
   total: number;
   confirmed: Record<string, HoldType>;
@@ -605,20 +618,20 @@ function ConfirmHold({
   return (
     <div className="flex min-h-0 flex-col overflow-y-auto px-6">
       <div className="flex items-center justify-between">
-        <p data-name="confirm/label" className={`${MONO} text-muted`}>
+        <p data-name="confirm/label" className={`${MONO} shrink-0 pr-3 whitespace-nowrap text-muted`}>
           Confirm hold {index + 1} of {total}
         </p>
-        <div data-name="confirm/progress-dots" className="flex gap-1.5" aria-hidden>
+        <div data-name="confirm/progress-dots" className="flex min-w-0 gap-1 overflow-hidden" aria-hidden>
           {unsure.map((id, i) => (
             <span
               key={id}
-              className={`h-1 rounded-full ${i === index ? "w-5 bg-accent" : confirmed[id] ? "w-2 bg-ink" : "w-2 bg-hairline"}`}
+              className={`h-1 shrink rounded-full ${i === index ? "w-5 bg-accent" : confirmed[id] ? "w-2 bg-ink" : "w-2 bg-hairline"}`}
             />
           ))}
         </div>
       </div>
       <div className="mt-4 flex items-end gap-4">
-        <Closeup hold={hold} photo={photo} />
+        <Closeup hold={hold} photo={photo} aspect={aspect} />
         <h2
           data-name="confirm/question"
           className="pb-1 font-display text-[32px] leading-[1.02] font-bold tracking-[-0.03em]"
