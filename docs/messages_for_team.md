@@ -1,17 +1,21 @@
 # Messages for the team
 
-Ready to paste. Written Saturday 14 November, about 17:00.
+Ready to paste. Written Saturday 14 November, updated about 18:00 after reading the backend.
 
-## For Krishna: contract questions
+## For Krishna: contract check and two asks
 
-> Hi Krishna, four questions about the contract so the voice coach reads `/solve` correctly. No change needed if my guesses are right; just confirm.
+Zaki: the four contract questions are all answered by Krishna's backend code (pushed late Saturday afternoon), so this message confirms rather than asks.
+
+> Hi Krishna, I read your backend to check how the voice coach should read `/solve`. From the code I'm taking these as the contract; shout if any is about to change:
 >
-> 1. **`crux`:** is it an index into `moves` (so `moves[crux]` is the hardest move), not into `keyframes`? I'm assuming `moves`.
-> 2. **Hold `x`, `y`:** are they the centre of the hold or the top-left of its box (with `w`, `h` the size)? I'm assuming centre. The coach only falls back to hold positions when a keyframe is missing a limb, but Adam will need this to draw boxes correctly too.
-> 3. **Left and right:** is `LH`/`RH` the climber's left and right, with the photo taken from behind the climber facing the wall (so image left = climber's left)? I'm assuming yes.
-> 4. **Foot moves:** will `/solve` return `LF`/`RF` moves before physics lands, or hand moves only? The coach handles both (it folds foot moves into the next hand move), I just need to know what to expect.
+> 1. `crux` is an index into `moves` (`route.py`: max cost over `moves`).
+> 2. Hold `x`, `y` are the centre of the box (`analyze.py`: `(x0 + x1) / 2`).
+> 3. `LH`/`RH` are the climber's left and right, with image left = climber's left (`pose.py` puts the left hand on the image-left side).
+> 4. `/solve` returns hand moves only (`LH`/`RH`); no foot moves until physics. The coach copes either way.
 >
-> Also: when you commit `contract/solve.json` and `contract/analyze.json`, my tests pick them up automatically. And whenever you have the MoonBoard/Kilter board data, tell me where it lives; for now I've prepped the Adaption dataset from the public MoonBoard 2016 data.
+> Two asks:
+> - Could you commit `contract/solve.json`, `contract/analyze.json` and `contract/wall.jpg` when you get a moment? My coach tests and Adam's frontend both pick them up automatically.
+> - Where can I get the Kilter rows you trained on? I've built the Adaption dataset from the public MoonBoard 2016 scrape (22k rows, setter details dropped), but every MoonBoard row is the same 40° angle, and Kilter would add wall angle.
 
 ## For Adam: wiring the voice coach
 

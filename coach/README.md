@@ -79,11 +79,15 @@ const conversation = await Conversation.startSession({
 - Every tool returns a JSON string. On a missing route it returns
   `{"error": ...}` and the coach says it can't see the route yet.
 
-## Assumptions about the contract (open questions for Krishna)
+## How the coach reads the contract
+
+Checked against Krishna's backend code (`backend/route.py`, `analyze.py`, `pose.py`):
 
 - `crux` is an index into `moves`.
 - A hold's `x`, `y` are its centre. This is only used if a keyframe is missing a
   limb, since keyframes give the limb positions directly.
 - Left and right are image left and right, which is the climber's left and right
   when the photo is taken from behind them.
-- `load` and `span_m` are not used yet.
+- `/solve` currently returns hand moves only, so the foot-move handling is ready
+  for when physics adds them.
+- `load` (relative effort, 0 to 1) and `span_m` are not used yet.
