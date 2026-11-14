@@ -26,6 +26,7 @@ See "Reproduce" to train them.
 | `POST /solve` (JSON) | Route in; moves, poses and grade out | under 0.1 s |
 | `GET /hold-types` | The hold database | instant |
 | `GET /health` | `{"ok": true}` | instant |
+| `GET /demo/` | A plain test page: load a photo, click a route, mark start and finish, solve, watch the figure climb | — |
 
 ```bash
 curl -F file=@../contract/wall.jpg localhost:8010/analyze
@@ -39,6 +40,7 @@ Request and response shapes are in [contract/](../contract/).
 | File | What it does |
 |---|---|
 | `server.py` | The API |
+| `demo/index.html` | The test page at `/demo/` (not the product frontend, which is in `frontend/`) |
 | `analyze.py` | `/analyze`: finds holds, samples each hold's colour, classifies its type |
 | `detect_holds.py` | Zero-shot hold finder (Grounding DINO on overlapping tiles) |
 | `detector_data.py`, `train_detector.py`, `detector.py` | Download a sample of ClimbInst, train a YOLO hold detector on it, run it |

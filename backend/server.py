@@ -119,5 +119,9 @@ def post_solve(req: SolveRequest):
         raise HTTPException(503, "The solver restarted. Send the request again.")
 
 
+# A plain test page at /demo/, and the contract example files it uses at /contract/.
+app.mount("/demo", StaticFiles(directory=os.path.join(HERE, "demo"), html=True), name="demo")
+app.mount("/contract", StaticFiles(directory=os.path.join(HERE, "..", "contract")), name="contract-examples")
+
 # Example pictures for the hold database, at /hold-types/<id>.svg
 app.mount("/hold-types", StaticFiles(directory=os.path.join(HERE, "hold_types")), name="hold-type-images")
