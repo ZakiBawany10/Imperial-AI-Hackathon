@@ -4,7 +4,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createCoachTools, describeMove, describeRoute, directionWords, distanceWords, planCalls } from "./coachTools.js";
-import { fixtureRequest, fixtureSolve, fixtureHoldTypes } from "./test_fixture.js";
+import { fixtureRequest, fixtureSolve, fixtureHoldTypes, fixtureMixedRequest, fixtureMixedSolve } from "./test_fixture.js";
 
 const CONTRACT = join(dirname(fileURLToPath(import.meta.url)), "..", "contract");
 
@@ -22,7 +22,9 @@ test("direction and distance words", () => {
   assert.equal(directionWords(-80, -100), "down and left");
   assert.equal(distanceWords(0.527), "about 50 centimetres");
   assert.equal(distanceWords(0.03), "about 10 centimetres");
-  assert.equal(distanceWords(1.02), "about 1.0 metres");
+  assert.equal(distanceWords(1.02), "about a metre");
+  assert.equal(distanceWords(1.26), "about 1.3 metres");
+  assert.equal(distanceWords(1.98), "about 2 metres");
 });
 
 test("describeMove reads limb, direction, distance and hold type", () => {
@@ -35,7 +37,7 @@ test("describeMove reads limb, direction, distance and hold type", () => {
   assert.equal(m1.is_crux, true);
 
   const m2 = describeMove(fixtureRequest, fixtureSolve, 2, fixtureHoldTypes);
-  assert.equal(m2.say, "Right hand, up and right, about 1.0 metres, to the jug.");
+  assert.equal(m2.say, "Right hand, up and right, about a metre, to the jug.");
 
   const m3 = describeMove(fixtureRequest, fixtureSolve, 3, fixtureHoldTypes);
   assert.equal(m3.is_match, true);
@@ -205,6 +207,51 @@ test("progress and step hooks use move indices, not call numbers", async () => {
   assert.deepEqual(seen, [0, 2, 6]);
 });
 
+test("mixed hand and foot moves read naturally in the default merge mode", () => {
+  const route = describeRoute(fixtureMixedRequest, fixtureMixedSolve, fixtureHoldTypes);
+  assert.deepEqual(route.moves, [
+    "Right foot up, then right hand, up, about 50 centimetres, to the crimp.",
+    "Feet up, then left hand, up, about 90 centimetres, to the sloper.",
+    "Feet up, then right hand, up and right, about a metre, to the jug.",
+    "Left hand, match on the jug.",
+  ]);
+  assert.equal(route.crux_move_number, 2);
+});
+
+test("a foot whose hold isn't in the request doesn't crash or claim a hold", () => {
+  // Move 3: hold null. Move 5: hold id 99 not in the request. Move 6: no hold key.
+  for (const i of [3, 5, 6]) {
+    const m = describeMove(fixtureMixedRequest, fixtureMixedSolve, i, fixtureHoldTypes);
+    assert.equal(m.on_route_hold, false);
+    assert.equal(m.hold_type, null);
+    assert.equal(m.is_match, false);
+    assert.doesNotMatch(m.say, /to the|undefined|null/);
+  }
+  assert.equal(describeMove(fixtureMixedRequest, fixtureMixedSolve, 3).say, "Right foot, up, about 40 centimetres.");
+
+  // With no keyframes either, it still says something sensible.
+  const bare = { ...fixtureMixedSolve, keyframes: [] };
+  assert.equal(describeMove(fixtureMixedRequest, bare, 6).say, "Move your right foot.");
+  // Two wall feet in a row must not count as a "match".
+  const twoWall = { ...fixtureMixedSolve, moves: [{ i: 0, limb: "LF", hold: null }, { i: 1, limb: "RF", hold: null }] };
+  assert.equal(describeMove(fixtureMixedRequest, twoWall, 1).is_match, false);
+});
+
+test("stepping through the mixed route in every mode ends cleanly", async () => {
+  const state = { request: fixtureMixedRequest, solve: fixtureMixedSolve, holdTypes: fixtureHoldTypes };
+  for (const [mode, calls] of [["merge", 4], ["skip", 4], ["call", 9]]) {
+    const coach = createCoachTools({ getState: () => state, footMoves: mode });
+    const says = [];
+    let r = await call(coach.clientTools.get_next_move, { climber_finished_last_move: false });
+    while (!r.status) {
+      says.push(r.say);
+      r = await call(coach.clientTools.get_next_move, { climber_finished_last_move: true });
+    }
+    assert.equal(says.length, calls, mode);
+    assert.equal(r.status, "finished");
+  }
+});
+
 test("works on the real contract examples when they exist", { skip: !existsSync(join(CONTRACT, "solve.json")) }, async () => {
   const solve = JSON.parse(readFileSync(join(CONTRACT, "solve.json"), "utf8"));
   const analyze = existsSync(join(CONTRACT, "analyze.json"))
@@ -213,5 +260,6 @@ test("works on the real contract examples when they exist", { skip: !existsSync(
   const request = { image: analyze.image, holds: analyze.holds, climber_height_m: 1.75, wall_height_m: 4.0 };
   const r = describeRoute(request, solve);
   assert.equal(r.total_moves, solve.moves.length);
-  for (const say of r.moves) assert.match(say, /^(Left|Right) (hand|foot)/);
+  for (const say of r.moves) assert.match(say, /^((Left|Right) (hand|foot)|Feet|Adjust your feet|Move your)/);
+  for (const say of r.moves) assert.doesNotMatch(say, /undefined|null|NaN/);
 });

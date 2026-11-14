@@ -49,3 +49,48 @@ export const fixtureHoldTypes = [
   { id: "crimp", name: "Crimp", quality: 0.3 },
   { id: "sloper", name: "Sloper", quality: 0.25 },
 ];
+
+// A route whose moves mix hands and feet, the shape Krishna's solver will return
+// once it adds foot moves. Same photo and wall as above (360 px per metre).
+// Moves 3 and 6 are feet on the wall rather than a hold: the contract doesn't say
+// yet how those appear, so one uses `hold: null` and the other has no `hold` at
+// all. Move 5 points at a hold id that isn't in the request.
+const P = (lh, rh, lf, rf) => ({ head: [620, 950], hip: [620, 1250], lh, rh, lf, rf });
+const mixedPoses = [
+  P([540, 1100], [700, 1080], [580, 1400], [660, 1400]), // start
+  P([540, 1100], [700, 1080], [580, 1400], [680, 1260]), // 0 RF up to foothold 40
+  P([540, 1100], [760, 900], [580, 1400], [680, 1260]), //  1 RH to crimp 12
+  P([540, 1100], [760, 900], [590, 1220], [680, 1260]), //  2 LF up to foothold 41
+  P([540, 1100], [760, 900], [590, 1220], [700, 1110]), //  3 RF up onto the wall (hold: null)
+  P([560, 760], [760, 900], [590, 1220], [700, 1110]), //   4 LH to sloper 15 (crux)
+  P([560, 760], [760, 900], [600, 1060], [700, 1110]), //   5 LF up to hold 99 (not in request)
+  P([560, 760], [760, 900], [600, 1060], [720, 960]), //    6 RF up onto the wall (no hold key)
+  P([560, 760], [900, 560], [600, 1060], [720, 960]), //    7 RH to jug 22
+  P([900, 560], [900, 560], [600, 1060], [720, 960]), //    8 LH matches on 22
+];
+
+export const fixtureMixedRequest = {
+  ...fixtureRequest,
+  holds: [
+    ...fixtureRequest.holds,
+    { id: 40, x: 680, y: 1260, w: 30, h: 20, type: "foot", quality: 0.4, color: "#2050c0", score: 0.6, needs_review: false, suggestions: [] },
+    { id: 41, x: 590, y: 1220, w: 30, h: 20, type: "foot", quality: 0.4, color: "#2050c0", score: 0.6, needs_review: false, suggestions: [] },
+  ],
+};
+
+export const fixtureMixedSolve = {
+  grade: fixtureSolve.grade,
+  crux: 4,
+  moves: [
+    { i: 0, limb: "RF", hold: 40 },
+    { i: 1, limb: "RH", hold: 12 },
+    { i: 2, limb: "LF", hold: 41 },
+    { i: 3, limb: "RF", hold: null },
+    { i: 4, limb: "LH", hold: 15 },
+    { i: 5, limb: "LF", hold: 99 },
+    { i: 6, limb: "RF" },
+    { i: 7, limb: "RH", hold: 22 },
+    { i: 8, limb: "LH", hold: 22 },
+  ],
+  keyframes: mixedPoses.map((joints, move) => ({ move, joints })),
+};

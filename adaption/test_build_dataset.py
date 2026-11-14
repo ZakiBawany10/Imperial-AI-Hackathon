@@ -11,6 +11,13 @@ from pathlib import Path
 
 import build_dataset as bd
 
+try:
+    import numpy  # noqa: F401
+    import sklearn  # noqa: F401
+    HAVE_SKLEARN = True
+except ImportError:
+    HAVE_SKLEARN = False
+
 
 def fake_problem(grade, start, mid, end, repeats=3, benchmark=False):
     return {
@@ -32,10 +39,12 @@ class BuildDatasetTest(unittest.TestCase):
         problems = {
             "1": fake_problem("6B+", [[5, 4]], [[5, 8], [3, 12]], [[4, 17]]),
             "2": fake_problem("7A", [[2, 3], [3, 3]], [[6, 9]], [[8, 17]]),
-            "3": fake_problem("7A", [[2, 3], [3, 3]], [[6, 9]], [[8, 17]], repeats=9),  # duplicate hold set
-            "4": fake_problem("6C", [[1, 2]], [[1, 9]], [[1, 17]], repeats=0),          # never repeated
-            "5": fake_problem("7B", [[1, 2]], [[2, 9]], [[3, 17]], repeats=0, benchmark=True),
+            "3": fake_problem("7A", [[2, 3], [3, 3]], [[6, 9]], [[8, 17]], repeats=9),  # same holds as "2": kept, like Krishna
+            "4": fake_problem("6C", [[1, 2]], [[1, 9]], [[1, 17]], repeats=1),          # under 2 repeats
+            "5": fake_problem("7B", [[1, 2]], [[2, 9]], [[3, 17]], repeats=0, benchmark=True),  # benchmarks not exempt
             "6": fake_problem("9Z", [[1, 2]], [[2, 9]], [[3, 17]]),                      # unknown grade
+            "7": fake_problem("6C", [[1, 2]], [[1, 2]], [[3, 17]]),                      # same hold listed twice
+            "8": fake_problem("6C", [], [[1, 9]], [[3, 17]]),                            # no start hold
         }
         (self.raw / "moonGen_scrape_2016_final").write_bytes(pickle.dumps(problems, protocol=2))
         for name in ("HoldFeature2016LeftHand.csv", "HoldFeature2016RightHand.csv"):
@@ -53,17 +62,43 @@ class BuildDatasetTest(unittest.TestCase):
         with (self.out / name).open(newline="") as f:
             return list(csv.DictReader(f))
 
-    def test_filters_dedupes_and_splits(self):
-        stats = bd.build(self.raw, self.out, min_repeats=1, test_fraction=0.0)
-        self.assertEqual(stats["dropped"], {"unknown grade": 1, "fewer than 1 repeats": 1, "duplicate hold set": 1})
-        train, test = self.read("train.csv"), self.read("test.csv")
-        self.assertEqual(sorted(r["response"] for r in train), ["6B+", "7A"])
-        # The benchmark is kept despite 0 repeats, and always lands in test.
-        self.assertEqual([r["response"] for r in test], ["7B"])
+    def test_filter_matches_krishna(self):
+        stats = bd.build(self.raw, self.out, split="hash", test_fraction=0.0, split_ids=None)
+        self.assertEqual(stats["dropped"], {"unknown grade or no start/finish": 2, "fewer than 2 repeats": 2,
+                                            "same hold listed twice": 1})
+        train = self.read("train.csv")
+        self.assertEqual([r["response"] for r in train], ["6B+", "7A", "7A"])  # pickle order kept
         self.assertEqual(list(train[0].keys()), ["instruction", "response"])
 
+    def test_split_ids_file_has_only_id_and_grade(self):
+        ids = Path(self.tmp.name) / "ids.csv"
+        bd.build(self.raw, self.out, split="hash", test_fraction=1.0, split_ids=ids)
+        with ids.open(newline="") as f:
+            rows = list(csv.DictReader(f))
+        self.assertEqual(list(rows[0].keys()), ["problem_id", "grade"])
+        self.assertEqual(sorted(r["problem_id"] for r in rows), ["1", "2", "3"])
+
+    @unittest.skipUnless(HAVE_SKLEARN, "needs numpy + scikit-learn (adaption/.venv)")
+    def test_krishna_split_is_stratified_and_deterministic(self):
+        kept = [{"grade": g} for g in ["6B+"] * 10 + ["7A"] * 10]
+        a, b = bd.split_krishna(kept), bd.split_krishna(kept)
+        self.assertEqual(a, b)
+        self.assertEqual(len(a), 4)
+        self.assertEqual(sum(kept[i]["grade"] == "7A" for i in a), 2)
+
+    def test_hold_difficulty_runs_high_score_good(self):
+        # The fixture scores hold (x, y) as (x + y) % 10, so (0, 9) scores 9 (best hold).
+        diff = bd.load_hold_difficulty(self.raw)
+        self.assertEqual(diff[(0, 9)], 0)
+        self.assertEqual(diff[(0, 0)], 9)
+
+    def test_baseline_matches_numpy_median(self):
+        b = bd.baseline(["6B+", "6C", "7A", "7B"], ["6C", "6C+"])  # median index 3.0 between 6C (2) and 7A (4)
+        self.assertEqual(b["mae"], 0.5)
+        self.assertEqual(b["exact"], 0.5)
+
     def test_no_personal_fields_in_output(self):
-        bd.build(self.raw, self.out, min_repeats=0, test_fraction=0.5)
+        bd.build(self.raw, self.out, split="hash", min_repeats=0, test_fraction=0.5, split_ids=None)
         text = (self.out / "train.csv").read_text() + (self.out / "test.csv").read_text()
         for leak in ("nick", "First", "Last", "Townsville", "Nowhere", "secret-name", "moonboard.com", ".gif"):
             self.assertNotIn(leak, text)

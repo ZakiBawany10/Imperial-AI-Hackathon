@@ -9,19 +9,28 @@
 //   route          the whole route
 //   height 1.55    change height (only re-labels here; the real app re-solves)
 //   restart, quit
+//
+//   node try_coach.mjs --mixed                 test route with foot moves (default merge mode)
+//   node try_coach.mjs --mixed --feet=call     or --feet=skip
 
 import { existsSync, readFileSync } from "node:fs";
 import { createInterface } from "node:readline/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createCoachTools } from "./coachTools.js";
-import { fixtureRequest, fixtureSolve, fixtureHoldTypes } from "./test_fixture.js";
+import { fixtureRequest, fixtureSolve, fixtureHoldTypes, fixtureMixedRequest, fixtureMixedSolve } from "./test_fixture.js";
 
 const CONTRACT = join(dirname(fileURLToPath(import.meta.url)), "..", "contract");
 const read = (f) => JSON.parse(readFileSync(join(CONTRACT, f), "utf8"));
 
+const MIXED = process.argv.includes("--mixed");
+const FEET = (process.argv.find((a) => a.startsWith("--feet=")) || "--feet=merge").slice(7);
+
 let state;
-if (existsSync(join(CONTRACT, "solve.json")) && existsSync(join(CONTRACT, "analyze.json"))) {
+if (MIXED) {
+  state = { request: fixtureMixedRequest, solve: fixtureMixedSolve, holdTypes: fixtureHoldTypes };
+  console.log(`Using the mixed hand/foot test route, footMoves: ${FEET}.`);
+} else if (existsSync(join(CONTRACT, "solve.json")) && existsSync(join(CONTRACT, "analyze.json"))) {
   const analyze = read("analyze.json");
   state = {
     request: { image: analyze.image, holds: analyze.holds, climber_height_m: 1.75, wall_height_m: 4.0 },
@@ -34,6 +43,7 @@ if (existsSync(join(CONTRACT, "solve.json")) && existsSync(join(CONTRACT, "analy
 }
 
 const { clientTools } = createCoachTools({
+  footMoves: FEET,
   getState: () => state,
   onHeightChange: async (h) => {
     state = { ...state, request: { ...state.request, climber_height_m: h } };

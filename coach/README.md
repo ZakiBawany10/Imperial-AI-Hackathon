@@ -88,6 +88,11 @@ Checked against Krishna's backend code (`backend/route.py`, `analyze.py`, `pose.
   limb, since keyframes give the limb positions directly.
 - Left and right are image left and right, which is the climber's left and right
   when the photo is taken from behind them.
-- `/solve` currently returns hand moves only, so the foot-move handling is ready
-  for when physics adds them.
+- `/solve` currently returns hand moves only. Krishna is adding foot moves; the
+  coach is ready for them (`node try_coach.mjs --mixed` rehearses a mixed route).
+- **Wall feet:** the contract doesn't yet say how a foot on the wall (not on a
+  hold) appears in `moves`; the question is with Krishna. Meanwhile any move
+  whose `hold` is `null`, missing, or not a route hold is described without a
+  target ("Right foot, up, about 40 centimetres."), never as a match, and never
+  crashes.
 - `load` (relative effort, 0 to 1) and `span_m` are not used yet.

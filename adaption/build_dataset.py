@@ -1,27 +1,35 @@
 """Build the Adaption fine-tune dataset: short text description of a climb -> grade.
 
-    python3 build_dataset.py                 # reads data/raw/, writes out/
-    python3 build_dataset.py --min-repeats 0 --test-fraction 0.1
+    .venv/bin/python build_dataset.py              # Krishna's filter and split (needs numpy + scikit-learn)
+    python3 build_dataset.py --split hash          # standard library only, NOT Krishna's rows
 
 Source: MoonBoard 2016 problems scraped by github.com/jrchang612/MoonBoardRNN
-(Apache-2.0), file raw_data/moonGen_scrape_2016_final, plus that repo's per-hold
-difficulty tables HoldFeature2016LeftHand.csv and HoldFeature2016RightHand.csv.
+(Apache-2.0), file raw_data/moonGen_scrape_2016_final, plus that repo's expert
+per-hold scores HoldFeature2016LeftHand.csv and HoldFeature2016RightHand.csv.
 Put all three in data/raw/ (see README.md).
 
+Rows match Krishna's grade-model evaluation exactly (backend/test_thesis.py and
+backend/train_grade.py, read 2026-11-14):
+    keep a problem if its grade is 6B..8B+, it has start and finish holds,
+    repeats >= 2, and no hold appears twice in it; problems kept in the pickle's
+    order; split with sklearn train_test_split(test_size=0.2, random_state=0,
+    stratify=grade index). Same function, same inputs, so the same rows.
+
 Writes:
-    out/train.csv   columns: instruction, response          (the file to upload)
-    out/test.csv    instruction, response + problem_id, is_benchmark, repeats, user_grade
-                    (held out; never uploaded; used to score the fine-tuned model)
-    out/stats.json  counts, grade distribution, median-guess baseline on the test split
+    out/train.csv          instruction, response                (the file to upload)
+    out/test.csv           instruction, response, problem_id, is_benchmark, repeats, user_grade
+                           (held out; never uploaded; used to score the fine-tuned model)
+    out/stats.json         counts, grade distribution, median-guess baseline on the test split
+    test_split_ids.csv     problem_id, grade for every test row (committed, so anyone can
+                           check they are scoring on the same rows)
 
 Privacy: the scrape includes each setter's name, nickname, city, country and
 profile image, and a URL containing the problem's name. None of that is read
 into the output. Only hold positions, grade, benchmark flag, repeat count and
 the numeric problem id are used.
 
-Standard library only. The pickle is loaded with every class import blocked,
-so a tampered file cannot run code; it contains only dicts, lists, strings and
-numbers.
+The pickle is loaded with every class import blocked, so a tampered file cannot
+run code; it contains only dicts, lists, strings and numbers.
 """
 
 from __future__ import annotations
@@ -39,18 +47,23 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 RAW = HERE / "data" / "raw"
 OUT = HERE / "out"
+SPLIT_IDS = HERE / "test_split_ids.csv"
 
-# MoonBoard 2016: 40 degree overhang, 11 x 18 grid of hold positions.
-# ASSUMPTION: about 0.2 m between neighbouring grid positions. The exact value
-# only rescales distances; it must be the same here and at prediction time.
+# MoonBoard 2016: 40 degree overhang, 11 x 18 grid of hold positions, about
+# 0.2 m apart (the same figure Krishna's beta_solver.py uses).
 GRID_M = 0.2
 BOARD_ANGLE_DEG = 40
 
-# Font grades in order, so errors can be counted in grade steps.
+# Font grades in order, so errors can be counted in grade steps. Same list as Krishna's.
 GRADES = ["6B", "6B+", "6C", "6C+", "7A", "7A+", "7B", "7B+", "7C", "7C+", "8A", "8A+", "8B", "8B+"]
 GRADE_INDEX = {g: i for i, g in enumerate(GRADES)}
 
-DEFAULT_DIFFICULTY = 5  # for the one hold position missing from the difficulty tables
+# Krishna's filter and split (backend/test_thesis.py, backend/train_grade.py).
+MIN_REPEATS = 2
+TEST_SIZE = 0.2
+SEED = 0
+
+DEFAULT_DIFFICULTY = 4.5  # for a hold position missing from the expert tables (one in the whole scrape)
 
 
 class _NoClassesUnpickler(pickle.Unpickler):
@@ -67,10 +80,12 @@ def load_problems(path: Path) -> dict:
 
 
 def load_hold_difficulty(raw: Path) -> dict[tuple[int, int], float]:
-    """(x, y) -> mean of left- and right-hand difficulty, 0 (easy) to 9 (hard).
+    """(x, y) -> hold difficulty, 0 (best hold) to 9 (worst), averaged over both hands.
 
-    ASSUMPTION: higher 'Difficulties' means a harder hold. The source repo does
-    not document the scale; it is consistent with jugs on the low rows.
+    The expert tables score holds 0..9 with HIGH = GOOD. Krishna checked the
+    direction against grades in backend/test_thesis.py (correlation 0.556,
+    results.json), so difficulty = 9 - score. This matches her "badness"
+    1 - score / 9, scaled to 0..9.
     """
     per_hand: list[dict[tuple[int, int], int]] = []
     for name in ("HoldFeature2016LeftHand.csv", "HoldFeature2016RightHand.csv"):
@@ -81,10 +96,7 @@ def load_hold_difficulty(raw: Path) -> dict[tuple[int, int], float]:
                     table[(int(row["X_coord"]), int(row["Y_coord"]))] = int(row["Difficulties"])
         per_hand.append(table)
     keys = set(per_hand[0]) | set(per_hand[1])
-    return {
-        k: statistics.mean([t[k] for t in per_hand if k in t])
-        for k in keys
-    }
+    return {k: 9 - statistics.mean([t[k] for t in per_hand if k in t]) for k in keys}
 
 
 def describe_route(holds: list[dict], wall_angle_deg: float) -> str:
@@ -146,53 +158,86 @@ def moonboard_holds(problem: dict, difficulty: dict[tuple[int, int], float]) -> 
     return holds
 
 
-def in_test_split(problem_id: str, fraction: float) -> bool:
-    """Deterministic split by hashed problem id, stable across runs and machines."""
-    h = int(hashlib.sha256(problem_id.encode()).hexdigest()[:8], 16)
-    return h / 0xFFFFFFFF < fraction
-
-
-def build(raw: Path, out: Path, min_repeats: int, test_fraction: float) -> dict:
-    problems = load_problems(raw / "moonGen_scrape_2016_final")
-    difficulty = load_hold_difficulty(raw)
-
-    # Keep only the fields we use. Setter details and the URL are never read.
-    kept: dict[tuple, dict] = {}
-    dropped = Counter()
+def keep_problems(problems: dict, min_repeats: int) -> tuple[list[dict], Counter]:
+    """Krishna's filter, in the pickle's order. Setter details and the URL are never read."""
+    kept, dropped = [], Counter()
     for pid, p in problems.items():
-        grade = p.get("grade")
-        if grade not in GRADE_INDEX:
-            dropped["unknown grade"] += 1
+        if p.get("grade") not in GRADE_INDEX or not p.get("start") or not p.get("end"):
+            dropped["unknown grade or no start/finish"] += 1
             continue
-        if (p.get("repeats") or 0) < min_repeats and not p.get("is_benchmark"):
+        if (p.get("repeats") or 0) < min_repeats:
             dropped[f"fewer than {min_repeats} repeats"] += 1
             continue
-        clean = {
+        holds = [tuple(h) for h in p["start"] + p["mid"] + p["end"]]
+        if len(set(holds)) != len(holds):
+            dropped["same hold listed twice"] += 1
+            continue
+        kept.append({
             "problem_id": str(pid),
             "start": [tuple(h) for h in p["start"]],
             "mid": [tuple(h) for h in p["mid"]],
             "end": [tuple(h) for h in p["end"]],
-            "grade": grade,
+            "grade": p["grade"],
             "user_grade": p.get("user_grade") if p.get("user_grade") in GRADE_INDEX else "",
             "is_benchmark": bool(p.get("is_benchmark")),
             "repeats": int(p.get("repeats") or 0),
-        }
-        # The same hold set can be uploaded more than once: keep the most repeated.
-        key = (tuple(sorted(clean["start"])), tuple(sorted(clean["mid"])), tuple(sorted(clean["end"])))
-        if key in kept:
-            dropped["duplicate hold set"] += 1
-            if clean["repeats"] <= kept[key]["repeats"] and not clean["is_benchmark"]:
-                continue
-        kept[key] = clean
+        })
+    return kept, dropped
+
+
+def split_krishna(kept: list[dict], test_size: float = TEST_SIZE, seed: int = SEED) -> set[int]:
+    """Indices of the test rows, exactly as Krishna's scripts choose them."""
+    import numpy as np  # only this split needs numpy and scikit-learn
+    from sklearn.model_selection import train_test_split
+
+    y = np.array([GRADE_INDEX[p["grade"]] for p in kept], dtype=float)
+    _, te = train_test_split(np.arange(len(kept)), test_size=test_size, random_state=seed, stratify=y)
+    return {int(i) for i in te}
+
+
+def in_test_split(problem_id: str, fraction: float) -> bool:
+    """Deterministic split by hashed problem id. Used only by --split hash."""
+    h = int(hashlib.sha256(problem_id.encode()).hexdigest()[:8], 16)
+    return h / 0xFFFFFFFF < fraction
+
+
+def baseline(train_grades: list[str], test_grades: list[str]) -> dict:
+    """Always guess the training median, scored the way Krishna scores (backend/test_thesis.py)."""
+    if not train_grades or not test_grades:
+        return {"median_guess": None, "mae": None, "exact": None, "within1": None}
+    tr = sorted(GRADE_INDEX[g] for g in train_grades)
+    n = len(tr)
+    median = tr[n // 2] if n % 2 else (tr[n // 2 - 1] + tr[n // 2]) / 2  # same as numpy.median
+    pred = min(max(round(median), 0), len(GRADES) - 1)  # numpy.rint rounds half to even, like round()
+    te = [GRADE_INDEX[g] for g in test_grades]
+    return {
+        "median_guess": GRADES[pred] if median == pred else f"{median} (between {GRADES[int(median)]} and {GRADES[int(median) + 1]})",
+        "mae": round(statistics.mean(abs(t - median) for t in te), 3),
+        "exact": round(statistics.mean(t == pred for t in te), 3),
+        "within1": round(statistics.mean(abs(t - pred) <= 1 for t in te), 3),
+    }
+
+
+def build(raw: Path, out: Path, split: str = "krishna", min_repeats: int = MIN_REPEATS,
+          test_fraction: float = TEST_SIZE, split_ids: Path | None = SPLIT_IDS) -> dict:
+    problems = load_problems(raw / "moonGen_scrape_2016_final")
+    difficulty = load_hold_difficulty(raw)
+    kept, dropped = keep_problems(problems, min_repeats)
+
+    if split == "krishna":
+        test_idx = split_krishna(kept, test_fraction, SEED)
+    elif split == "hash":
+        test_idx = {i for i, p in enumerate(kept) if in_test_split(p["problem_id"], test_fraction)}
+    else:
+        raise ValueError(f"unknown split {split!r}")
 
     train, test = [], []
-    for p in kept.values():
+    for i, p in enumerate(kept):
         row = {
             "instruction": describe_route(moonboard_holds(p, difficulty), BOARD_ANGLE_DEG),
             "response": p["grade"],
         }
-        # Benchmarks have the most trusted grades, so they always go to the test split.
-        if p["is_benchmark"] or in_test_split(p["problem_id"], test_fraction):
+        if i in test_idx:
             test.append({**row, "problem_id": p["problem_id"], "is_benchmark": p["is_benchmark"],
                          "repeats": p["repeats"], "user_grade": p["user_grade"]})
         else:
@@ -201,24 +246,23 @@ def build(raw: Path, out: Path, min_repeats: int, test_fraction: float) -> dict:
     out.mkdir(parents=True, exist_ok=True)
     write_csv(out / "train.csv", train, ["instruction", "response"])
     write_csv(out / "test.csv", test, ["instruction", "response", "problem_id", "is_benchmark", "repeats", "user_grade"])
+    if split_ids is not None:
+        write_csv(split_ids, [{"problem_id": r["problem_id"], "grade": r["response"]} for r in test],
+                  ["problem_id", "grade"])
 
-    # Baseline to beat: always guess the training median grade.
-    train_idx = sorted(GRADE_INDEX[r["response"]] for r in train)
-    median = train_idx[len(train_idx) // 2] if train_idx else None
-    mae = (statistics.mean(abs(GRADE_INDEX[r["response"]] - median) for r in test)
-           if test and median is not None else None)
+    by_grade = lambda rows: dict(sorted(Counter(r["response"] for r in rows).items(), key=lambda kv: GRADE_INDEX[kv[0]]))
     stats = {
         "source_problems": len(problems),
+        "kept": len(kept),
         "dropped": dict(dropped),
         "train_rows": len(train),
         "test_rows": len(test),
         "test_benchmarks": sum(r["is_benchmark"] for r in test),
-        "grades_train": dict(sorted(Counter(r["response"] for r in train).items(), key=lambda kv: GRADE_INDEX[kv[0]])),
-        "grades_test": dict(sorted(Counter(r["response"] for r in test).items(), key=lambda kv: GRADE_INDEX[kv[0]])),
-        "median_guess": GRADES[median] if median is not None else None,
-        "median_guess_mae_grade_steps_on_test": round(mae, 3) if mae is not None else None,
-        "settings": {"min_repeats": min_repeats, "test_fraction": test_fraction, "grid_m": GRID_M,
-                     "wall_angle_deg": BOARD_ANGLE_DEG},
+        "grades_train": by_grade(train),
+        "grades_test": by_grade(test),
+        "baseline_median_guess_on_test": baseline([r["response"] for r in train], [r["response"] for r in test]),
+        "settings": {"split": split, "min_repeats": min_repeats, "test_fraction": test_fraction, "seed": SEED,
+                     "grid_m": GRID_M, "wall_angle_deg": BOARD_ANGLE_DEG},
     }
     (out / "stats.json").write_text(json.dumps(stats, indent=2) + "\n")
     return stats
@@ -235,11 +279,17 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--raw", type=Path, default=RAW)
     ap.add_argument("--out", type=Path, default=OUT)
-    ap.add_argument("--min-repeats", type=int, default=1,
-                    help="drop problems repeated fewer times than this (benchmarks always kept); default 1")
-    ap.add_argument("--test-fraction", type=float, default=0.1)
+    ap.add_argument("--split", choices=["krishna", "hash"], default="krishna",
+                    help="krishna: her exact test rows (needs numpy + scikit-learn); hash: stdlib only, different rows")
+    ap.add_argument("--min-repeats", type=int, default=MIN_REPEATS,
+                    help=f"default {MIN_REPEATS}, Krishna's value; changing it changes the rows")
+    ap.add_argument("--test-fraction", type=float, default=TEST_SIZE)
     args = ap.parse_args()
-    stats = build(args.raw, args.out, args.min_repeats, args.test_fraction)
+    if args.split != "krishna" or args.min_repeats != MIN_REPEATS or args.test_fraction != TEST_SIZE:
+        print("NOTE: these settings do not reproduce Krishna's test rows; test_split_ids.csv is not written.")
+    keep_ids = args.split == "krishna" and args.min_repeats == MIN_REPEATS and args.test_fraction == TEST_SIZE
+    stats = build(args.raw, args.out, args.split, args.min_repeats, args.test_fraction,
+                  SPLIT_IDS if keep_ids else None)
     print(json.dumps(stats, indent=2))
 
 

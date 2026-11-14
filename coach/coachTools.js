@@ -56,7 +56,9 @@ export function distanceWords(metres) {
     const cm = Math.max(10, Math.round((metres * 100) / 10) * 10);
     return `about ${cm} centimetres`;
   }
-  return `about ${(Math.round(metres * 10) / 10).toFixed(1)} metres`;
+  const tenths = Math.round(metres * 10) / 10;
+  if (tenths === 1) return "about a metre";
+  return `about ${tenths % 1 === 0 ? tenths.toFixed(0) : tenths.toFixed(1)} metres`;
 }
 
 /** Direction from a pixel offset. dxPx is rightwards, dyUpPx is upwards. */
@@ -99,9 +101,12 @@ export function describeMove(request, solve, i, holdTypes) {
   const move = moves[i];
   if (!move) return null;
 
-  const limb = LIMBS[move.limb] || { words: String(move.limb).toLowerCase(), joint: null, other: null };
-  const hold = (request.holds || []).find((h) => h.id === move.hold) || null;
-  const typeWords = holdTypeWords(hold && hold.type, holdTypes);
+  const limb = LIMBS[move.limb] || { words: "next limb", joint: null, other: null };
+  // A move's hold may be missing from the request: for example a foot placed on
+  // the wall rather than a hold. The contract doesn't define that case yet, so
+  // any move whose `hold` isn't a route hold is described without a target.
+  const hold = move.hold != null ? (request.holds || []).find((h) => h.id === move.hold) || null : null;
+  const typeWords = hold ? holdTypeWords(hold.type, holdTypes) : null;
 
   // keyframes[i] is the pose before move i; keyframes[i + 1] is the pose after it.
   const kfBefore = (solve.keyframes || [])[i];
@@ -114,7 +119,7 @@ export function describeMove(request, solve, i, holdTypes) {
   const metresPerPx = imageH && request.wall_height_m ? request.wall_height_m / imageH : null;
 
   const before = limbHoldsBefore(moves, i);
-  const isMatch = limb.other != null && before[limb.other] === move.hold;
+  const isMatch = hold != null && limb.other != null && before[limb.other] === move.hold;
   const isCrux = solve.crux === i;
 
   let direction = null;
@@ -129,14 +134,17 @@ export function describeMove(request, solve, i, holdTypes) {
 
   let sentence;
   const limbCap = limb.words[0].toUpperCase() + limb.words.slice(1);
+  const target = typeWords ? ` to the ${typeWords}` : "";
   if (isMatch) {
     sentence = `${limbCap}, match on the ${typeWords}.`;
   } else if (direction && distanceM != null) {
-    sentence = `${limbCap}, ${direction}, ${distanceWords(distanceM)}, to the ${typeWords}.`;
+    sentence = `${limbCap}, ${direction}, ${distanceWords(distanceM)}${target ? `,${target}` : ""}.`;
   } else if (direction) {
-    sentence = `${limbCap}, ${direction}, to the ${typeWords}.`;
+    sentence = `${limbCap}, ${direction}${target ? `,${target}` : ""}.`;
+  } else if (target) {
+    sentence = `${limbCap}${target}.`;
   } else {
-    sentence = `${limbCap} to the ${typeWords}.`;
+    sentence = `Move your ${limb.words}.`;
   }
 
   return {
@@ -144,6 +152,7 @@ export function describeMove(request, solve, i, holdTypes) {
     total_moves: moves.length,
     limb: limb.words,
     hold_type: typeWords,
+    on_route_hold: hold != null,
     direction,
     distance_m: distanceM == null ? null : Math.round(distanceM * 100) / 100,
     is_match: isMatch,

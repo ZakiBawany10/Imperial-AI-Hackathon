@@ -1,21 +1,28 @@
 # Messages for the team
 
-Ready to paste. Written Saturday 14 November, updated about 18:00 after reading the backend.
+Ready to paste. Written Saturday 14 November; Krishna's message updated about 18:45 after reading the backend again.
 
-## For Krishna: contract check and two asks
+## For Krishna: foot moves, test rows, and two asks
 
-Zaki: the four contract questions are all answered by Krishna's backend code (pushed late Saturday afternoon), so this message confirms rather than asks.
+Zaki: the earlier contract questions are answered by Krishna's code, so they appear as confirmations. The new question is how wall feet will appear in `moves`. The Kilter ask is gone too: the backend README says the data is the public Vilin97/KilterBoard dataset on Hugging Face.
 
-> Hi Krishna, I read your backend to check how the voice coach should read `/solve`. From the code I'm taking these as the contract; shout if any is about to change:
+> Hi Krishna, a few things from the coach and Adaption side.
 >
-> 1. `crux` is an index into `moves` (`route.py`: max cost over `moves`).
-> 2. Hold `x`, `y` are the centre of the box (`analyze.py`: `(x0 + x1) / 2`).
-> 3. `LH`/`RH` are the climber's left and right, with image left = climber's left (`pose.py` puts the left hand on the image-left side).
-> 4. `/solve` returns hand moves only (`LH`/`RH`); no foot moves until physics. The coach copes either way.
+> **Foot moves.** I hear `/solve` will start returning `LF`/`RF` moves. The coach is ready: by default it folds foot moves into the next hand call ("Feet up, then right hand, up, about 50 centimetres, to the crimp"). One question: today `pose.py` can put a foot on the wall rather than on a hold. **How will a wall foot appear in `moves`?** `"hold": null`, no `hold` key, a special id, or never as a move? I haven't guessed a shape. For now the coach just describes any move whose `hold` isn't a route hold as "Right foot, up, about 40 centimetres", with no target, and it doesn't crash on any of those three shapes.
 >
-> Two asks:
-> - Could you commit `contract/solve.json`, `contract/analyze.json` and `contract/wall.jpg` when you get a moment? My coach tests and Adam's frontend both pick them up automatically.
-> - Where can I get the Kilter rows you trained on? I've built the Adaption dataset from the public MoonBoard 2016 scrape (22k rows, setter details dropped), but every MoonBoard row is the same 40° angle, and Kilter would add wall angle.
+> **Same test rows as your grade model.** I rebuilt the Adaption dataset to use exactly your MoonBoard filter and split from `test_thesis.py` / `train_grade.py`:
+> - grade 6B to 8B+, start and finish holds, repeats ≥ 2, no hold listed twice, in the pickle's order;
+> - `train_test_split(test_size=0.2, random_state=0, stratify=grade)`.
+>
+> That gives the same 20,710 problems and 4,142 test rows. The median-guess baseline on them comes out at exactly your 1.674 / 14.4% / 66.7%. The ids are in `adaption/test_split_ids.csv` (problem id and grade only). The only difference is the input: the fine-tune sees a text description of the climb (holds in metres, hold difficulty from the same expert tables), not your solver features. Scores should be directly comparable.
+>
+> One caveat for that comparison. `grade_meta.json` says the served model was retrained on all 75,072 rows after the comparison, MoonBoard test rows included. So I'll compare against your held-out 0.942 ("trained on kilter + moonboard, tested on moonboard"), not a fresh score of `models/grade.txt`. Does that match how you'd do it?
+>
+> **Confirmed from your code, shout if any changes:** `crux` indexes `moves`; hold `x`, `y` are the box centre; image left is the climber's left.
+>
+> **Asks:**
+> - Could you commit `contract/solve.json`, `contract/analyze.json` and `contract/wall.jpg`? Your backend README's `curl` examples also point at `contract/wall.jpg` and `contract/solve_request.json`. My coach tests pick the files up automatically.
+> - The slide numbers in `Documents/PLAN.md` are the pre-reach-penalty ones (0.98 and 1.39). I've listed the current ones from your results files in `docs/numbers.md`. Could you check it and update the plan's rigour table, since that file is shared?
 
 ## For Adam: wiring the voice coach
 
