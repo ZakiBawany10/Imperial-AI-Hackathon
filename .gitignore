@@ -1,0 +1,23 @@
+# Secrets — keys are shared privately, never committed
+.env
+.env.*
+!.env.example
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# Node
+node_modules/
+dist/
+.next/
+
+# Model weights and downloaded datasets
+*.pt
+*.onnx
+backend/data/
+
+# OS / editor
+.DS_Store
+.vscode/
