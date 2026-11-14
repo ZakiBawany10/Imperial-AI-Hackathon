@@ -1,0 +1,58 @@
+[
+ {
+  "id": "jug",
+  "name": "Jug",
+  "quality": 0.9,
+  "description": "Deep, positive hold you can wrap your whole hand around",
+  "image": "/hold-types/jug.svg"
+ },
+ {
+  "id": "pinch",
+  "name": "Pinch",
+  "quality": 0.55,
+  "description": "Squeezed between thumb and fingers, usually taller than it is wide",
+  "image": "/hold-types/pinch.svg"
+ },
+ {
+  "id": "pocket",
+  "name": "Pocket",
+  "quality": 0.5,
+  "description": "A hole that takes one to three fingers",
+  "image": "/hold-types/pocket.svg"
+ },
+ {
+  "id": "crimp",
+  "name": "Crimp",
+  "quality": 0.4,
+  "description": "Thin edge that only fits your fingertips",
+  "image": "/hold-types/crimp.svg"
+ },
+ {
+  "id": "volume",
+  "name": "Volume",
+  "quality": 0.4,
+  "description": "Large bolted-on shape, held by pressing or wrapping an edge",
+  "image": "/hold-types/volume.svg"
+ },
+ {
+  "id": "sloper",
+  "name": "Sloper",
+  "quality": 0.3,
+  "description": "Rounded hold with no edge, held with an open hand and friction",
+  "image": "/hold-types/sloper.svg"
+ },
+ {
+  "id": "foot",
+  "name": "Foot chip",
+  "quality": 0.1,
+  "description": "Tiny hold meant for feet only",
+  "image": "/hold-types/foot.svg"
+ },
+ {
+  "id": "unknown",
+  "name": "Not sure",
+  "quality": 0.5,
+  "description": "Type not known; treated as an average hold",
+  "image": "/hold-types/unknown.svg"
+ }
+]

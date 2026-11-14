@@ -1,0 +1,200 @@
+{
+ "image": {
+  "w": 1920,
+  "h": 1440
+ },
+ "holds": [
+  {
+   "id": 176,
+   "x": 161,
+   "y": 1253,
+   "w": 73,
+   "h": 76,
+   "type": "jug",
+   "quality": 0.9,
+   "color": "#efda4e",
+   "score": 0.92,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "sloper",
+     "p": 1.0
+    },
+    {
+     "type": "jug",
+     "p": 0.0
+    },
+    {
+     "type": "crimp",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 166,
+   "x": 361,
+   "y": 1020,
+   "w": 32,
+   "h": 32,
+   "type": "jug",
+   "quality": 0.9,
+   "color": "#d8c55c",
+   "score": 0.88,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.98
+    },
+    {
+     "type": "jug",
+     "p": 0.02
+    },
+    {
+     "type": "pinch",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 146,
+   "x": 290,
+   "y": 861,
+   "w": 24,
+   "h": 30,
+   "type": "foot",
+   "quality": 0.1,
+   "color": "#c5cf81",
+   "score": 0.84,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.96
+    },
+    {
+     "type": "jug",
+     "p": 0.03
+    },
+    {
+     "type": "pinch",
+     "p": 0.01
+    }
+   ]
+  },
+  {
+   "id": 106,
+   "x": 242,
+   "y": 719,
+   "w": 69,
+   "h": 64,
+   "type": "sloper",
+   "quality": 0.3,
+   "color": "#e9d284",
+   "score": 0.71,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "jug",
+     "p": 0.54
+    },
+    {
+     "type": "pinch",
+     "p": 0.29
+    },
+    {
+     "type": "crimp",
+     "p": 0.17
+    }
+   ]
+  },
+  {
+   "id": 53,
+   "x": 409,
+   "y": 528,
+   "w": 45,
+   "h": 56,
+   "type": "jug",
+   "quality": 0.9,
+   "color": "#d3bb46",
+   "score": 0.88,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "jug",
+     "p": 0.64
+    },
+    {
+     "type": "crimp",
+     "p": 0.34
+    },
+    {
+     "type": "pinch",
+     "p": 0.03
+    }
+   ]
+  },
+  {
+   "id": 32,
+   "x": 657,
+   "y": 425,
+   "w": 38,
+   "h": 36,
+   "type": "jug",
+   "quality": 0.9,
+   "color": "#f4dc8a",
+   "score": 0.89,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.97
+    },
+    {
+     "type": "jug",
+     "p": 0.03
+    },
+    {
+     "type": "sloper",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 2,
+   "x": 197,
+   "y": 111,
+   "w": 36,
+   "h": 58,
+   "type": "jug",
+   "quality": 0.9,
+   "color": "#e6df7d",
+   "score": 0.9,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "sloper",
+     "p": 0.97
+    },
+    {
+     "type": "jug",
+     "p": 0.02
+    },
+    {
+     "type": "crimp",
+     "p": 0.01
+    }
+   ]
+  }
+ ],
+ "start": [
+  176,
+  166
+ ],
+ "finish": [
+  2
+ ],
+ "climber_height_m": 1.75,
+ "wall_height_m": 4.0,
+ "wall_angle_deg": 0
+}

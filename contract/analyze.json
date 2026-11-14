@@ -1,0 +1,4636 @@
+{
+ "image": {
+  "w": 1920,
+  "h": 1440
+ },
+ "holds": [
+  {
+   "id": 0,
+   "x": 280,
+   "y": 34,
+   "w": 49,
+   "h": 68,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#eb5a97",
+   "score": 0.35,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.68
+    },
+    {
+     "type": "pinch",
+     "p": 0.28
+    },
+    {
+     "type": "jug",
+     "p": 0.02
+    }
+   ]
+  },
+  {
+   "id": 1,
+   "x": 760,
+   "y": 92,
+   "w": 29,
+   "h": 42,
+   "type": "jug",
+   "quality": 0.9,
+   "color": "#6185b3",
+   "score": 0.79,
+   "needs_review": true,
+   "suggestions": [
+    {
+     "type": "jug",
+     "p": 0.59
+    },
+    {
+     "type": "crimp",
+     "p": 0.41
+    },
+    {
+     "type": "pinch",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 2,
+   "x": 197,
+   "y": 111,
+   "w": 36,
+   "h": 58,
+   "type": "sloper",
+   "quality": 0.3,
+   "color": "#e6df7d",
+   "score": 0.9,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "sloper",
+     "p": 0.97
+    },
+    {
+     "type": "jug",
+     "p": 0.02
+    },
+    {
+     "type": "crimp",
+     "p": 0.01
+    }
+   ]
+  },
+  {
+   "id": 3,
+   "x": 338,
+   "y": 145,
+   "w": 50,
+   "h": 42,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#283450",
+   "score": 0.88,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 1.0
+    },
+    {
+     "type": "jug",
+     "p": 0.0
+    },
+    {
+     "type": "pinch",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 4,
+   "x": 550,
+   "y": 173,
+   "w": 51,
+   "h": 35,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#708d68",
+   "score": 0.76,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.75
+    },
+    {
+     "type": "jug",
+     "p": 0.24
+    },
+    {
+     "type": "pinch",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 5,
+   "x": 882,
+   "y": 195,
+   "w": 35,
+   "h": 49,
+   "type": "jug",
+   "quality": 0.9,
+   "color": "#7d9177",
+   "score": 0.91,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "jug",
+     "p": 0.8
+    },
+    {
+     "type": "crimp",
+     "p": 0.19
+    },
+    {
+     "type": "pinch",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 6,
+   "x": 700,
+   "y": 237,
+   "w": 47,
+   "h": 71,
+   "type": "jug",
+   "quality": 0.9,
+   "color": "#8da267",
+   "score": 0.9,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "jug",
+     "p": 0.77
+    },
+    {
+     "type": "crimp",
+     "p": 0.2
+    },
+    {
+     "type": "pinch",
+     "p": 0.03
+    }
+   ]
+  },
+  {
+   "id": 7,
+   "x": 104,
+   "y": 243,
+   "w": 43,
+   "h": 59,
+   "type": "pinch",
+   "quality": 0.55,
+   "color": "#6d9070",
+   "score": 0.88,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "pinch",
+     "p": 0.92
+    },
+    {
+     "type": "crimp",
+     "p": 0.06
+    },
+    {
+     "type": "jug",
+     "p": 0.03
+    }
+   ]
+  },
+  {
+   "id": 8,
+   "x": 936,
+   "y": 258,
+   "w": 32,
+   "h": 59,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#a4b0c6",
+   "score": 0.48,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.81
+    },
+    {
+     "type": "pinch",
+     "p": 0.09
+    },
+    {
+     "type": "jug",
+     "p": 0.07
+    }
+   ]
+  },
+  {
+   "id": 9,
+   "x": 1547,
+   "y": 267,
+   "w": 71,
+   "h": 47,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#5c1221",
+   "score": 0.9,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.76
+    },
+    {
+     "type": "pinch",
+     "p": 0.16
+    },
+    {
+     "type": "jug",
+     "p": 0.07
+    }
+   ]
+  },
+  {
+   "id": 10,
+   "x": 754,
+   "y": 290,
+   "w": 36,
+   "h": 31,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#83202f",
+   "score": 0.91,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.98
+    },
+    {
+     "type": "pinch",
+     "p": 0.01
+    },
+    {
+     "type": "jug",
+     "p": 0.01
+    }
+   ]
+  },
+  {
+   "id": 11,
+   "x": 1243,
+   "y": 293,
+   "w": 30,
+   "h": 42,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#8587b7",
+   "score": 0.64,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.96
+    },
+    {
+     "type": "jug",
+     "p": 0.04
+    },
+    {
+     "type": "pinch",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 12,
+   "x": 1170,
+   "y": 296,
+   "w": 29,
+   "h": 35,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#5e5554",
+   "score": 0.71,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.98
+    },
+    {
+     "type": "jug",
+     "p": 0.02
+    },
+    {
+     "type": "sloper",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 13,
+   "x": 828,
+   "y": 298,
+   "w": 46,
+   "h": 45,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#a8a38f",
+   "score": 0.85,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.94
+    },
+    {
+     "type": "jug",
+     "p": 0.05
+    },
+    {
+     "type": "pinch",
+     "p": 0.01
+    }
+   ]
+  },
+  {
+   "id": 14,
+   "x": 11,
+   "y": 306,
+   "w": 23,
+   "h": 44,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#455332",
+   "score": 0.82,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.68
+    },
+    {
+     "type": "jug",
+     "p": 0.26
+    },
+    {
+     "type": "pinch",
+     "p": 0.05
+    }
+   ]
+  },
+  {
+   "id": 15,
+   "x": 1630,
+   "y": 310,
+   "w": 34,
+   "h": 33,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#bfd146",
+   "score": 0.88,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 1.0
+    },
+    {
+     "type": "pinch",
+     "p": 0.0
+    },
+    {
+     "type": "jug",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 16,
+   "x": 1302,
+   "y": 316,
+   "w": 28,
+   "h": 22,
+   "type": "foot",
+   "quality": 0.1,
+   "color": "#854c57",
+   "score": 0.74,
+   "needs_review": true,
+   "suggestions": [
+    {
+     "type": "foot",
+     "p": 0.5
+    },
+    {
+     "type": "crimp",
+     "p": 0.5
+    },
+    {
+     "type": "jug",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 17,
+   "x": 1610,
+   "y": 321,
+   "w": 19,
+   "h": 19,
+   "type": "foot",
+   "quality": 0.1,
+   "color": "#a4aea6",
+   "score": 0.31,
+   "needs_review": true,
+   "suggestions": [
+    {
+     "type": "foot",
+     "p": 0.5
+    },
+    {
+     "type": "crimp",
+     "p": 0.5
+    },
+    {
+     "type": "jug",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 18,
+   "x": 606,
+   "y": 323,
+   "w": 23,
+   "h": 33,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#a94f53",
+   "score": 0.8,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 1.0
+    },
+    {
+     "type": "pinch",
+     "p": 0.0
+    },
+    {
+     "type": "jug",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 19,
+   "x": 954,
+   "y": 331,
+   "w": 21,
+   "h": 21,
+   "type": "foot",
+   "quality": 0.1,
+   "color": "#2b2f45",
+   "score": 0.82,
+   "needs_review": true,
+   "suggestions": [
+    {
+     "type": "foot",
+     "p": 0.5
+    },
+    {
+     "type": "crimp",
+     "p": 0.5
+    },
+    {
+     "type": "jug",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 20,
+   "x": 1733,
+   "y": 337,
+   "w": 46,
+   "h": 68,
+   "type": "jug",
+   "quality": 0.9,
+   "color": "#4e82ad",
+   "score": 0.92,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "jug",
+     "p": 0.61
+    },
+    {
+     "type": "crimp",
+     "p": 0.38
+    },
+    {
+     "type": "pinch",
+     "p": 0.01
+    }
+   ]
+  },
+  {
+   "id": 21,
+   "x": 1075,
+   "y": 360,
+   "w": 31,
+   "h": 24,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#66666d",
+   "score": 0.81,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.98
+    },
+    {
+     "type": "jug",
+     "p": 0.02
+    },
+    {
+     "type": "pinch",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 22,
+   "x": 977,
+   "y": 364,
+   "w": 24,
+   "h": 17,
+   "type": "foot",
+   "quality": 0.1,
+   "color": "#92928d",
+   "score": 0.26,
+   "needs_review": true,
+   "suggestions": [
+    {
+     "type": "foot",
+     "p": 0.5
+    },
+    {
+     "type": "crimp",
+     "p": 0.5
+    },
+    {
+     "type": "jug",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 23,
+   "x": 1528,
+   "y": 368,
+   "w": 20,
+   "h": 18,
+   "type": "foot",
+   "quality": 0.1,
+   "color": "#6b7a99",
+   "score": 0.64,
+   "needs_review": true,
+   "suggestions": [
+    {
+     "type": "foot",
+     "p": 0.5
+    },
+    {
+     "type": "crimp",
+     "p": 0.5
+    },
+    {
+     "type": "jug",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 24,
+   "x": 908,
+   "y": 380,
+   "w": 26,
+   "h": 38,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#888983",
+   "score": 0.81,
+   "needs_review": true,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.54
+    },
+    {
+     "type": "sloper",
+     "p": 0.32
+    },
+    {
+     "type": "jug",
+     "p": 0.14
+    }
+   ]
+  },
+  {
+   "id": 25,
+   "x": 1625,
+   "y": 388,
+   "w": 46,
+   "h": 34,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#344568",
+   "score": 0.87,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.81
+    },
+    {
+     "type": "jug",
+     "p": 0.17
+    },
+    {
+     "type": "pinch",
+     "p": 0.01
+    }
+   ]
+  },
+  {
+   "id": 26,
+   "x": 1029,
+   "y": 390,
+   "w": 53,
+   "h": 64,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#958a8e",
+   "score": 0.91,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.61
+    },
+    {
+     "type": "jug",
+     "p": 0.38
+    },
+    {
+     "type": "pinch",
+     "p": 0.01
+    }
+   ]
+  },
+  {
+   "id": 27,
+   "x": 1767,
+   "y": 393,
+   "w": 42,
+   "h": 28,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#89594c",
+   "score": 0.61,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.98
+    },
+    {
+     "type": "pinch",
+     "p": 0.01
+    },
+    {
+     "type": "jug",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 28,
+   "x": 573,
+   "y": 397,
+   "w": 27,
+   "h": 39,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#686a7d",
+   "score": 0.77,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.99
+    },
+    {
+     "type": "jug",
+     "p": 0.01
+    },
+    {
+     "type": "pinch",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 29,
+   "x": 725,
+   "y": 406,
+   "w": 30,
+   "h": 36,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#454342",
+   "score": 0.73,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.94
+    },
+    {
+     "type": "jug",
+     "p": 0.05
+    },
+    {
+     "type": "pinch",
+     "p": 0.01
+    }
+   ]
+  },
+  {
+   "id": 30,
+   "x": 1425,
+   "y": 422,
+   "w": 50,
+   "h": 32,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#92676c",
+   "score": 0.87,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.97
+    },
+    {
+     "type": "jug",
+     "p": 0.03
+    },
+    {
+     "type": "sloper",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 31,
+   "x": 349,
+   "y": 422,
+   "w": 47,
+   "h": 46,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#92a0ba",
+   "score": 0.83,
+   "needs_review": true,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.58
+    },
+    {
+     "type": "sloper",
+     "p": 0.39
+    },
+    {
+     "type": "jug",
+     "p": 0.03
+    }
+   ]
+  },
+  {
+   "id": 32,
+   "x": 657,
+   "y": 425,
+   "w": 38,
+   "h": 36,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#f4dc8a",
+   "score": 0.89,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.97
+    },
+    {
+     "type": "jug",
+     "p": 0.03
+    },
+    {
+     "type": "sloper",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 33,
+   "x": 785,
+   "y": 431,
+   "w": 24,
+   "h": 26,
+   "type": "foot",
+   "quality": 0.1,
+   "color": "#6b788d",
+   "score": 0.74,
+   "needs_review": true,
+   "suggestions": [
+    {
+     "type": "foot",
+     "p": 0.5
+    },
+    {
+     "type": "crimp",
+     "p": 0.35
+    },
+    {
+     "type": "jug",
+     "p": 0.15
+    }
+   ]
+  },
+  {
+   "id": 34,
+   "x": 498,
+   "y": 432,
+   "w": 58,
+   "h": 107,
+   "type": "pinch",
+   "quality": 0.55,
+   "color": "#b74752",
+   "score": 0.93,
+   "needs_review": true,
+   "suggestions": [
+    {
+     "type": "pinch",
+     "p": 0.51
+    },
+    {
+     "type": "crimp",
+     "p": 0.35
+    },
+    {
+     "type": "jug",
+     "p": 0.12
+    }
+   ]
+  },
+  {
+   "id": 35,
+   "x": 1886,
+   "y": 442,
+   "w": 33,
+   "h": 25,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#6a1f2c",
+   "score": 0.87,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 1.0
+    },
+    {
+     "type": "jug",
+     "p": 0.0
+    },
+    {
+     "type": "pinch",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 36,
+   "x": 1615,
+   "y": 442,
+   "w": 27,
+   "h": 26,
+   "type": "foot",
+   "quality": 0.1,
+   "color": "#93b5bf",
+   "score": 0.84,
+   "needs_review": true,
+   "suggestions": [
+    {
+     "type": "foot",
+     "p": 0.5
+    },
+    {
+     "type": "crimp",
+     "p": 0.5
+    },
+    {
+     "type": "jug",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 37,
+   "x": 1549,
+   "y": 447,
+   "w": 52,
+   "h": 41,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#4d403e",
+   "score": 0.88,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 1.0
+    },
+    {
+     "type": "sloper",
+     "p": 0.0
+    },
+    {
+     "type": "pinch",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 38,
+   "x": 1131,
+   "y": 452,
+   "w": 21,
+   "h": 18,
+   "type": "foot",
+   "quality": 0.1,
+   "color": "#ab453c",
+   "score": 0.6,
+   "needs_review": true,
+   "suggestions": [
+    {
+     "type": "foot",
+     "p": 0.5
+    },
+    {
+     "type": "crimp",
+     "p": 0.5
+    },
+    {
+     "type": "pinch",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 39,
+   "x": 955,
+   "y": 452,
+   "w": 40,
+   "h": 27,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#1b2010",
+   "score": 0.76,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.93
+    },
+    {
+     "type": "pinch",
+     "p": 0.06
+    },
+    {
+     "type": "jug",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 40,
+   "x": 1261,
+   "y": 452,
+   "w": 23,
+   "h": 21,
+   "type": "foot",
+   "quality": 0.1,
+   "color": "#ceae40",
+   "score": 0.79,
+   "needs_review": true,
+   "suggestions": [
+    {
+     "type": "foot",
+     "p": 0.5
+    },
+    {
+     "type": "crimp",
+     "p": 0.5
+    },
+    {
+     "type": "jug",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 41,
+   "x": 1485,
+   "y": 453,
+   "w": 23,
+   "h": 18,
+   "type": "foot",
+   "quality": 0.1,
+   "color": "#cbb144",
+   "score": 0.74,
+   "needs_review": true,
+   "suggestions": [
+    {
+     "type": "foot",
+     "p": 0.5
+    },
+    {
+     "type": "crimp",
+     "p": 0.5
+    },
+    {
+     "type": "jug",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 42,
+   "x": 1338,
+   "y": 454,
+   "w": 23,
+   "h": 36,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#635769",
+   "score": 0.76,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.9
+    },
+    {
+     "type": "jug",
+     "p": 0.1
+    },
+    {
+     "type": "pinch",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 43,
+   "x": 883,
+   "y": 458,
+   "w": 12,
+   "h": 19,
+   "type": "foot",
+   "quality": 0.1,
+   "color": "#465624",
+   "score": 0.27,
+   "needs_review": true,
+   "suggestions": [
+    {
+     "type": "foot",
+     "p": 0.5
+    },
+    {
+     "type": "crimp",
+     "p": 0.5
+    },
+    {
+     "type": "jug",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 44,
+   "x": 145,
+   "y": 484,
+   "w": 41,
+   "h": 41,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#d18692",
+   "score": 0.84,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.85
+    },
+    {
+     "type": "sloper",
+     "p": 0.09
+    },
+    {
+     "type": "jug",
+     "p": 0.06
+    }
+   ]
+  },
+  {
+   "id": 45,
+   "x": 1304,
+   "y": 501,
+   "w": 228,
+   "h": 156,
+   "type": "pinch",
+   "quality": 0.55,
+   "color": "#9a8d82",
+   "score": 0.54,
+   "needs_review": true,
+   "suggestions": [
+    {
+     "type": "pinch",
+     "p": 0.41
+    },
+    {
+     "type": "crimp",
+     "p": 0.25
+    },
+    {
+     "type": "volume",
+     "p": 0.14
+    }
+   ]
+  },
+  {
+   "id": 46,
+   "x": 295,
+   "y": 503,
+   "w": 19,
+   "h": 22,
+   "type": "foot",
+   "quality": 0.1,
+   "color": "#8c9947",
+   "score": 0.48,
+   "needs_review": true,
+   "suggestions": [
+    {
+     "type": "foot",
+     "p": 0.5
+    },
+    {
+     "type": "crimp",
+     "p": 0.5
+    },
+    {
+     "type": "jug",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 47,
+   "x": 1534,
+   "y": 504,
+   "w": 46,
+   "h": 35,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#8d8480",
+   "score": 0.83,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.92
+    },
+    {
+     "type": "pinch",
+     "p": 0.04
+    },
+    {
+     "type": "jug",
+     "p": 0.03
+    }
+   ]
+  },
+  {
+   "id": 48,
+   "x": 875,
+   "y": 506,
+   "w": 14,
+   "h": 25,
+   "type": "foot",
+   "quality": 0.1,
+   "color": "#dbc36a",
+   "score": 0.46,
+   "needs_review": true,
+   "suggestions": [
+    {
+     "type": "foot",
+     "p": 0.5
+    },
+    {
+     "type": "crimp",
+     "p": 0.5
+    },
+    {
+     "type": "jug",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 49,
+   "x": 985,
+   "y": 514,
+   "w": 33,
+   "h": 24,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#0f1621",
+   "score": 0.65,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 1.0
+    },
+    {
+     "type": "pinch",
+     "p": 0.0
+    },
+    {
+     "type": "sloper",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 50,
+   "x": 534,
+   "y": 514,
+   "w": 31,
+   "h": 38,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#73878e",
+   "score": 0.69,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.9
+    },
+    {
+     "type": "jug",
+     "p": 0.09
+    },
+    {
+     "type": "pinch",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 51,
+   "x": 1224,
+   "y": 525,
+   "w": 20,
+   "h": 22,
+   "type": "foot",
+   "quality": 0.1,
+   "color": "#9c7e4d",
+   "score": 0.51,
+   "needs_review": true,
+   "suggestions": [
+    {
+     "type": "foot",
+     "p": 0.5
+    },
+    {
+     "type": "crimp",
+     "p": 0.44
+    },
+    {
+     "type": "jug",
+     "p": 0.06
+    }
+   ]
+  },
+  {
+   "id": 52,
+   "x": 1351,
+   "y": 527,
+   "w": 24,
+   "h": 18,
+   "type": "foot",
+   "quality": 0.1,
+   "color": "#c46a44",
+   "score": 0.73,
+   "needs_review": true,
+   "suggestions": [
+    {
+     "type": "foot",
+     "p": 0.5
+    },
+    {
+     "type": "crimp",
+     "p": 0.5
+    },
+    {
+     "type": "jug",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 53,
+   "x": 409,
+   "y": 528,
+   "w": 45,
+   "h": 56,
+   "type": "jug",
+   "quality": 0.9,
+   "color": "#d3bb46",
+   "score": 0.88,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "jug",
+     "p": 0.64
+    },
+    {
+     "type": "crimp",
+     "p": 0.34
+    },
+    {
+     "type": "pinch",
+     "p": 0.03
+    }
+   ]
+  },
+  {
+   "id": 54,
+   "x": 1437,
+   "y": 546,
+   "w": 10,
+   "h": 13,
+   "type": "foot",
+   "quality": 0.1,
+   "color": "#3f4f62",
+   "score": 0.43,
+   "needs_review": true,
+   "suggestions": [
+    {
+     "type": "foot",
+     "p": 0.5
+    },
+    {
+     "type": "crimp",
+     "p": 0.5
+    },
+    {
+     "type": "pinch",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 55,
+   "x": 818,
+   "y": 548,
+   "w": 20,
+   "h": 25,
+   "type": "foot",
+   "quality": 0.1,
+   "color": "#324164",
+   "score": 0.74,
+   "needs_review": true,
+   "suggestions": [
+    {
+     "type": "foot",
+     "p": 0.5
+    },
+    {
+     "type": "crimp",
+     "p": 0.5
+    },
+    {
+     "type": "pinch",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 56,
+   "x": 1728,
+   "y": 552,
+   "w": 24,
+   "h": 20,
+   "type": "foot",
+   "quality": 0.1,
+   "color": "#eca15a",
+   "score": 0.81,
+   "needs_review": true,
+   "suggestions": [
+    {
+     "type": "foot",
+     "p": 0.5
+    },
+    {
+     "type": "crimp",
+     "p": 0.5
+    },
+    {
+     "type": "jug",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 57,
+   "x": 759,
+   "y": 555,
+   "w": 22,
+   "h": 20,
+   "type": "foot",
+   "quality": 0.1,
+   "color": "#848f99",
+   "score": 0.63,
+   "needs_review": true,
+   "suggestions": [
+    {
+     "type": "foot",
+     "p": 0.5
+    },
+    {
+     "type": "crimp",
+     "p": 0.47
+    },
+    {
+     "type": "jug",
+     "p": 0.03
+    }
+   ]
+  },
+  {
+   "id": 58,
+   "x": 1492,
+   "y": 564,
+   "w": 43,
+   "h": 37,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#803643",
+   "score": 0.88,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.91
+    },
+    {
+     "type": "jug",
+     "p": 0.09
+    },
+    {
+     "type": "pinch",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 59,
+   "x": 662,
+   "y": 565,
+   "w": 33,
+   "h": 46,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#756c67",
+   "score": 0.43,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.77
+    },
+    {
+     "type": "jug",
+     "p": 0.23
+    },
+    {
+     "type": "sloper",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 60,
+   "x": 712,
+   "y": 571,
+   "w": 17,
+   "h": 15,
+   "type": "foot",
+   "quality": 0.1,
+   "color": "#606f57",
+   "score": 0.48,
+   "needs_review": true,
+   "suggestions": [
+    {
+     "type": "foot",
+     "p": 0.5
+    },
+    {
+     "type": "crimp",
+     "p": 0.5
+    },
+    {
+     "type": "jug",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 61,
+   "x": 1898,
+   "y": 578,
+   "w": 36,
+   "h": 20,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#385c44",
+   "score": 0.83,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 1.0
+    },
+    {
+     "type": "jug",
+     "p": 0.0
+    },
+    {
+     "type": "pinch",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 62,
+   "x": 1559,
+   "y": 579,
+   "w": 50,
+   "h": 43,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#648041",
+   "score": 0.89,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.82
+    },
+    {
+     "type": "jug",
+     "p": 0.17
+    },
+    {
+     "type": "pinch",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 63,
+   "x": 796,
+   "y": 582,
+   "w": 17,
+   "h": 27,
+   "type": "foot",
+   "quality": 0.1,
+   "color": "#8693aa",
+   "score": 0.77,
+   "needs_review": true,
+   "suggestions": [
+    {
+     "type": "foot",
+     "p": 0.5
+    },
+    {
+     "type": "crimp",
+     "p": 0.49
+    },
+    {
+     "type": "jug",
+     "p": 0.01
+    }
+   ]
+  },
+  {
+   "id": 64,
+   "x": 692,
+   "y": 583,
+   "w": 33,
+   "h": 30,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#645e5b",
+   "score": 0.58,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 1.0
+    },
+    {
+     "type": "jug",
+     "p": 0.0
+    },
+    {
+     "type": "pinch",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 65,
+   "x": 949,
+   "y": 583,
+   "w": 32,
+   "h": 21,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#45351c",
+   "score": 0.57,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.98
+    },
+    {
+     "type": "pinch",
+     "p": 0.02
+    },
+    {
+     "type": "jug",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 66,
+   "x": 1377,
+   "y": 584,
+   "w": 25,
+   "h": 23,
+   "type": "foot",
+   "quality": 0.1,
+   "color": "#98a9a0",
+   "score": 0.64,
+   "needs_review": true,
+   "suggestions": [
+    {
+     "type": "foot",
+     "p": 0.5
+    },
+    {
+     "type": "crimp",
+     "p": 0.5
+    },
+    {
+     "type": "jug",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 67,
+   "x": 1759,
+   "y": 585,
+   "w": 19,
+   "h": 20,
+   "type": "foot",
+   "quality": 0.1,
+   "color": "#cec9c5",
+   "score": 0.29,
+   "needs_review": true,
+   "suggestions": [
+    {
+     "type": "foot",
+     "p": 0.5
+    },
+    {
+     "type": "crimp",
+     "p": 0.5
+    },
+    {
+     "type": "jug",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 68,
+   "x": 350,
+   "y": 587,
+   "w": 24,
+   "h": 14,
+   "type": "foot",
+   "quality": 0.1,
+   "color": "#eaad72",
+   "score": 0.34,
+   "needs_review": true,
+   "suggestions": [
+    {
+     "type": "foot",
+     "p": 0.5
+    },
+    {
+     "type": "crimp",
+     "p": 0.5
+    },
+    {
+     "type": "volume",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 69,
+   "x": 847,
+   "y": 589,
+   "w": 29,
+   "h": 24,
+   "type": "foot",
+   "quality": 0.1,
+   "color": "#cab680",
+   "score": 0.86,
+   "needs_review": true,
+   "suggestions": [
+    {
+     "type": "foot",
+     "p": 0.5
+    },
+    {
+     "type": "crimp",
+     "p": 0.5
+    },
+    {
+     "type": "jug",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 70,
+   "x": 1169,
+   "y": 598,
+   "w": 31,
+   "h": 24,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#eb6a8b",
+   "score": 0.83,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.92
+    },
+    {
+     "type": "jug",
+     "p": 0.08
+    },
+    {
+     "type": "pinch",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 71,
+   "x": 1798,
+   "y": 599,
+   "w": 44,
+   "h": 29,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#c53f5c",
+   "score": 0.9,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.95
+    },
+    {
+     "type": "jug",
+     "p": 0.04
+    },
+    {
+     "type": "sloper",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 72,
+   "x": 1088,
+   "y": 602,
+   "w": 14,
+   "h": 18,
+   "type": "foot",
+   "quality": 0.1,
+   "color": "#55593e",
+   "score": 0.35,
+   "needs_review": true,
+   "suggestions": [
+    {
+     "type": "foot",
+     "p": 0.5
+    },
+    {
+     "type": "crimp",
+     "p": 0.5
+    },
+    {
+     "type": "jug",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 73,
+   "x": 1630,
+   "y": 603,
+   "w": 53,
+   "h": 20,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#803a3a",
+   "score": 0.82,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 1.0
+    },
+    {
+     "type": "jug",
+     "p": 0.0
+    },
+    {
+     "type": "pinch",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 74,
+   "x": 1585,
+   "y": 617,
+   "w": 44,
+   "h": 38,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#bcb5ad",
+   "score": 0.27,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.99
+    },
+    {
+     "type": "jug",
+     "p": 0.01
+    },
+    {
+     "type": "pinch",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 75,
+   "x": 735,
+   "y": 621,
+   "w": 20,
+   "h": 23,
+   "type": "foot",
+   "quality": 0.1,
+   "color": "#66a4c3",
+   "score": 0.79,
+   "needs_review": true,
+   "suggestions": [
+    {
+     "type": "foot",
+     "p": 0.5
+    },
+    {
+     "type": "crimp",
+     "p": 0.5
+    },
+    {
+     "type": "jug",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 76,
+   "x": 1433,
+   "y": 630,
+   "w": 29,
+   "h": 29,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#5c5335",
+   "score": 0.84,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.97
+    },
+    {
+     "type": "jug",
+     "p": 0.03
+    },
+    {
+     "type": "pinch",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 77,
+   "x": 572,
+   "y": 636,
+   "w": 35,
+   "h": 41,
+   "type": "jug",
+   "quality": 0.9,
+   "color": "#7da1ce",
+   "score": 0.86,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "jug",
+     "p": 0.6
+    },
+    {
+     "type": "crimp",
+     "p": 0.32
+    },
+    {
+     "type": "pinch",
+     "p": 0.07
+    }
+   ]
+  },
+  {
+   "id": 78,
+   "x": 695,
+   "y": 636,
+   "w": 25,
+   "h": 23,
+   "type": "foot",
+   "quality": 0.1,
+   "color": "#b7aa93",
+   "score": 0.8,
+   "needs_review": true,
+   "suggestions": [
+    {
+     "type": "foot",
+     "p": 0.5
+    },
+    {
+     "type": "crimp",
+     "p": 0.5
+    },
+    {
+     "type": "jug",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 79,
+   "x": 990,
+   "y": 637,
+   "w": 37,
+   "h": 44,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#111623",
+   "score": 0.72,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.99
+    },
+    {
+     "type": "pinch",
+     "p": 0.0
+    },
+    {
+     "type": "jug",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 80,
+   "x": 488,
+   "y": 638,
+   "w": 42,
+   "h": 37,
+   "type": "jug",
+   "quality": 0.9,
+   "color": "#9c8b81",
+   "score": 0.85,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "jug",
+     "p": 0.98
+    },
+    {
+     "type": "crimp",
+     "p": 0.02
+    },
+    {
+     "type": "pinch",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 81,
+   "x": 959,
+   "y": 638,
+   "w": 30,
+   "h": 33,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#0a100e",
+   "score": 0.59,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.98
+    },
+    {
+     "type": "pinch",
+     "p": 0.02
+    },
+    {
+     "type": "sloper",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 82,
+   "x": 1770,
+   "y": 641,
+   "w": 30,
+   "h": 21,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#9c9791",
+   "score": 0.63,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 1.0
+    },
+    {
+     "type": "jug",
+     "p": 0.0
+    },
+    {
+     "type": "pocket",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 83,
+   "x": 786,
+   "y": 645,
+   "w": 14,
+   "h": 23,
+   "type": "foot",
+   "quality": 0.1,
+   "color": "#3b5475",
+   "score": 0.39,
+   "needs_review": true,
+   "suggestions": [
+    {
+     "type": "foot",
+     "p": 0.5
+    },
+    {
+     "type": "crimp",
+     "p": 0.5
+    },
+    {
+     "type": "jug",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 84,
+   "x": 1844,
+   "y": 646,
+   "w": 71,
+   "h": 64,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#843849",
+   "score": 0.94,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.96
+    },
+    {
+     "type": "pinch",
+     "p": 0.03
+    },
+    {
+     "type": "jug",
+     "p": 0.01
+    }
+   ]
+  },
+  {
+   "id": 85,
+   "x": 1520,
+   "y": 649,
+   "w": 31,
+   "h": 32,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#1f1e22",
+   "score": 0.69,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.99
+    },
+    {
+     "type": "pinch",
+     "p": 0.01
+    },
+    {
+     "type": "jug",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 86,
+   "x": 1235,
+   "y": 651,
+   "w": 36,
+   "h": 19,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#dba3ae",
+   "score": 0.83,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.99
+    },
+    {
+     "type": "sloper",
+     "p": 0.01
+    },
+    {
+     "type": "jug",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 87,
+   "x": 1760,
+   "y": 651,
+   "w": 66,
+   "h": 50,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#443933",
+   "score": 0.69,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.99
+    },
+    {
+     "type": "jug",
+     "p": 0.01
+    },
+    {
+     "type": "sloper",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 88,
+   "x": 855,
+   "y": 652,
+   "w": 19,
+   "h": 33,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#16161e",
+   "score": 0.3,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.99
+    },
+    {
+     "type": "pinch",
+     "p": 0.01
+    },
+    {
+     "type": "sloper",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 89,
+   "x": 1561,
+   "y": 659,
+   "w": 25,
+   "h": 28,
+   "type": "foot",
+   "quality": 0.1,
+   "color": "#253a4b",
+   "score": 0.41,
+   "needs_review": true,
+   "suggestions": [
+    {
+     "type": "foot",
+     "p": 0.5
+    },
+    {
+     "type": "crimp",
+     "p": 0.5
+    },
+    {
+     "type": "jug",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 90,
+   "x": 366,
+   "y": 664,
+   "w": 48,
+   "h": 61,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#aa7e7d",
+   "score": 0.86,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.92
+    },
+    {
+     "type": "jug",
+     "p": 0.04
+    },
+    {
+     "type": "pinch",
+     "p": 0.03
+    }
+   ]
+  },
+  {
+   "id": 91,
+   "x": 62,
+   "y": 664,
+   "w": 59,
+   "h": 74,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#9eb95e",
+   "score": 0.85,
+   "needs_review": true,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.46
+    },
+    {
+     "type": "jug",
+     "p": 0.33
+    },
+    {
+     "type": "sloper",
+     "p": 0.2
+    }
+   ]
+  },
+  {
+   "id": 92,
+   "x": 1172,
+   "y": 671,
+   "w": 29,
+   "h": 31,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#817871",
+   "score": 0.29,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 1.0
+    },
+    {
+     "type": "pinch",
+     "p": 0.0
+    },
+    {
+     "type": "jug",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 93,
+   "x": 731,
+   "y": 672,
+   "w": 30,
+   "h": 33,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#35503e",
+   "score": 0.86,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.98
+    },
+    {
+     "type": "pinch",
+     "p": 0.01
+    },
+    {
+     "type": "jug",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 94,
+   "x": 802,
+   "y": 674,
+   "w": 35,
+   "h": 26,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#473d3f",
+   "score": 0.62,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.98
+    },
+    {
+     "type": "pinch",
+     "p": 0.01
+    },
+    {
+     "type": "jug",
+     "p": 0.01
+    }
+   ]
+  },
+  {
+   "id": 95,
+   "x": 1125,
+   "y": 681,
+   "w": 76,
+   "h": 52,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#706b68",
+   "score": 0.57,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.8
+    },
+    {
+     "type": "jug",
+     "p": 0.19
+    },
+    {
+     "type": "sloper",
+     "p": 0.01
+    }
+   ]
+  },
+  {
+   "id": 96,
+   "x": 1695,
+   "y": 684,
+   "w": 28,
+   "h": 20,
+   "type": "foot",
+   "quality": 0.1,
+   "color": "#464548",
+   "score": 0.76,
+   "needs_review": true,
+   "suggestions": [
+    {
+     "type": "foot",
+     "p": 0.5
+    },
+    {
+     "type": "crimp",
+     "p": 0.5
+    },
+    {
+     "type": "jug",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 97,
+   "x": 1495,
+   "y": 686,
+   "w": 43,
+   "h": 20,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#3e3630",
+   "score": 0.33,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.99
+    },
+    {
+     "type": "pinch",
+     "p": 0.01
+    },
+    {
+     "type": "volume",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 98,
+   "x": 1622,
+   "y": 688,
+   "w": 31,
+   "h": 18,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#42567a",
+   "score": 0.75,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.98
+    },
+    {
+     "type": "pinch",
+     "p": 0.01
+    },
+    {
+     "type": "jug",
+     "p": 0.01
+    }
+   ]
+  },
+  {
+   "id": 99,
+   "x": 681,
+   "y": 701,
+   "w": 26,
+   "h": 42,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#6b8e65",
+   "score": 0.88,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.86
+    },
+    {
+     "type": "jug",
+     "p": 0.12
+    },
+    {
+     "type": "pinch",
+     "p": 0.01
+    }
+   ]
+  },
+  {
+   "id": 100,
+   "x": 887,
+   "y": 708,
+   "w": 32,
+   "h": 16,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#463d22",
+   "score": 0.5,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 1.0
+    },
+    {
+     "type": "pinch",
+     "p": 0.0
+    },
+    {
+     "type": "jug",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 101,
+   "x": 804,
+   "y": 710,
+   "w": 23,
+   "h": 26,
+   "type": "foot",
+   "quality": 0.1,
+   "color": "#5c1e2b",
+   "score": 0.75,
+   "needs_review": true,
+   "suggestions": [
+    {
+     "type": "foot",
+     "p": 0.5
+    },
+    {
+     "type": "crimp",
+     "p": 0.5
+    },
+    {
+     "type": "pinch",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 102,
+   "x": 780,
+   "y": 711,
+   "w": 24,
+   "h": 35,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#809dbb",
+   "score": 0.72,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.95
+    },
+    {
+     "type": "jug",
+     "p": 0.05
+    },
+    {
+     "type": "pinch",
+     "p": 0.01
+    }
+   ]
+  },
+  {
+   "id": 103,
+   "x": 226,
+   "y": 718,
+   "w": 38,
+   "h": 57,
+   "type": "jug",
+   "quality": 0.9,
+   "color": "#d9c890",
+   "score": 0.26,
+   "needs_review": true,
+   "suggestions": [
+    {
+     "type": "jug",
+     "p": 0.46
+    },
+    {
+     "type": "pinch",
+     "p": 0.25
+    },
+    {
+     "type": "crimp",
+     "p": 0.15
+    }
+   ]
+  },
+  {
+   "id": 104,
+   "x": 1453,
+   "y": 718,
+   "w": 30,
+   "h": 24,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#3e7878",
+   "score": 0.81,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.98
+    },
+    {
+     "type": "jug",
+     "p": 0.02
+    },
+    {
+     "type": "pinch",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 105,
+   "x": 263,
+   "y": 719,
+   "w": 31,
+   "h": 65,
+   "type": "pinch",
+   "quality": 0.55,
+   "color": "#dbc581",
+   "score": 0.6,
+   "needs_review": true,
+   "suggestions": [
+    {
+     "type": "pinch",
+     "p": 0.58
+    },
+    {
+     "type": "jug",
+     "p": 0.26
+    },
+    {
+     "type": "crimp",
+     "p": 0.15
+    }
+   ]
+  },
+  {
+   "id": 106,
+   "x": 242,
+   "y": 719,
+   "w": 69,
+   "h": 64,
+   "type": "jug",
+   "quality": 0.9,
+   "color": "#e9d284",
+   "score": 0.71,
+   "needs_review": true,
+   "suggestions": [
+    {
+     "type": "jug",
+     "p": 0.54
+    },
+    {
+     "type": "pinch",
+     "p": 0.29
+    },
+    {
+     "type": "crimp",
+     "p": 0.17
+    }
+   ]
+  },
+  {
+   "id": 107,
+   "x": 1903,
+   "y": 720,
+   "w": 33,
+   "h": 28,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#bda6ad",
+   "score": 0.8,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.97
+    },
+    {
+     "type": "jug",
+     "p": 0.03
+    },
+    {
+     "type": "pinch",
+     "p": 0.01
+    }
+   ]
+  },
+  {
+   "id": 108,
+   "x": 1525,
+   "y": 720,
+   "w": 47,
+   "h": 26,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#161720",
+   "score": 0.86,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 1.0
+    },
+    {
+     "type": "jug",
+     "p": 0.0
+    },
+    {
+     "type": "pinch",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 109,
+   "x": 592,
+   "y": 722,
+   "w": 33,
+   "h": 35,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#e6cb8b",
+   "score": 0.87,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 1.0
+    },
+    {
+     "type": "jug",
+     "p": 0.0
+    },
+    {
+     "type": "pocket",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 110,
+   "x": 1309,
+   "y": 734,
+   "w": 53,
+   "h": 55,
+   "type": "jug",
+   "quality": 0.9,
+   "color": "#c5d740",
+   "score": 0.93,
+   "needs_review": true,
+   "suggestions": [
+    {
+     "type": "jug",
+     "p": 0.47
+    },
+    {
+     "type": "crimp",
+     "p": 0.27
+    },
+    {
+     "type": "pinch",
+     "p": 0.26
+    }
+   ]
+  },
+  {
+   "id": 111,
+   "x": 1782,
+   "y": 747,
+   "w": 39,
+   "h": 33,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#a06168",
+   "score": 0.89,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.93
+    },
+    {
+     "type": "jug",
+     "p": 0.06
+    },
+    {
+     "type": "pinch",
+     "p": 0.01
+    }
+   ]
+  },
+  {
+   "id": 112,
+   "x": 1838,
+   "y": 752,
+   "w": 30,
+   "h": 26,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#604339",
+   "score": 0.73,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 1.0
+    },
+    {
+     "type": "jug",
+     "p": 0.0
+    },
+    {
+     "type": "pinch",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 113,
+   "x": 611,
+   "y": 752,
+   "w": 33,
+   "h": 40,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#c0bfce",
+   "score": 0.92,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.73
+    },
+    {
+     "type": "sloper",
+     "p": 0.23
+    },
+    {
+     "type": "jug",
+     "p": 0.03
+    }
+   ]
+  },
+  {
+   "id": 114,
+   "x": 1602,
+   "y": 757,
+   "w": 27,
+   "h": 24,
+   "type": "foot",
+   "quality": 0.1,
+   "color": "#817973",
+   "score": 0.69,
+   "needs_review": true,
+   "suggestions": [
+    {
+     "type": "foot",
+     "p": 0.5
+    },
+    {
+     "type": "crimp",
+     "p": 0.5
+    },
+    {
+     "type": "jug",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 115,
+   "x": 992,
+   "y": 759,
+   "w": 71,
+   "h": 40,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#39302a",
+   "score": 0.4,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.68
+    },
+    {
+     "type": "pinch",
+     "p": 0.14
+    },
+    {
+     "type": "jug",
+     "p": 0.1
+    }
+   ]
+  },
+  {
+   "id": 116,
+   "x": 1504,
+   "y": 764,
+   "w": 21,
+   "h": 22,
+   "type": "foot",
+   "quality": 0.1,
+   "color": "#708a9d",
+   "score": 0.6,
+   "needs_review": true,
+   "suggestions": [
+    {
+     "type": "foot",
+     "p": 0.5
+    },
+    {
+     "type": "crimp",
+     "p": 0.5
+    },
+    {
+     "type": "jug",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 117,
+   "x": 783,
+   "y": 765,
+   "w": 22,
+   "h": 23,
+   "type": "foot",
+   "quality": 0.1,
+   "color": "#746939",
+   "score": 0.63,
+   "needs_review": true,
+   "suggestions": [
+    {
+     "type": "foot",
+     "p": 0.5
+    },
+    {
+     "type": "crimp",
+     "p": 0.48
+    },
+    {
+     "type": "jug",
+     "p": 0.01
+    }
+   ]
+  },
+  {
+   "id": 118,
+   "x": 677,
+   "y": 767,
+   "w": 15,
+   "h": 16,
+   "type": "foot",
+   "quality": 0.1,
+   "color": "#e98f49",
+   "score": 0.73,
+   "needs_review": true,
+   "suggestions": [
+    {
+     "type": "foot",
+     "p": 0.5
+    },
+    {
+     "type": "crimp",
+     "p": 0.5
+    },
+    {
+     "type": "jug",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 119,
+   "x": 422,
+   "y": 770,
+   "w": 25,
+   "h": 28,
+   "type": "foot",
+   "quality": 0.1,
+   "color": "#d3d2d1",
+   "score": 0.78,
+   "needs_review": true,
+   "suggestions": [
+    {
+     "type": "foot",
+     "p": 0.5
+    },
+    {
+     "type": "crimp",
+     "p": 0.41
+    },
+    {
+     "type": "jug",
+     "p": 0.09
+    }
+   ]
+  },
+  {
+   "id": 120,
+   "x": 333,
+   "y": 772,
+   "w": 36,
+   "h": 32,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#b38a8a",
+   "score": 0.91,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.92
+    },
+    {
+     "type": "jug",
+     "p": 0.08
+    },
+    {
+     "type": "pinch",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 121,
+   "x": 641,
+   "y": 778,
+   "w": 34,
+   "h": 46,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#8b7c77",
+   "score": 0.91,
+   "needs_review": true,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.46
+    },
+    {
+     "type": "jug",
+     "p": 0.28
+    },
+    {
+     "type": "sloper",
+     "p": 0.25
+    }
+   ]
+  },
+  {
+   "id": 122,
+   "x": 524,
+   "y": 785,
+   "w": 41,
+   "h": 37,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#a9b9d0",
+   "score": 0.85,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.88
+    },
+    {
+     "type": "jug",
+     "p": 0.11
+    },
+    {
+     "type": "sloper",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 123,
+   "x": 715,
+   "y": 798,
+   "w": 21,
+   "h": 38,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#b46874",
+   "score": 0.85,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.85
+    },
+    {
+     "type": "jug",
+     "p": 0.1
+    },
+    {
+     "type": "pinch",
+     "p": 0.05
+    }
+   ]
+  },
+  {
+   "id": 124,
+   "x": 1678,
+   "y": 801,
+   "w": 20,
+   "h": 16,
+   "type": "foot",
+   "quality": 0.1,
+   "color": "#92a86a",
+   "score": 0.55,
+   "needs_review": true,
+   "suggestions": [
+    {
+     "type": "foot",
+     "p": 0.5
+    },
+    {
+     "type": "crimp",
+     "p": 0.48
+    },
+    {
+     "type": "jug",
+     "p": 0.02
+    }
+   ]
+  },
+  {
+   "id": 125,
+   "x": 1601,
+   "y": 802,
+   "w": 105,
+   "h": 51,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#837e7a",
+   "score": 0.46,
+   "needs_review": true,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.29
+    },
+    {
+     "type": "jug",
+     "p": 0.25
+    },
+    {
+     "type": "sloper",
+     "p": 0.21
+    }
+   ]
+  },
+  {
+   "id": 126,
+   "x": 1006,
+   "y": 805,
+   "w": 36,
+   "h": 34,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#571b14",
+   "score": 0.79,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.97
+    },
+    {
+     "type": "pinch",
+     "p": 0.03
+    },
+    {
+     "type": "jug",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 127,
+   "x": 1635,
+   "y": 806,
+   "w": 35,
+   "h": 32,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#babbc8",
+   "score": 0.63,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.96
+    },
+    {
+     "type": "jug",
+     "p": 0.03
+    },
+    {
+     "type": "pinch",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 128,
+   "x": 1682,
+   "y": 807,
+   "w": 27,
+   "h": 27,
+   "type": "foot",
+   "quality": 0.1,
+   "color": "#99a984",
+   "score": 0.27,
+   "needs_review": true,
+   "suggestions": [
+    {
+     "type": "foot",
+     "p": 0.5
+    },
+    {
+     "type": "crimp",
+     "p": 0.31
+    },
+    {
+     "type": "jug",
+     "p": 0.16
+    }
+   ]
+  },
+  {
+   "id": 129,
+   "x": 1903,
+   "y": 813,
+   "w": 27,
+   "h": 15,
+   "type": "foot",
+   "quality": 0.1,
+   "color": "#da938d",
+   "score": 0.41,
+   "needs_review": true,
+   "suggestions": [
+    {
+     "type": "foot",
+     "p": 0.5
+    },
+    {
+     "type": "crimp",
+     "p": 0.5
+    },
+    {
+     "type": "jug",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 130,
+   "x": 742,
+   "y": 815,
+   "w": 20,
+   "h": 28,
+   "type": "foot",
+   "quality": 0.1,
+   "color": "#e5eaec",
+   "score": 0.6,
+   "needs_review": true,
+   "suggestions": [
+    {
+     "type": "foot",
+     "p": 0.5
+    },
+    {
+     "type": "crimp",
+     "p": 0.46
+    },
+    {
+     "type": "jug",
+     "p": 0.03
+    }
+   ]
+  },
+  {
+   "id": 131,
+   "x": 366,
+   "y": 817,
+   "w": 97,
+   "h": 116,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#a39484",
+   "score": 0.34,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.62
+    },
+    {
+     "type": "pinch",
+     "p": 0.28
+    },
+    {
+     "type": "volume",
+     "p": 0.05
+    }
+   ]
+  },
+  {
+   "id": 132,
+   "x": 1396,
+   "y": 822,
+   "w": 23,
+   "h": 17,
+   "type": "foot",
+   "quality": 0.1,
+   "color": "#5cb7e8",
+   "score": 0.76,
+   "needs_review": true,
+   "suggestions": [
+    {
+     "type": "foot",
+     "p": 0.5
+    },
+    {
+     "type": "crimp",
+     "p": 0.5
+    },
+    {
+     "type": "jug",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 133,
+   "x": 448,
+   "y": 835,
+   "w": 47,
+   "h": 21,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#4b5a2e",
+   "score": 0.84,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.94
+    },
+    {
+     "type": "pinch",
+     "p": 0.05
+    },
+    {
+     "type": "jug",
+     "p": 0.01
+    }
+   ]
+  },
+  {
+   "id": 134,
+   "x": 778,
+   "y": 836,
+   "w": 41,
+   "h": 21,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#3e3937",
+   "score": 0.27,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.95
+    },
+    {
+     "type": "jug",
+     "p": 0.02
+    },
+    {
+     "type": "pinch",
+     "p": 0.02
+    }
+   ]
+  },
+  {
+   "id": 135,
+   "x": 780,
+   "y": 838,
+   "w": 30,
+   "h": 14,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#474442",
+   "score": 0.37,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.99
+    },
+    {
+     "type": "jug",
+     "p": 0.01
+    },
+    {
+     "type": "pinch",
+     "p": 0.01
+    }
+   ]
+  },
+  {
+   "id": 136,
+   "x": 1275,
+   "y": 846,
+   "w": 47,
+   "h": 54,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#78a09d",
+   "score": 0.4,
+   "needs_review": true,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.5
+    },
+    {
+     "type": "jug",
+     "p": 0.49
+    },
+    {
+     "type": "pinch",
+     "p": 0.01
+    }
+   ]
+  },
+  {
+   "id": 137,
+   "x": 78,
+   "y": 848,
+   "w": 53,
+   "h": 27,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#7b473b",
+   "score": 0.57,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 1.0
+    },
+    {
+     "type": "pinch",
+     "p": 0.0
+    },
+    {
+     "type": "jug",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 138,
+   "x": 353,
+   "y": 848,
+   "w": 65,
+   "h": 56,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#a69388",
+   "score": 0.34,
+   "needs_review": true,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.55
+    },
+    {
+     "type": "pinch",
+     "p": 0.23
+    },
+    {
+     "type": "jug",
+     "p": 0.18
+    }
+   ]
+  },
+  {
+   "id": 139,
+   "x": 610,
+   "y": 849,
+   "w": 42,
+   "h": 30,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#8d5750",
+   "score": 0.74,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.99
+    },
+    {
+     "type": "pinch",
+     "p": 0.0
+    },
+    {
+     "type": "jug",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 140,
+   "x": 740,
+   "y": 850,
+   "w": 22,
+   "h": 22,
+   "type": "foot",
+   "quality": 0.1,
+   "color": "#8b8d92",
+   "score": 0.36,
+   "needs_review": true,
+   "suggestions": [
+    {
+     "type": "foot",
+     "p": 0.5
+    },
+    {
+     "type": "crimp",
+     "p": 0.5
+    },
+    {
+     "type": "jug",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 141,
+   "x": 499,
+   "y": 850,
+   "w": 33,
+   "h": 26,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#aa4536",
+   "score": 0.81,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.91
+    },
+    {
+     "type": "pinch",
+     "p": 0.08
+    },
+    {
+     "type": "jug",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 142,
+   "x": 1031,
+   "y": 857,
+   "w": 24,
+   "h": 26,
+   "type": "foot",
+   "quality": 0.1,
+   "color": "#303d22",
+   "score": 0.73,
+   "needs_review": true,
+   "suggestions": [
+    {
+     "type": "foot",
+     "p": 0.5
+    },
+    {
+     "type": "crimp",
+     "p": 0.49
+    },
+    {
+     "type": "jug",
+     "p": 0.01
+    }
+   ]
+  },
+  {
+   "id": 143,
+   "x": 1494,
+   "y": 857,
+   "w": 29,
+   "h": 24,
+   "type": "jug",
+   "quality": 0.9,
+   "color": "#c3ccd0",
+   "score": 0.73,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "jug",
+     "p": 0.68
+    },
+    {
+     "type": "crimp",
+     "p": 0.31
+    },
+    {
+     "type": "sloper",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 144,
+   "x": 1588,
+   "y": 859,
+   "w": 53,
+   "h": 42,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#dd786c",
+   "score": 0.87,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.97
+    },
+    {
+     "type": "sloper",
+     "p": 0.01
+    },
+    {
+     "type": "jug",
+     "p": 0.01
+    }
+   ]
+  },
+  {
+   "id": 145,
+   "x": 561,
+   "y": 860,
+   "w": 37,
+   "h": 22,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#c3af7e",
+   "score": 0.89,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 1.0
+    },
+    {
+     "type": "jug",
+     "p": 0.0
+    },
+    {
+     "type": "pinch",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 146,
+   "x": 290,
+   "y": 861,
+   "w": 24,
+   "h": 30,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#c5cf81",
+   "score": 0.84,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.96
+    },
+    {
+     "type": "jug",
+     "p": 0.03
+    },
+    {
+     "type": "pinch",
+     "p": 0.01
+    }
+   ]
+  },
+  {
+   "id": 147,
+   "x": 1768,
+   "y": 865,
+   "w": 24,
+   "h": 22,
+   "type": "foot",
+   "quality": 0.1,
+   "color": "#7699c8",
+   "score": 0.27,
+   "needs_review": true,
+   "suggestions": [
+    {
+     "type": "foot",
+     "p": 0.5
+    },
+    {
+     "type": "crimp",
+     "p": 0.49
+    },
+    {
+     "type": "jug",
+     "p": 0.01
+    }
+   ]
+  },
+  {
+   "id": 148,
+   "x": 1681,
+   "y": 866,
+   "w": 53,
+   "h": 23,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#b47999",
+   "score": 0.35,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.93
+    },
+    {
+     "type": "jug",
+     "p": 0.05
+    },
+    {
+     "type": "pinch",
+     "p": 0.02
+    }
+   ]
+  },
+  {
+   "id": 149,
+   "x": 1775,
+   "y": 869,
+   "w": 35,
+   "h": 28,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#7393bb",
+   "score": 0.37,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.91
+    },
+    {
+     "type": "jug",
+     "p": 0.08
+    },
+    {
+     "type": "pinch",
+     "p": 0.01
+    }
+   ]
+  },
+  {
+   "id": 150,
+   "x": 1557,
+   "y": 879,
+   "w": 30,
+   "h": 26,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#633c39",
+   "score": 0.29,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.97
+    },
+    {
+     "type": "pinch",
+     "p": 0.01
+    },
+    {
+     "type": "jug",
+     "p": 0.01
+    }
+   ]
+  },
+  {
+   "id": 151,
+   "x": 687,
+   "y": 880,
+   "w": 27,
+   "h": 27,
+   "type": "foot",
+   "quality": 0.1,
+   "color": "#53565d",
+   "score": 0.61,
+   "needs_review": true,
+   "suggestions": [
+    {
+     "type": "foot",
+     "p": 0.5
+    },
+    {
+     "type": "crimp",
+     "p": 0.5
+    },
+    {
+     "type": "jug",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 152,
+   "x": 960,
+   "y": 892,
+   "w": 32,
+   "h": 34,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#222e14",
+   "score": 0.84,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.97
+    },
+    {
+     "type": "jug",
+     "p": 0.02
+    },
+    {
+     "type": "pinch",
+     "p": 0.01
+    }
+   ]
+  },
+  {
+   "id": 153,
+   "x": 622,
+   "y": 900,
+   "w": 28,
+   "h": 19,
+   "type": "foot",
+   "quality": 0.1,
+   "color": "#a06f5f",
+   "score": 0.4,
+   "needs_review": true,
+   "suggestions": [
+    {
+     "type": "foot",
+     "p": 0.5
+    },
+    {
+     "type": "crimp",
+     "p": 0.5
+    },
+    {
+     "type": "pinch",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 154,
+   "x": 620,
+   "y": 903,
+   "w": 41,
+   "h": 30,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#875a4e",
+   "score": 0.5,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.98
+    },
+    {
+     "type": "pinch",
+     "p": 0.01
+    },
+    {
+     "type": "jug",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 155,
+   "x": 642,
+   "y": 911,
+   "w": 33,
+   "h": 22,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#7d8365",
+   "score": 0.49,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.98
+    },
+    {
+     "type": "pinch",
+     "p": 0.02
+    },
+    {
+     "type": "jug",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 156,
+   "x": 729,
+   "y": 919,
+   "w": 22,
+   "h": 29,
+   "type": "foot",
+   "quality": 0.1,
+   "color": "#a0856b",
+   "score": 0.79,
+   "needs_review": true,
+   "suggestions": [
+    {
+     "type": "foot",
+     "p": 0.5
+    },
+    {
+     "type": "crimp",
+     "p": 0.5
+    },
+    {
+     "type": "sloper",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 157,
+   "x": 1752,
+   "y": 919,
+   "w": 41,
+   "h": 20,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#5b2a2b",
+   "score": 0.75,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.99
+    },
+    {
+     "type": "pinch",
+     "p": 0.01
+    },
+    {
+     "type": "jug",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 158,
+   "x": 1125,
+   "y": 934,
+   "w": 36,
+   "h": 31,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#6d944a",
+   "score": 0.79,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 1.0
+    },
+    {
+     "type": "pinch",
+     "p": 0.0
+    },
+    {
+     "type": "jug",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 159,
+   "x": 96,
+   "y": 934,
+   "w": 34,
+   "h": 27,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#6a8db4",
+   "score": 0.67,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 1.0
+    },
+    {
+     "type": "jug",
+     "p": 0.0
+    },
+    {
+     "type": "volume",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 160,
+   "x": 186,
+   "y": 952,
+   "w": 78,
+   "h": 54,
+   "type": "jug",
+   "quality": 0.9,
+   "color": "#9c6157",
+   "score": 0.89,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "jug",
+     "p": 0.75
+    },
+    {
+     "type": "crimp",
+     "p": 0.24
+    },
+    {
+     "type": "pinch",
+     "p": 0.01
+    }
+   ]
+  },
+  {
+   "id": 161,
+   "x": 333,
+   "y": 960,
+   "w": 36,
+   "h": 29,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#863741",
+   "score": 0.77,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.99
+    },
+    {
+     "type": "jug",
+     "p": 0.0
+    },
+    {
+     "type": "pinch",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 162,
+   "x": 427,
+   "y": 963,
+   "w": 32,
+   "h": 45,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#c35943",
+   "score": 0.79,
+   "needs_review": true,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.42
+    },
+    {
+     "type": "pinch",
+     "p": 0.33
+    },
+    {
+     "type": "jug",
+     "p": 0.22
+    }
+   ]
+  },
+  {
+   "id": 163,
+   "x": 535,
+   "y": 968,
+   "w": 29,
+   "h": 39,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#b3ac9d",
+   "score": 0.31,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.96
+    },
+    {
+     "type": "pinch",
+     "p": 0.03
+    },
+    {
+     "type": "jug",
+     "p": 0.01
+    }
+   ]
+  },
+  {
+   "id": 164,
+   "x": 1705,
+   "y": 1010,
+   "w": 67,
+   "h": 37,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#4781c3",
+   "score": 0.33,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.87
+    },
+    {
+     "type": "pinch",
+     "p": 0.13
+    },
+    {
+     "type": "jug",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 165,
+   "x": 1474,
+   "y": 1011,
+   "w": 43,
+   "h": 42,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#a24a4e",
+   "score": 0.82,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.96
+    },
+    {
+     "type": "sloper",
+     "p": 0.02
+    },
+    {
+     "type": "pinch",
+     "p": 0.01
+    }
+   ]
+  },
+  {
+   "id": 166,
+   "x": 361,
+   "y": 1020,
+   "w": 32,
+   "h": 32,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#d8c55c",
+   "score": 0.88,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.98
+    },
+    {
+     "type": "jug",
+     "p": 0.02
+    },
+    {
+     "type": "pinch",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 167,
+   "x": 628,
+   "y": 1026,
+   "w": 26,
+   "h": 34,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#425e94",
+   "score": 0.86,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.94
+    },
+    {
+     "type": "jug",
+     "p": 0.03
+    },
+    {
+     "type": "pinch",
+     "p": 0.03
+    }
+   ]
+  },
+  {
+   "id": 168,
+   "x": 470,
+   "y": 1063,
+   "w": 25,
+   "h": 22,
+   "type": "foot",
+   "quality": 0.1,
+   "color": "#f78b49",
+   "score": 0.79,
+   "needs_review": true,
+   "suggestions": [
+    {
+     "type": "foot",
+     "p": 0.5
+    },
+    {
+     "type": "pinch",
+     "p": 0.26
+    },
+    {
+     "type": "jug",
+     "p": 0.16
+    }
+   ]
+  },
+  {
+   "id": 169,
+   "x": 558,
+   "y": 1069,
+   "w": 39,
+   "h": 70,
+   "type": "jug",
+   "quality": 0.9,
+   "color": "#677c57",
+   "score": 0.91,
+   "needs_review": true,
+   "suggestions": [
+    {
+     "type": "jug",
+     "p": 0.53
+    },
+    {
+     "type": "crimp",
+     "p": 0.4
+    },
+    {
+     "type": "pinch",
+     "p": 0.07
+    }
+   ]
+  },
+  {
+   "id": 170,
+   "x": 158,
+   "y": 1073,
+   "w": 32,
+   "h": 38,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#7f7067",
+   "score": 0.71,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.9
+    },
+    {
+     "type": "jug",
+     "p": 0.09
+    },
+    {
+     "type": "pinch",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 171,
+   "x": 70,
+   "y": 1123,
+   "w": 24,
+   "h": 22,
+   "type": "foot",
+   "quality": 0.1,
+   "color": "#a7bd5b",
+   "score": 0.75,
+   "needs_review": true,
+   "suggestions": [
+    {
+     "type": "foot",
+     "p": 0.5
+    },
+    {
+     "type": "crimp",
+     "p": 0.5
+    },
+    {
+     "type": "jug",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 172,
+   "x": 405,
+   "y": 1169,
+   "w": 30,
+   "h": 23,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#9db545",
+   "score": 0.28,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 1.0
+    },
+    {
+     "type": "pinch",
+     "p": 0.0
+    },
+    {
+     "type": "jug",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 173,
+   "x": 417,
+   "y": 1169,
+   "w": 28,
+   "h": 22,
+   "type": "foot",
+   "quality": 0.1,
+   "color": "#a6b25b",
+   "score": 0.37,
+   "needs_review": true,
+   "suggestions": [
+    {
+     "type": "foot",
+     "p": 0.5
+    },
+    {
+     "type": "crimp",
+     "p": 0.48
+    },
+    {
+     "type": "pinch",
+     "p": 0.02
+    }
+   ]
+  },
+  {
+   "id": 174,
+   "x": 251,
+   "y": 1212,
+   "w": 25,
+   "h": 26,
+   "type": "foot",
+   "quality": 0.1,
+   "color": "#e2c139",
+   "score": 0.78,
+   "needs_review": true,
+   "suggestions": [
+    {
+     "type": "foot",
+     "p": 0.5
+    },
+    {
+     "type": "crimp",
+     "p": 0.5
+    },
+    {
+     "type": "jug",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 175,
+   "x": 20,
+   "y": 1220,
+   "w": 30,
+   "h": 33,
+   "type": "crimp",
+   "quality": 0.4,
+   "color": "#6895d4",
+   "score": 0.86,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "crimp",
+     "p": 0.97
+    },
+    {
+     "type": "jug",
+     "p": 0.03
+    },
+    {
+     "type": "pocket",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 176,
+   "x": 161,
+   "y": 1253,
+   "w": 73,
+   "h": 76,
+   "type": "sloper",
+   "quality": 0.3,
+   "color": "#efda4e",
+   "score": 0.92,
+   "needs_review": false,
+   "suggestions": [
+    {
+     "type": "sloper",
+     "p": 1.0
+    },
+    {
+     "type": "jug",
+     "p": 0.0
+    },
+    {
+     "type": "crimp",
+     "p": 0.0
+    }
+   ]
+  },
+  {
+   "id": 177,
+   "x": 13,
+   "y": 1302,
+   "w": 24,
+   "h": 25,
+   "type": "foot",
+   "quality": 0.1,
+   "color": "#c6c177",
+   "score": 0.76,
+   "needs_review": true,
+   "suggestions": [
+    {
+     "type": "foot",
+     "p": 0.5
+    },
+    {
+     "type": "crimp",
+     "p": 0.49
+    },
+    {
+     "type": "jug",
+     "p": 0.01
+    }
+   ]
+  }
+ ]
+}
