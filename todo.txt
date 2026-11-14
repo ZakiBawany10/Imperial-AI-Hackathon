@@ -1,0 +1,19 @@
+- video data + transcripts 
+- split ibt o frames + the transcript extract the context 
+- train 
+- compare split split- error interval 
+- benchmarks 
+
+
+- presentation 
+
+
+- putting things together 
+- elevenlabs connect 
+- adaptation 
+- 3d mesh thingy 
+- pwa 
+- sign in 
+- video watching thingy 
+- grading 
+12q11
