@@ -1,0 +1,168 @@
+@import url("https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700&family=Instrument+Sans:wght@400;600&family=JetBrains+Mono:wght@500&display=swap");
+@import "tailwindcss";
+
+@theme {
+  --color-paper: #f4efe6;
+  --color-surface: #fbf8f2;
+  --color-ink: #1b1a17;
+  --color-muted: #6b665c;
+  --color-hairline: #d9d2c3;
+  --color-accent: #e8431f;
+  --color-tape-blue: #2f6fde;
+  --color-tape-yellow: #e8b100;
+  --color-tape-green: #2e8b57;
+
+  --font-display: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Instrument Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+}
+
+@layer base {
+  html {
+    background: var(--color-paper);
+  }
+  body {
+    background: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+  }
+  ::selection {
+    background: var(--color-accent);
+    color: var(--color-surface);
+  }
+}
+
+@keyframes dot-in {
+  0% {
+    transform: translate(-50%, -50%) scale(0);
+  }
+  70% {
+    transform: translate(-50%, -50%) scale(1.15);
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+@keyframes scan {
+  0% {
+    top: 0%;
+  }
+  100% {
+    top: 100%;
+  }
+}
+@keyframes blink {
+  50% {
+    opacity: 0.2;
+  }
+}
+.anim-dot {
+  animation: dot-in 320ms cubic-bezier(0.2, 0.8, 0.3, 1.2) both;
+}
+.anim-scan {
+  animation: scan 2.4s linear infinite alternate;
+}
+.anim-blink {
+  animation: blink 1s steps(2, start) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .anim-dot,
+  .anim-scan,
+  .anim-blink {
+    animation: none;
+  }
+}
+
+@keyframes pop {
+  0% {
+    transform: scale(0);
+  }
+  70% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+@keyframes trace {
+  0% {
+    stroke-dashoffset: 100;
+  }
+  70%,
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes ring {
+  0% {
+    transform: scale(0.85);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.35);
+    opacity: 0;
+  }
+}
+@keyframes pulse-out {
+  0% {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+}
+@keyframes wave {
+  0%,
+  100% {
+    transform: scaleY(0.4);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+.anim-pop {
+  animation: pop 300ms cubic-bezier(0.2, 0.8, 0.3, 1.2) both;
+}
+.anim-sheet {
+  animation: sheet-up 240ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.anim-trace {
+  stroke-dasharray: 100;
+  animation: trace 2.4s ease-in-out infinite;
+}
+.anim-ring {
+  animation: ring 1.6s ease-out infinite;
+}
+.anim-pulse {
+  animation: pulse-out 1.2s ease-out infinite;
+}
+.anim-wave {
+  animation: wave 700ms ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .anim-pop,
+  .anim-sheet,
+  .anim-ring,
+  .anim-pulse,
+  .anim-wave {
+    animation: none;
+  }
+  .anim-trace {
+    animation: none;
+    stroke-dasharray: none;
+  }
+}

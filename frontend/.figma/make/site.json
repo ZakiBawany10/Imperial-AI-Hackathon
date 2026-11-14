@@ -1,0 +1,10 @@
+{
+  "description": "Climbers photograph indoor bouldering walls to identify holds, discover routes suited to their height, and get route grades.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
