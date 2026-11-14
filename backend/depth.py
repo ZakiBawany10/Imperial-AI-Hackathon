@@ -17,7 +17,7 @@ import torch
 from PIL import Image, ImageFilter, ImageOps
 
 MODEL = "depth-anything/Depth-Anything-V2-Small-hf"
-OUT_SIDE = 384          # long side of the relief map sent to the viewer
+OUT_SIDE = 512          # long side of the relief map sent to the viewer
 _lock = threading.Lock()
 
 
@@ -48,6 +48,9 @@ def relief(image):
     r -= np.median(r)                               # most of the photo is flat wall
     core = r[h // 10: -h // 10, w // 10: -w // 10]  # scale from the middle, not the floor or the photo edges
     r = np.clip(r / max(np.percentile(core, 99.5), 1e-6), 0, 1)
+    # The bottom of a wall photo is usually floor and mats, which the filter mistakes for relief.
+    fade = np.clip((h - 1 - np.arange(h)) / (0.08 * h), 0, 1) ** 2
+    r *= fade[:, None]
     img = Image.fromarray((r * 255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(0.8))
     return np.asarray(img, dtype=np.float32) / 255
 

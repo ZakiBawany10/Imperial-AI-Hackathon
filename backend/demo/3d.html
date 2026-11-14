@@ -15,6 +15,7 @@
   header button { font:inherit; font-size:12px; color:#d9f6ff; background:transparent; border:1px solid rgba(39,230,255,.4);
     padding:4px 9px; cursor:pointer; }
   header button.on { background:#27e6ff; color:#04060b; font-weight:700; }
+  header select { font:inherit; font-size:12px; color:#d9f6ff; background:#06101c; border:1px solid rgba(39,230,255,.4); padding:3px 6px; }
   #status { color:rgba(217,246,255,.65); font-size:12px; margin-left:auto; }
   #status.err { color:#ff6b81; }
   #stage { flex:1; min-height:0; position:relative; }
@@ -24,6 +25,11 @@
 <header>
   <b>BetaCrux 3D wall</b>
   <button data-src="mesh" title="A straight-on wall turned into a 3D mesh from its depth, with a climb solved live">3D mesh</button>
+  <select id="wallpick" title="Which wall photo to use in 3D mesh mode">
+    <option value="/demo/walls/seattle-bp-06.jpg">Wall 1 (blue, straight on)</option>
+    <option value="/demo/walls/seattle-bp-05.jpg">Wall 2 (blue, wide)</option>
+    <option value="/contract/wall.jpg">Wall 3 (rock, outdoor)</option>
+  </select>
   <button data-src="example" title="The fixed example files in contract/, exactly as the server answers today">Example</button>
   <button data-src="physics" title="A hand-made sample with foot moves and forces, to test what the physics engine will send">Sample with forces</button>
   <button data-src="wall" title="The wall and its holds, before a route is solved">Wall only</button>
@@ -69,7 +75,7 @@ const sources = {
   },
   // A straight-on wall: find holds and routes, pick a climb, solve it, and build the 3D mesh from depth.
   async mesh() {
-    const photoUrl = query.get("photo") || "/demo/walls/smichoff-005.jpg";
+    const photoUrl = query.get("photo") || document.getElementById("wallpick")?.value || "/demo/walls/seattle-bp-06.jpg";
     say("Finding the holds and the shape of the wall…");
     const blob = await (await fetch(photoUrl)).blob();
     const post = (path) => { const f = new FormData(); f.append("file", blob, "wall.jpg"); return fetch(path, { method: "POST", body: f }); };
@@ -87,10 +93,14 @@ const sources = {
         const span = (r) => Math.max(...r.hs.map((h) => h.y)) - Math.min(...r.hs.map((h) => h.y));
         return dull(a) - dull(b) || span(b) - span(a);
       });
+    const wallM = Number(query.get("wall_m")) || 5;
+    const mpp = wallM / analyze.image.h;
     for (const r of routes) {
       const hs = [...r.hs].sort((a, b) => b.y - a.y);
+      // A climb starts from the ground: the lowest hold must be in reach of someone standing on the floor.
+      if ((analyze.image.h - hs[0].y) * mpp > 1.9) continue;
       const req = { image: analyze.image, holds: hs, start: [hs[0].id], finish: [hs[hs.length - 1].id],
-                    climber_height_m: 1.75, wall_height_m: Number(query.get("wall_m")) || 4.5, wall_angle_deg: 0 };
+                    climber_height_m: 1.75, wall_height_m: wallM, wall_angle_deg: 0 };
       const res = await fetch("/solve", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(req) });
       if (!res.ok) continue;
       const solve = await res.json();
@@ -158,6 +168,7 @@ async function show(name) {
 }
 
 for (const b of document.querySelectorAll("header button")) b.addEventListener("click", () => show(b.dataset.src));
+document.getElementById("wallpick").addEventListener("change", () => show("mesh"));
 const first = query.get("live") === "1" ? "live" : query.get("src");
 show(first in sources ? first : "mesh");
 </script>

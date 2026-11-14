@@ -1,1 +1,6 @@
-smichoff-005.jpg: Tomáš Sláma, "Indoor Climbing Gym Hold And Route Segmentation" v4 (Kaggle), CC BY-SA 4.0. Via wall training images/indoor-bouldering-600-more.
+Example wall photos for the 3D demo.
+
+seattle-bp-06.jpg, seattle-bp-05.jpg: Joe Mabel, "Bouldering Project (old University National Bank) 06 / 05 -
+ground floor climbing walls", Wikimedia Commons, CC BY-SA 4.0
+(https://commons.wikimedia.org/wiki/Category:University_National_Bank_Headquarters_-_interior).
+Resized to 1920 pixels wide by Wikimedia; otherwise unchanged.

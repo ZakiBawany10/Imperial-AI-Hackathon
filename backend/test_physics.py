@@ -50,6 +50,10 @@ def check_response(req, out, hands_only):
 
     # The hand moves, the hardest move and the grade are the hands-only answer, untouched.
     hand_moves = [m for m in moves if m["limb"][1] == "H"]
+    # All-limbs mode may add one last move: the free hand matching on the finish hold.
+    if len(hand_moves) == len(hands_only["moves"]) + 1:
+        assert hand_moves[-1]["hold"] in req["finish"], "the extra last move must be a match on the finish"
+        hand_moves = hand_moves[:-1]
     assert [(m["limb"], m["hold"], m["load"], m["span_m"]) for m in hand_moves] == \
            [(m["limb"], m["hold"], m["load"], m["span_m"]) for m in hands_only["moves"]]
     assert out["grade"] == hands_only["grade"]

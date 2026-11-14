@@ -120,6 +120,12 @@ const STYLE = `
 .bcx-ctl button:hover{background:rgba(39,230,255,.18);color:#fff}
 .bcx-ctl button.main{color:#04060b;background:${CYAN};font-weight:700;min-width:84px}
 .bcx-ctl button[hidden]{display:none}
+.bcx-info{position:absolute;right:16px;bottom:86px;width:270px;display:none;padding:12px 14px;pointer-events:auto;
+  background:linear-gradient(180deg,rgba(6,16,28,.92),rgba(4,9,18,.88));border:1px solid ${CYAN};box-shadow:0 0 22px rgba(39,230,255,.25);font-size:13px;line-height:1.45}
+.bcx-info.on{display:block}
+.bcx-info h3{margin:2px 0 6px;font-size:18px;letter-spacing:.02em}
+.bcx-info .sw{display:inline-block;width:12px;height:12px;border:1px solid #fff6;margin-right:6px;vertical-align:-1px}
+.bcx-info .x{position:absolute;right:8px;top:4px;cursor:pointer;opacity:.7;background:none;border:0;color:inherit;font:inherit}
 .bcx-alert{position:absolute;left:50%;top:26px;transform:translateX(-50%);display:none;padding:7px 16px;font-size:15px;
   font-weight:700;letter-spacing:.2em;color:#fff;border:1px solid ${MAGENTA};background:rgba(255,43,214,.16);
   text-shadow:0 0 12px ${MAGENTA};box-shadow:0 0 26px rgba(255,43,214,.45);white-space:nowrap;pointer-events:none}
@@ -246,6 +252,7 @@ export function mountViewer(container, options = {}) {
       <div class="bcx-note" data-k="physsum"></div>
     </div>
     <div class="bcx-alert" data-k="alert"></div>
+    <div class="bcx-info" data-k="info"></div>
     <div class="bcx-bottom">
       <div class="bcx-line" data-k="line"></div>
       <div class="bcx-ctl">
@@ -285,8 +292,8 @@ export function mountViewer(container, options = {}) {
   let pixelRatio = Math.min(window.devicePixelRatio || 1, 1.5);
 
   const scene = new THREE.Scene();
-  scene.add(new THREE.AmbientLight(0xffffff, 1.1));
-  const key = new THREE.DirectionalLight(0xffffff, 2.2);
+  scene.add(new THREE.AmbientLight(0xffffff, 0.9));
+  const key = new THREE.DirectionalLight(0xffffff, 2.6);
   key.position.set(-2.5, 4, 5);
   scene.add(key);
   scene.background = new THREE.Color(0x04060b);
@@ -449,6 +456,30 @@ export function mountViewer(container, options = {}) {
     return tex;
   }
 
+  // Marching squares over the relief map: line segments where the surface crosses each level.
+  function contourLines(wallW, wallH) {
+    const out = [], W = relief.w, H = relief.h, d = relief.data, step = 1;
+    const levels = [0.18, 0.45, 0.75];
+    const wx = (i) => (i / (W - 1) - 0.5) * wallW, wy = (j) => (1 - j / (H - 1)) * wallH;
+    for (const L of levels) {
+      const z = L * RELIEF_M + 0.004;
+      for (let j = 0; j < H - step; j += step) for (let i = 0; i < W - step; i += step) {
+        const a = d[j * W + i], b = d[j * W + i + step], c = d[(j + step) * W + i + step], e = d[(j + step) * W + i];
+        const code = (a > L ? 8 : 0) | (b > L ? 4 : 0) | (c > L ? 2 : 0) | (e > L ? 1 : 0);
+        if (code === 0 || code === 15) continue;
+        const t = (p, q) => (L - p) / ((q - p) || 1e-6);
+        const P = { top: [wx(i + step * t(a, b)), wy(j)], right: [wx(i + step), wy(j + step * t(b, c))],
+                    bottom: [wx(i + step * t(e, c)), wy(j + step)], left: [wx(i), wy(j + step * t(a, e))] };
+        const pairs = { 1: [["left", "bottom"]], 2: [["bottom", "right"]], 3: [["left", "right"]], 4: [["top", "right"]],
+          5: [["left", "top"], ["bottom", "right"]], 6: [["top", "bottom"]], 7: [["left", "top"]], 8: [["left", "top"]],
+          9: [["top", "bottom"]], 10: [["left", "bottom"], ["top", "right"]], 11: [["top", "right"]], 12: [["left", "right"]],
+          13: [["bottom", "right"]], 14: [["left", "bottom"]] }[code];
+        for (const [u, v] of pairs) out.push(P[u][0], P[u][1], z, P[v][0], P[v][1], z);
+      }
+    }
+    return new THREE.BufferGeometry().setAttribute("position", new THREE.Float32BufferAttribute(out, 3));
+  }
+
   // The outline of a hold in wall metres, counter-clockwise, at most 18 points.
   function holdOutline(h) {
     let pts;
@@ -472,6 +503,7 @@ export function mountViewer(container, options = {}) {
 
   function reliefOf(h) {
     const kind = RELIEF[h.type] || RELIEF.unknown;
+    if (relief && h.type === "volume") return 0.015;     // the mesh already shows a big shape's real form
     const small = Math.min(h.w || 30, h.h || 30) * S.mpp;
     return Math.max(0.012, Math.min(kind.out, small * (h.type === "volume" ? 0.55 : 0.9)));
   }
@@ -556,7 +588,7 @@ export function mountViewer(container, options = {}) {
     let surfaceGeo;
     if (relief) {
       // The wall as a mesh: one vertex per relief pixel (at most 192 across), pushed out by the relief.
-      const cols = Math.min(relief.w, 128), rows = Math.max(2, Math.round(cols * relief.h / relief.w));
+      const cols = Math.min(relief.w, 256), rows = Math.max(2, Math.round(cols * relief.h / relief.w));
       surfaceGeo = new THREE.PlaneGeometry(wallW, wallH, cols - 1, rows - 1);
       const pos = surfaceGeo.attributes.position;
       for (let i = 0; i < pos.count; i++) pos.setZ(i, S.depthAt(pos.getX(i) , pos.getY(i) + wallH / 2));
@@ -565,12 +597,12 @@ export function mountViewer(container, options = {}) {
     const surface = new THREE.Mesh(surfaceGeo, relief ? new THREE.MeshLambertMaterial({ color: 0xffffff }) : new THREE.MeshBasicMaterial({ color: 0xffffff }));
     surface.position.set(0, wallH / 2, 0);
     if (relief) {
-      // A faint neon wireframe over the mesh: the "digital twin" look, and it shows the shapes from any angle.
-      const wire = new THREE.Mesh(surfaceGeo, new THREE.MeshBasicMaterial({ color: linear(CYAN).multiplyScalar(0.9), wireframe: true, transparent: true, opacity: 0.025, depthWrite: false }));
-      wire.position.copy(surface.position);
-      wire.position.z += 0.002;
-      wire.name = "wire";
-      wallStatic.add(wire);
+      // Height lines, like a map: one line every few centimetres of relief, so the shape of every
+      // volume reads from any angle, without a busy wireframe.
+      const lines = contourLines(wallW, wallH);
+      const topo = new THREE.LineSegments(lines, new THREE.LineBasicMaterial({ color: linear(CYAN).multiplyScalar(1.2), transparent: true, opacity: 0.3, depthWrite: false }));
+      topo.name = "topo";
+      wallStatic.add(topo);
     }
     surface.name = "surface";
     surface.userData.plain = schematicTexture(wallW, wallH);
@@ -637,8 +669,10 @@ export function mountViewer(container, options = {}) {
     surface.material.needsUpdate = true;
     const rest = wallStatic.getObjectByName("rest");
     if (rest && hasRoute) {                             // on the photo, holds that are not on the route are only ghosts
-      rest.children[0].material.opacity = usePhoto ? 0.3 : 0.9;
-      rest.children[1].material.opacity = usePhoto ? 0.35 : 0.8;
+      // On the photo the other holds are already visible, so their glow is left off: only the climb shines.
+      rest.visible = !usePhoto;
+      rest.children[0].material.opacity = 0.9;
+      rest.children[1].material.opacity = 0.8;
     }
     buttons.view.textContent = `Wall: ${usePhoto ? "photo" : "plain"}`;
   }
@@ -1047,7 +1081,7 @@ export function mountViewer(container, options = {}) {
         // The climber's frame has x = 0 at the photo's left edge and z = 0 on a flat wall. Shift it out
         // by the wall surface behind the hips, so a volume behind the body pushes the whole body out.
         const under = S.depthAt(P.hip.x, P.hip.y), dx = S.wallW / 2;
-        const at = (v) => [v.x + dx, v.y, Math.max(v.z - under, 0.01)];
+        const at = (v) => [v.x + dx, v.y, Math.max(v.z, S.depthAt(v.x, v.y) + 0.05) - under];
         climber.group.position.set(-dx, 0, under);
         climber.group.visible = figure.visible;
         const m = where.i >= 0 ? K.moves[where.i] : null;
@@ -1089,6 +1123,66 @@ export function mountViewer(container, options = {}) {
   }
 
   // ------------------------------------------------------------ public methods
+
+  // ---- click a hold to see what it is
+  const HOLD_ABOUT = {
+    jug: "A deep grip you can wrap your whole hand around. The easiest kind to hold.",
+    crimp: "A thin edge that only fits your fingertips. Hard on the fingers.",
+    sloper: "A rounded bump with no edge. You hold it with an open hand and friction.",
+    pinch: "You squeeze it between thumb and fingers.",
+    pocket: "A hole that takes one to three fingers.",
+    volume: "A big bolted-on shape. You press on it, stand on it, or use its edges.",
+    foot: "A tiny hold meant for feet only.",
+    unknown: "The app could not tell what kind of hold this is.",
+  };
+  const ray = new THREE.Raycaster(), ndc = new THREE.Vector2(), _hit = new THREE.Vector3();
+  const pickRing = new THREE.Mesh(new THREE.TorusGeometry(1, 0.06, 8, 48), new THREE.MeshBasicMaterial({ color: linear(CYAN).multiplyScalar(2.6) }));
+  pickRing.visible = false;
+  wall.add(pickRing);
+  let downAt = null;
+  renderer.domElement.addEventListener("pointerdown", (e) => { downAt = [e.clientX, e.clientY]; });
+  renderer.domElement.addEventListener("pointerup", (e) => {
+    if (!downAt || Math.hypot(e.clientX - downAt[0], e.clientY - downAt[1]) > 5 || !S) return;   // a drag turns the camera
+    const r = renderer.domElement.getBoundingClientRect();
+    ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+    ray.setFromCamera(ndc, camera);
+    const surface = wallStatic.getObjectByName("surface");
+    const hit = surface && ray.intersectObject(surface, false)[0];
+    if (!hit) { showHold(null); return; }
+    wall.worldToLocal(_hit.copy(hit.point));
+    let best = null, bestD = Infinity;
+    for (const h of S.holds.values()) {
+      const [x, y] = S.toWall(h.x, h.y), reach = Math.max(h.w || 30, h.h || 30) * S.mpp * 0.6 + 0.04;
+      const d = Math.hypot(x - _hit.x, y - _hit.y);
+      if (d < reach && d < bestD) { best = h; bestD = d; }
+    }
+    showHold(best);
+  });
+  function showHold(h) {
+    const box = ui.info;
+    if (!h) { box.classList.remove("on"); pickRing.visible = false; return; }
+    const [x, y] = S.toWall(h.x, h.y), size = Math.max(h.w || 30, h.h || 30) * S.mpp;
+    pickRing.position.set(x, y, S.depthAt(x, y) + reliefOf(h) + 0.02);
+    pickRing.scale.set(size * 0.62 + 0.03, size * 0.62 + 0.03, 0.25);
+    pickRing.visible = true;
+    const role = S.start.has(h.id) ? "A start hold of this climb." : S.finish.has(h.id) ? "The top hold of this climb." : S.route.has(h.id) ? "Part of this climb." : "Not part of the climb shown.";
+    const q = Number(h.quality), grip = !Number.isFinite(q) ? "" : q >= 0.75 ? "good" : q >= 0.45 ? "medium" : "poor";
+    const guesses = (h.suggestions || []).map((g) => `${HOLD_LABEL[g.type] || g.type} ${Math.round(g.p * 100)}%`).join(" · ");
+    const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+    box.innerHTML = `<button class="x" title="Close">✕</button>
+      <div class="bcx-tag">Hold ${esc(h.id)}</div>
+      <h3>${esc(HOLD_LABEL[h.type] || "Grip")}</h3>
+      <div>${esc(HOLD_ABOUT[h.type] || HOLD_ABOUT.unknown)}</div>
+      <div class="bcx-rule"></div>
+      <div><span class="sw" style="background:${esc(h.color || "#888")}"></span>${esc(h.color_name || "colour")}${h.route !== undefined && h.route !== null ? ` · in the ${esc(h.color_name || "")} group of holds` : ""}</div>
+      ${grip ? `<div>Grip: ${grip}</div>` : ""}
+      <div>${role}</div>
+      <div>About ${Math.round(Math.max(h.w || 0, h.h || 0) * S.mpp * 100)} cm across${relief ? `, sticks out about ${Math.round(S.depthAt(x, y) * 100 + reliefOf(h) * 100)} cm` : ""}.</div>
+      ${guesses ? `<div class="bcx-note">What the app thinks it is: ${esc(guesses)}${h.needs_review ? " (not sure, so it asks)" : ""}</div>` : ""}`;
+    box.querySelector(".x").onclick = () => showHold(null);
+    box.classList.add("on");
+    emit("hold", h);
+  }
 
   const api = {
     /** Show a new route and its solution. Either may be null: no request shows the bare wall, no solve shows the route only. */

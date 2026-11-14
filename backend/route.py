@@ -138,7 +138,20 @@ def solve(req):
                                 px_states, height_px, image_h)
         return {"grade": grade, "crux": crux, "moves": out_moves, "keyframes": frames}
 
-    # All four limbs. Everything below works in solver units with y up, then goes back to pixels.
+    # All four limbs. A climb is finished with both hands on the top hold, so if the search
+    # ended with one hand there, the other hand matches it as a last move.
+    last = states[-1]
+    if last[0] != last[1] and (last[0] in e_idx or last[1] in e_idx):
+        top = last[0] if last[0] in e_idx else last[1]
+        hand_moving = 1 if last[0] == top else 0          # 0 = left hand
+        other = last[hand_moving]
+        span = math.dist(pts[other], pts[top])
+        states = states + [(top, top)]
+        px_states = px_states + [(pos[hand[top]["id"]],) * 2]
+        out_moves = out_moves + [{"i": len(out_moves), "limb": "LH" if hand_moving == 0 else "RH", "hold": hand[top]["id"],
+                                  "load": round(min(0.5 * (span + 0.5) / LOAD_FULL_SCALE, 1.0), 2), "span_m": round(span * unit_m, 2)}]
+
+    # Everything below works in solver units with y up, then goes back to pixels.
     px_per_unit = unit_m / m_per_px
     plan = limbs.plan([to_units(h) for h in holds], px_states,
                       kinds=[h.get("type") or "unknown" for h in holds],
