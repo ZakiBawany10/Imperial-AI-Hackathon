@@ -23,6 +23,7 @@
 <body>
 <header>
   <b>BetaCrux 3D wall</b>
+  <button data-src="mesh" title="A straight-on wall turned into a 3D mesh from its depth, with a climb solved live">3D mesh</button>
   <button data-src="example" title="The fixed example files in contract/, exactly as the server answers today">Example</button>
   <button data-src="physics" title="A hand-made sample with foot moves and forces, to test what the physics engine will send">Sample with forces</button>
   <button data-src="wall" title="The wall and its holds, before a route is solved">Wall only</button>
@@ -66,6 +67,39 @@ const sources = {
   async wall() {
     return { analyze: await getJson("/contract/analyze.json"), solveRequest: null, solve: null, note: "The wall and every hold found on it. No route chosen." };
   },
+  // A straight-on wall: find holds and routes, pick a climb, solve it, and build the 3D mesh from depth.
+  async mesh() {
+    const photoUrl = query.get("photo") || "/demo/walls/smichoff-005.jpg";
+    say("Finding the holds and the shape of the wall…");
+    const blob = await (await fetch(photoUrl)).blob();
+    const post = (path) => { const f = new FormData(); f.append("file", blob, "wall.jpg"); return fetch(path, { method: "POST", body: f }); };
+    const [found, depth] = await Promise.all([post("/analyze"), post("/depth")]);
+    if (!found.ok) throw new Error(`/analyze answered ${found.status}`);
+    const analyze = await found.json();
+    const reliefUrl = depth.ok ? URL.createObjectURL(await depth.blob()) : null;
+    const byId = new Map(analyze.holds.map((h) => [h.id, h]));
+    // Try the routes with the most height first; the first one the solver can climb is shown.
+    const routes = (analyze.routes || []).map((r) => ({ ...r, hs: r.holds.map((i) => byId.get(i)) }))
+      .filter((r) => r.hs.length >= 3)
+      // Colourful routes first (grey, white and black are often the wall or bolt-on chips), then the tallest.
+      .sort((a, b) => {
+        const dull = (r) => ["grey", "white", "black", "brown"].includes(r.color_name) ? 1 : 0;
+        const span = (r) => Math.max(...r.hs.map((h) => h.y)) - Math.min(...r.hs.map((h) => h.y));
+        return dull(a) - dull(b) || span(b) - span(a);
+      });
+    for (const r of routes) {
+      const hs = [...r.hs].sort((a, b) => b.y - a.y);
+      const req = { image: analyze.image, holds: hs, start: [hs[0].id], finish: [hs[hs.length - 1].id],
+                    climber_height_m: 1.75, wall_height_m: Number(query.get("wall_m")) || 4.5, wall_angle_deg: 0 };
+      const res = await fetch("/solve", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(req) });
+      if (!res.ok) continue;
+      const solve = await res.json();
+      if (!solve.moves.length) continue;
+      return { imageUrl: photoUrl, reliefUrl, analyze, solveRequest: req, solve,
+               note: `3D mesh from the photo's depth · ${analyze.holds.length} holds · the ${r.color_name} climb, ${solve.moves.length} moves` };
+    }
+    return { imageUrl: photoUrl, reliefUrl, analyze, solveRequest: null, solve: null, note: "3D mesh from the photo's depth. No climb could be solved on this wall." };
+  },
   async live() {
     say("Asking the server to find the holds…");
     const photo = await (await fetch(PHOTO)).blob();
@@ -107,7 +141,7 @@ async function show(name) {
     const data = await sources[name]();
     viewer?.dispose();
     viewer = mountViewer(stage, {
-      imageUrl: PHOTO, analyze: data.analyze, solveRequest: data.solveRequest, solve: data.solve,
+      imageUrl: data.imageUrl || PHOTO, reliefUrl: data.reliefUrl, analyze: data.analyze, solveRequest: data.solveRequest, solve: data.solve,
       view: query.get("view") === "schematic" ? "schematic" : "photo",
       autoplay: query.get("paused") !== "1",
       sway: query.get("sway") !== "0",
@@ -125,7 +159,7 @@ async function show(name) {
 
 for (const b of document.querySelectorAll("header button")) b.addEventListener("click", () => show(b.dataset.src));
 const first = query.get("live") === "1" ? "live" : query.get("src");
-show(first in sources ? first : "example");
+show(first in sources ? first : "mesh");
 </script>
 </body>
 </html>

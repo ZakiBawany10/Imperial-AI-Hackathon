@@ -108,6 +108,19 @@ def post_analyze(file: UploadFile = File(...)):
     return analyze_mod.analyze(image)
 
 
+@app.post("/depth")
+def post_depth(file: UploadFile = File(...)):
+    """A relief map of the wall photo as a greyscale PNG: black is flat wall, white sticks out most."""
+    import depth
+    from fastapi.responses import Response
+    try:
+        image = Image.open(io.BytesIO(file.file.read()))
+        image.load()
+    except (UnidentifiedImageError, OSError):
+        raise HTTPException(400, "That file is not a photo this server can read (use JPEG or PNG).")
+    return Response(depth.relief_png(image), media_type="image/png")
+
+
 @app.post("/solve")
 def post_solve(req: SolveRequest):
     global _solver

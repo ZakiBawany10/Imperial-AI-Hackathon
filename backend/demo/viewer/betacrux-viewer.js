@@ -14,6 +14,7 @@ import { EffectComposer } from "./vendor/EffectComposer.js";
 import { RenderPass } from "./vendor/RenderPass.js";
 import { UnrealBloomPass } from "./vendor/UnrealBloomPass.js";
 import { OutputPass } from "./vendor/OutputPass.js";
+import { createClimber, poseFromTargets } from "../climber/climber.js";
 
 // ---------------------------------------------------------------- plain words
 
@@ -284,6 +285,10 @@ export function mountViewer(container, options = {}) {
   let pixelRatio = Math.min(window.devicePixelRatio || 1, 1.5);
 
   const scene = new THREE.Scene();
+  scene.add(new THREE.AmbientLight(0xffffff, 1.1));
+  const key = new THREE.DirectionalLight(0xffffff, 2.2);
+  key.position.set(-2.5, 4, 5);
+  scene.add(key);
   scene.background = new THREE.Color(0x04060b);
   const camera = new THREE.PerspectiveCamera(38, 1, 0.05, 200);
   const controls = new OrbitControls(camera, renderer.domElement);
@@ -337,6 +342,9 @@ export function mountViewer(container, options = {}) {
 
   // ---- state
   let analyze = opts.analyze || null, solveRequest = opts.solveRequest || null, solve = opts.solve || null;
+  // Relief map from POST /depth: how far each part of the photo sticks out of the wall (0..1).
+  let relief = null;                                    // { w, h, data: Float32Array }
+  const RELIEF_M = opts.reliefMetres || 0.32;           // what 1.0 in the relief map is, in metres
   let photo = null;                                     // texture of the wall photo
   let viewMode = opts.view === "schematic" ? "schematic" : "photo";
   let showForces = true;
@@ -368,7 +376,11 @@ export function mountViewer(container, options = {}) {
   const figure = new THREE.Group();
   figure.visible = false;
   wall.add(figure);
-  const mk = (geo) => { const m = new THREE.Mesh(geo, bodyMat); figure.add(m); return m; };
+  // The realistic climber (../climber/climber.js) is shown by default; opts.figure = "simple" keeps the
+  // tube-and-ball figure. The simple figure is still posed every frame: its joints drive the climber.
+  const climber = opts.figure === "simple" ? null : createClimber(THREE, { style: opts.climberStyle || "hologram" });
+  if (climber) { climber.group.visible = false; wall.add(climber.group); }
+  const mk = (geo) => { const m = new THREE.Mesh(geo, bodyMat); m.visible = !climber; figure.add(m); return m; };
   const body = {
     torso: mk(torsoGeo), pelvis: mk(ballGeo), neck: mk(tubeGeo), head: mk(ballGeo),
     limb: Object.fromEntries(LIMBS.map((l) => [l, { upper: mk(tubeGeo), lower: mk(tubeGeo), root: mk(ballGeo), mid: mk(ballGeo), end: mk(ballGeo), foot: l[1] === "F" ? mk(tubeGeo) : null }])),
@@ -480,9 +492,10 @@ export function mountViewer(container, options = {}) {
     for (const h of holds) {
       const kind = RELIEF[h.type] || RELIEF.unknown, out = reliefOf(h), ring0 = holdOutline(h), base = neon(h.color);
       const cx = ring0.reduce((s, p) => s + p[0], 0) / ring0.length, cy = ring0.reduce((s, p) => s + p[1], 0) / ring0.length;
+      const baseZ = S.depthAt(cx, cy);                  // the wall surface under the hold
       const rings = [];
       for (let j = 0; j <= kind.rings; j++) {
-        const ang = (j / kind.rings) * Math.PI / 2, k = kind.top + (1 - kind.top) * Math.cos(ang), z = 0.002 + out * Math.sin(ang);
+        const ang = (j / kind.rings) * Math.PI / 2, k = kind.top + (1 - kind.top) * Math.cos(ang), z = baseZ + 0.002 + out * Math.sin(ang);
         rings.push(ring0.map(([x, y]) => [cx + (x - cx) * k, cy + (y - cy) * k, z]));
       }
       const N = ring0.length;
@@ -524,6 +537,15 @@ export function mountViewer(container, options = {}) {
     S = {
       image, wallH, wallW, mpp, angleDeg, angle: angleDeg * Math.PI / 180,
       toWall: (x, y) => [(x - image.w / 2) * mpp, (image.h - y) * mpp],
+      // How far the wall surface sticks out at a point given in wall metres (0 on a flat wall).
+      depthAt: (wx, wy) => {
+        if (!relief) return 0;
+        const u = (wx / wallW + 0.5) * (relief.w - 1), v = (1 - wy / wallH) * (relief.h - 1);
+        const x0 = Math.max(0, Math.min(relief.w - 2, Math.floor(u))), y0 = Math.max(0, Math.min(relief.h - 2, Math.floor(v)));
+        const fx = Math.min(Math.max(u - x0, 0), 1), fy = Math.min(Math.max(v - y0, 0), 1), d = relief.data, W = relief.w;
+        const a = d[y0 * W + x0], b = d[y0 * W + x0 + 1], c = d[(y0 + 1) * W + x0], e = d[(y0 + 1) * W + x0 + 1];
+        return RELIEF_M * ((a * (1 - fx) + b * fx) * (1 - fy) + (c * (1 - fx) + e * fx) * fy);
+      },
       holds: new Map(), route: new Set(), start: new Set(solveRequest?.start || []), finish: new Set(solveRequest?.finish || []),
     };
     for (const h of analyze?.holds || []) S.holds.set(h.id, h);
@@ -531,8 +553,25 @@ export function mountViewer(container, options = {}) {
     wall.rotation.x = S.angle;                          // positive leans the top toward the viewer
 
     // The wall surface: the photo, or a plain dark panel with a grid.
-    const surface = new THREE.Mesh(new THREE.PlaneGeometry(wallW, wallH), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+    let surfaceGeo;
+    if (relief) {
+      // The wall as a mesh: one vertex per relief pixel (at most 192 across), pushed out by the relief.
+      const cols = Math.min(relief.w, 128), rows = Math.max(2, Math.round(cols * relief.h / relief.w));
+      surfaceGeo = new THREE.PlaneGeometry(wallW, wallH, cols - 1, rows - 1);
+      const pos = surfaceGeo.attributes.position;
+      for (let i = 0; i < pos.count; i++) pos.setZ(i, S.depthAt(pos.getX(i) , pos.getY(i) + wallH / 2));
+      surfaceGeo.computeVertexNormals();
+    } else surfaceGeo = new THREE.PlaneGeometry(wallW, wallH);
+    const surface = new THREE.Mesh(surfaceGeo, relief ? new THREE.MeshLambertMaterial({ color: 0xffffff }) : new THREE.MeshBasicMaterial({ color: 0xffffff }));
     surface.position.set(0, wallH / 2, 0);
+    if (relief) {
+      // A faint neon wireframe over the mesh: the "digital twin" look, and it shows the shapes from any angle.
+      const wire = new THREE.Mesh(surfaceGeo, new THREE.MeshBasicMaterial({ color: linear(CYAN).multiplyScalar(0.9), wireframe: true, transparent: true, opacity: 0.025, depthWrite: false }));
+      wire.position.copy(surface.position);
+      wire.position.z += 0.002;
+      wire.name = "wire";
+      wallStatic.add(wire);
+    }
     surface.name = "surface";
     surface.userData.plain = schematicTexture(wallW, wallH);
     wallStatic.add(surface);
@@ -658,7 +697,8 @@ export function mountViewer(container, options = {}) {
         const given = f.contacts && l in f.contacts;
         contacts[l] = given ? f.contacts[l] : nearestHold(f.joints[END_JOINT[l]], l[1] === "H");
         const h = contacts[l] === null || contacts[l] === undefined ? null : S.holds.get(contacts[l]);
-        z[l] = h ? reliefOf(h) * (l[1] === "H" ? 0.85 : 0.75) + 0.02 : 0.03;      // how far out the hand or foot sits
+        const at = h ? S.toWall(h.x, h.y) : S.toWall(...f.joints[END_JOINT[l]]);
+        z[l] = S.depthAt(...at) + (h ? reliefOf(h) * (l[1] === "H" ? 0.85 : 0.75) + 0.02 : 0.03);   // how far out the hand or foot sits
       }
       let physics = null;
       if (f.physics) {
@@ -750,6 +790,8 @@ export function mountViewer(container, options = {}) {
     const reachZ = (root, end, len) => end.z + Math.sqrt(Math.max(len * len - (root.x - end.x) ** 2 - (root.y - end.y) ** 2, 0));
     chestZ = Math.max(0.075 * H, Math.min(chestZ, reachZ(P.ls, P.lh, (armU + armL) * 0.99), reachZ(P.rs, P.rh, (armU + armL) * 0.99)));
     hipZ = Math.max(0.09 * H, Math.min(hipZ, reachZ(P.lhip, P.lf, (legU + legL) * 0.98) + 0.03, reachZ(P.rhip, P.rf, (legU + legL) * 0.98) + 0.03));
+    const under = Math.max(S.depthAt(P.hip.x, P.hip.y), S.depthAt(P.neck.x, P.neck.y));   // a volume behind the body pushes it out
+    chestZ += under; hipZ += under;
     P.ls.z = P.rs.z = P.neck.z = chestZ;
     P.head.z = chestZ + 0.012 * H;
     P.hip.z = P.lhip.z = P.rhip.z = hipZ;
@@ -976,7 +1018,7 @@ export function mountViewer(container, options = {}) {
   function frame(now) {
     if (disposed) return;
     raf = requestAnimationFrame(frame);
-    const dt = Math.min(0.1, (now - last) / 1000);
+    const dt = Math.min(0.1, Math.max(0, (now - last) / 1000));
     last = now; clock += dt;
     frames++;
     if (now - fpsFrom >= 1000) {
@@ -1001,6 +1043,19 @@ export function mountViewer(container, options = {}) {
       if (where.i !== lastMove) { lastMove = where.i; if (where.i >= 0) emit("move", where.i); }
       const st = poseFigure(where);
       posePhysics(st, live);
+      if (climber) {
+        // The climber's frame has x = 0 at the photo's left edge and z = 0 on a flat wall. Shift it out
+        // by the wall surface behind the hips, so a volume behind the body pushes the whole body out.
+        const under = S.depthAt(P.hip.x, P.hip.y), dx = S.wallW / 2;
+        const at = (v) => [v.x + dx, v.y, Math.max(v.z - under, 0.01)];
+        climber.group.position.set(-dx, 0, under);
+        climber.group.visible = figure.visible;
+        const m = where.i >= 0 ? K.moves[where.i] : null;
+        climber.setPose(poseFromTargets({ heightM: K.height, lHand: at(P.lh), rHand: at(P.rh), lFoot: at(P.lf), rFoot: at(P.rf),
+                                           pelvis: [P.hip.x + dx, P.hip.y] }));
+        climber.setState({ effort: live.effort, stable: live.effort < 1, movingLimb: m && where.phase !== "end" ? m.limb : null });
+        climber.update(dt);
+      }
       updateHud(where, st);
       // Ring on the place the moving hand or foot is going to.
       const m = where.i >= 0 ? K.moves[where.i] : null;
@@ -1118,6 +1173,7 @@ export function mountViewer(container, options = {}) {
     /** Where the animation is: { move, of, playing }. move is -1 before the first move. */
     state() { const w = locate(t); return { move: K ? w.i : -1, of: K ? K.moves.length : 0, progress: w.p, phase: w.phase, playing }; },
     dispose() {
+      climber?.dispose();
       if (disposed) return;
       disposed = true;
       cancelAnimationFrame(raf);
@@ -1176,6 +1232,21 @@ export function mountViewer(container, options = {}) {
       applyView();
       emit("photo");
     }, undefined, () => { console.warn("BetaCrux viewer: the wall photo could not be loaded; showing the plain wall."); applyView(); });
+  }
+  if (opts.reliefUrl) {
+    const img = new Image();
+    img.onload = () => {
+      if (disposed) return;
+      const c = document.createElement("canvas"); c.width = img.width; c.height = img.height;
+      const g = c.getContext("2d", { willReadFrequently: true }); g.drawImage(img, 0, 0);
+      const px = g.getImageData(0, 0, c.width, c.height).data, data = new Float32Array(c.width * c.height);
+      for (let i = 0; i < data.length; i++) data[i] = px[i * 4] / 255;
+      relief = { w: c.width, h: c.height, data };
+      build(); prepare(); applyView();
+      emit("relief");
+    };
+    img.onerror = () => console.warn("BetaCrux viewer: the relief map could not be loaded; the wall stays flat.");
+    img.src = opts.reliefUrl;
   }
   raf = requestAnimationFrame(frame);
   emit("ready");

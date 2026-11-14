@@ -29,7 +29,7 @@ Forces are in body-weights.
     two thin edges 69%, and from one thin edge alone impossible (139%).
     These two numbers are a judgement, not a measurement.
  5. Pulling outward. The body's centre of mass sits `body_out` away from the
-    wall (0.30 m for everyone). With feet on the wall the body is a lever
+    wall (0.20 m for everyone). With feet on the wall the body is a lever
     hinged at the feet, so the hands must pull outward with
         (body_out * cos A + (height of centre of mass above the feet) * sin A)
         / (height of the hands above the feet)
@@ -73,7 +73,7 @@ FOOT_CONE_DEG = 40.0    # a foot can push within this angle of straight up
 SMEAR_FRICTION = 0.6    # rubber on bare wall
 SMEAR_GONE_DEG = 10.0   # overhang at which a foot on bare wall is worth nothing
 MIN_LEVER = 0.25        # shortest hands-above-feet distance used in the lever, as a share of height
-BODY_OUT_M = 0.30       # how far the centre of mass sits from the wall, metres
+BODY_OUT_M = 0.20       # how far the centre of mass sits from the wall, metres (hips kept close)
 UNBALANCED = 1e-4       # body-weights of force left over before a position counts as "cannot balance"
 MAX_EFFORT = 5.0        # efforts are reported up to this and no higher
 
