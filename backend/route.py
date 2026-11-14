@@ -62,9 +62,14 @@ def solve(req):
     ids = [h["id"] for h in holds]
     if len(set(ids)) != len(ids):
         raise RouteError("Two holds share the same id.")
-    start, finish = list(req["start"]), list(req["finish"])
+    # Repeated ids are dropped: the grade model counts start and finish holds.
+    start, finish = list(dict.fromkeys(req["start"])), list(dict.fromkeys(req["finish"]))
     if not start or not finish:
         raise RouteError("Mark at least one start hold and one finish hold.")
+    if len(start) > 2:
+        raise RouteError("Mark one or two start holds: one for each hand.")
+    if set(start) & set(finish):
+        raise RouteError("A hold cannot be both a start and a finish hold.")
     missing = [i for i in start + finish if i not in ids]
     if missing:
         raise RouteError(f"Start or finish hold {missing[0]} is not in the hold list.")

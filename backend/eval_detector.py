@@ -1,7 +1,7 @@
 """Score a hold detector: what share of labelled holds does it find?
 
 Usage:  python3 eval_detector.py zero-shot [split]
-        python3 eval_detector.py models/holds.pt [split]
+        python3 eval_detector.py models/holds.pt [split] [tiled]
 
 split is test (default), validation or train, under data/climbinst/yolo/.
 A labelled hold counts as found when a predicted box overlaps it with
@@ -29,15 +29,18 @@ def zero_shot():
     return lambda img: detect_holds.detect(img, processor, model, device)
 
 
-def yolo(weights):
+def yolo(weights, tiled):
     import detector
-    return lambda img: detector.detect(img, weights)
+    return lambda img: detector.detect(img, weights, tiled=tiled)
 
 
 def main():
     which = sys.argv[1]
     split = sys.argv[2] if len(sys.argv) > 2 else "test"
-    detect = zero_shot() if which == "zero-shot" else yolo(which)
+    tiled = "tiled" in sys.argv[3:]
+    detect = zero_shot() if which == "zero-shot" else yolo(which, tiled)
+    if tiled:
+        which += " (tiled)"
     found = labelled = predicted = 0
     t0 = time.time()
     paths = sorted(glob.glob(os.path.join(HERE, "data", "climbinst", "yolo", split, "images", "*.jpg")))

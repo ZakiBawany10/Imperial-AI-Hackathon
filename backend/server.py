@@ -12,7 +12,9 @@ from contextlib import asynccontextmanager
 from typing import Optional
 
 from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from PIL import Image, UnidentifiedImageError
 from pydantic import BaseModel, ConfigDict, Field
@@ -48,6 +50,14 @@ async def lifespan(app):
 
 app = FastAPI(title="BetaCrux", lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+
+
+@app.exception_handler(RequestValidationError)
+async def bad_request(request, exc):
+    # Same {"detail": "message"} shape as every other error, not FastAPI's list of objects.
+    e = exc.errors()[0]
+    where = ".".join(str(p) for p in e["loc"][1:])
+    return JSONResponse({"detail": f"{where}: {e['msg']}" if where else e["msg"]}, status_code=422)
 
 
 class ImageSize(BaseModel):

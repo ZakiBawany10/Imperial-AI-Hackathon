@@ -1,9 +1,11 @@
 """POST /analyze: a wall photo in, the hold list of the API contract out.
 
-Finding holds: the zero-shot finder in detect_holds.py (no training).
+Finding holds: the trained YOLO detector if models/holds.pt exists (see
+train_detector.py), otherwise the zero-shot finder in detect_holds.py.
 Colour: sampled from the photo.
-Type: there is no trained type model yet, so each hold gets a rough guess from
-its size and shape and is always flagged for the user to confirm.
+Type: the trained classifier if models/hold_type.pt exists (see train_type.py).
+Without it each hold gets a rough guess from its size and shape, which is never
+confident, so every hold is flagged for the user to confirm.
 """
 import functools
 import json
@@ -15,9 +17,12 @@ import torch
 from PIL import Image, ImageOps
 
 import detect_holds
+import hold_type
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-MAX_SIDE = 1920          # larger photos are shrunk for detection; results are scaled back
+MAX_SIDE = 1920          # larger photos are shrunk for zero-shot detection; results are scaled back
+YOLO_WEIGHTS = os.path.join(HERE, "models", "holds.pt")
+YOLO_TILED = os.environ.get("BETACRUX_TILED", "0") == "1"
 REVIEW_BELOW = 0.6       # top type guess under this confidence -> needs_review
 _lock = threading.Lock()
 
@@ -36,9 +41,25 @@ def _detector():
     return processor, model, device
 
 
+def _find(image):
+    """[(box in pixels of image, score)] from whichever detector is available."""
+    if os.path.exists(YOLO_WEIGHTS):
+        import detector
+        return detector.detect(image, YOLO_WEIGHTS, tiled=YOLO_TILED)
+    W, H = image.size
+    scale = min(1.0, MAX_SIDE / max(W, H))
+    small = image.resize((round(W * scale), round(H * scale))) if scale < 1 else image
+    processor, model, device = _detector()
+    return [([v / scale for v in box], score) for box, score in detect_holds.detect(small, processor, model, device)]
+
+
 def warm():
     with _lock:
-        _detector()
+        if os.path.exists(YOLO_WEIGHTS):
+            import detector
+            detector._model(YOLO_WEIGHTS)
+        else:
+            _detector()
 
 
 def _color(arr, box):
@@ -69,22 +90,39 @@ def _type_guess(w, h, image_h):
     return [{"type": t, "p": p} for t, p in g]
 
 
+FOOT_BELOW = 0.02        # holds smaller than this share of the photo height are probably foot chips
+
+
+def _type_guesses(image, boxes):
+    """Top three [{"type", "p"}] per box, best first."""
+    H = image.size[1]
+    sizes = [(x1 - x0, y1 - y0) for x0, y0, x1, y1 in boxes]
+    if not hold_type.available():
+        return [_type_guess(w, h, H) for w, h in sizes]
+    out = []
+    for (w, h), ranked in zip(sizes, hold_type.predict(image, boxes)):
+        if max(w, h) / H <= FOOT_BELOW:
+            # The classifier has no foot class; a tiny hold is most likely one.
+            ranked = [("foot", 0.5)] + [(t, p * 0.5) for t, p in ranked]
+        out.append([{"type": t, "p": round(p, 2)} for t, p in ranked[:3]])
+    return out
+
+
 def analyze(image):
     """image: a PIL image. Returns the POST /analyze response dict."""
     image = ImageOps.exif_transpose(image).convert("RGB")   # match how a browser shows a phone photo
     W, H = image.size
-    scale = min(1.0, MAX_SIDE / max(W, H))
-    small = image.resize((round(W * scale), round(H * scale))) if scale < 1 else image
     with _lock:
-        processor, model, device = _detector()
-        found = detect_holds.detect(small, processor, model, device)
+        found = _find(image)
+    found = sorted(found, key=lambda f: (f[0][1] + f[0][3], f[0][0] + f[0][2]))
+    with _lock:
+        all_guesses = _type_guesses(image, [box for box, _ in found])
     arr = np.asarray(image)
     quality = {t["id"]: t["quality"] for t in hold_types()}
     holds = []
-    for box, score in sorted(found, key=lambda f: (f[0][1] + f[0][3], f[0][0] + f[0][2])):
-        x0, y0, x1, y1 = (v / scale for v in box)
+    for (box, score), guesses in zip(found, all_guesses):
+        x0, y0, x1, y1 = box
         w, h = x1 - x0, y1 - y0
-        guesses = _type_guess(w, h, H)
         top = guesses[0]
         holds.append({"id": len(holds), "x": round((x0 + x1) / 2), "y": round((y0 + y1) / 2),
                       "w": round(w), "h": round(h), "type": top["type"], "quality": quality[top["type"]],
