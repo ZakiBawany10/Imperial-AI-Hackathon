@@ -1,0 +1,52 @@
+[
+  {
+    "type": "client",
+    "name": "get_route",
+    "description": "Get the solved route the climber is on: grade, number of moves, which move is the crux, the climber height it was solved for, and every move in order in plain words.",
+    "expects_response": true,
+    "response_timeout_secs": 10,
+    "parameters": {
+      "type": "object",
+      "properties": {},
+      "required": []
+    }
+  },
+  {
+    "type": "client",
+    "name": "get_next_move",
+    "description": "Get the move the climber should do now: which limb, which direction, how far, which hold type, and whether it is the crux. Set climber_finished_last_move to true when the climber has just completed the move you last called, so the coach moves on to the following one.",
+    "expects_response": true,
+    "response_timeout_secs": 10,
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "climber_finished_last_move": {
+          "type": "boolean",
+          "description": "True if the climber says they completed the last move you called. False if they are asking again, asking for a repeat, or have not started yet."
+        },
+        "restart": {
+          "type": "boolean",
+          "description": "True to start again from the first move, for example after a fall. Defaults to false."
+        }
+      },
+      "required": ["climber_finished_last_move"]
+    }
+  },
+  {
+    "type": "client",
+    "name": "set_climber_height",
+    "description": "Re-solve the route for a climber of a different height and return the new route. Use when the climber tells you their height or asks how the route changes for a taller or shorter climber. Restarts coaching from the first move.",
+    "expects_response": true,
+    "response_timeout_secs": 30,
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "height_m": {
+          "type": "number",
+          "description": "Climber height in metres, between 1.2 and 2.2. Convert from feet and inches or centimetres if the climber says it that way."
+        }
+      },
+      "required": ["height_m"]
+    }
+  }
+]

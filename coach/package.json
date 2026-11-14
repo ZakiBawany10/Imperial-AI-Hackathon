@@ -1,0 +1,12 @@
+{
+  "name": "betacrux-coach",
+  "private": true,
+  "type": "module",
+  "description": "BetaCrux voice coach: agent prompt, client tool definitions, tool handlers and agent setup script",
+  "scripts": {
+    "test": "node --test",
+    "setup:dry": "node setup_agent.mjs",
+    "setup:apply": "node setup_agent.mjs --apply",
+    "try": "node try_coach.mjs"
+  }
+}

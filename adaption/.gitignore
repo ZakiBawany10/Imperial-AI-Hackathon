@@ -1,0 +1,4 @@
+# Downloaded third-party data and anything built from it stay local.
+data/
+out/
+.venv/
