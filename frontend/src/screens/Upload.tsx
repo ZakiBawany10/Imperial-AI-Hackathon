@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { HOLDS, PHOTOS, unsplash } from "../lib/wall";
-import { BottomSheet, Btn, MONO, Screen, StickyBar, Tape, TopBar, WallPhoto } from "../ui/kit";
+import { BottomSheet, Btn, MONO, Screen, StickyBar, TopBar, WallPhoto } from "../ui/kit";
+import { HoldPin } from "../ui/HoldPins";
+import { C } from "../lib/wall";
 
 const EXAMPLES = [
   { id: "wall-01", label: "Wall 01", photo: PHOTOS.wall01 },
@@ -183,8 +185,10 @@ export function UploadScreen({ photo, initialSheet = false, onPhoto, onCancel, o
 function PinnedSheet({ children, name }: { children: ReactNode; name: string }) {
   return (
     <div data-name={name} className="relative" style={{ transform: "rotate(-0.8deg)" }}>
-      <Tape className="-top-2 -left-5" rotate={-36} />
-      <Tape className="-top-2 -right-5" rotate={34} />
+      <HoldPin kind="jug" colour={C.yellow} size={56} rotate={-14} className="-top-5 -left-4" />
+      <HoldPin kind="pinch" colour={C.blue} size={52} rotate={18} className="-top-5 -right-3" />
+      <HoldPin kind="sloper" colour={C.accent} size={54} rotate={8} className="-bottom-5 -left-3" />
+      <HoldPin kind="crimp" colour={C.green} size={50} rotate={-10} className="-right-3 -bottom-4" />
       <div className="relative h-[340px] overflow-hidden rounded-[4px] border border-dashed border-ink bg-surface">
         {children}
       </div>

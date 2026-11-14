@@ -261,7 +261,7 @@ function Board() {
 }
 
 export default function App() {
-  const phone = useMedia("(max-width: 520px)");
+  const phone = useMedia("(max-width: 520px), (pointer: coarse) and (max-width: 1024px)");
   const only = new URLSearchParams(window.location.search).get("frame")?.toUpperCase() ?? null;
   if (only)
     return (
@@ -277,7 +277,7 @@ export default function App() {
     return (
       <div
         data-name="device"
-        className="relative h-[100dvh] w-full overflow-hidden bg-paper"
+        className="fixed inset-0 overflow-hidden bg-paper"
         style={
           {
             "--sat": "max(env(safe-area-inset-top), 12px)",
