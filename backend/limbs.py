@@ -36,7 +36,8 @@ import pose
 HEIGHT = 8.75            # the climber's height in solver units (1.75 m at 0.2 m a unit)
 BODY_OUT = physics.BODY_OUT_M / 0.2   # centre of mass to wall, solver units, for the 1.75 m climber
 TOP_FEET = 4             # footholds tried for each hand move
-SWITCH = 0.05            # effort a foot move must save to be worth making
+SWITCH = 0.12            # effort a foot move must save to be worth making (fewer, calmer foot moves)
+DOWN_STEP = 0.4          # extra cost per body height a foot moves DOWN: climbers step up, not back down
 OVER_1 = 2.0             # extra cost per unit of effort above 1 (a position that cannot be held)
 MATCH_OFFSET = 0.04      # two hands on one hold sit this share of height either side of its centre
 
@@ -222,6 +223,8 @@ class _Planner:
         for i, a in enumerate(top):
             for b in top[i + 1:]:
                 opts.append((a, b) if x(a) <= x(b) else (b, a))          # feet never cross
+        if k == 0 and self.floor is not None and self.x_range(0, (None, None)) is not None:
+            return [(None, None)]                    # a climb starts with both feet on the ground
         ok = [f for f in opts if self.x_range(k, f) is not None and (k == 0 or self.x_range(k - 1, f) is not None)]
         return ok or [(None, None)]
 
@@ -236,7 +239,7 @@ class _Planner:
                 here = price(self.quick(k, f, self.mover[k]).effort)
                 pick, pick_cost = None, math.inf
                 for g, (cost, _) in layers[-1].items():
-                    c = cost + SWITCH * ((g[0] != f[0]) + (g[1] != f[1]))
+                    c = cost + SWITCH * ((g[0] != f[0]) + (g[1] != f[1])) + self._down(g, f)
                     if c < pick_cost:
                         pick, pick_cost = g, c
                 layer[f] = (pick_cost + here, pick)
@@ -247,6 +250,14 @@ class _Planner:
             f = layer[f][1]
             chain.append(f)
         return chain[::-1]
+
+    def _down(self, old, new):
+        """Cost of feet moving down from hold to hold (moving onto or off the wall or floor is free)."""
+        c = 0.0
+        for a, b in zip(old, new):
+            if a is not None and b is not None and a != b:
+                c += DOWN_STEP * max(0.0, self.pts[a][1] - self.pts[b][1]) / self.height
+        return c
 
     def foot_steps(self, k, old, new):
         """The one-foot-at-a-time steps that take the feet from `old` to `new` with the hands

@@ -123,6 +123,7 @@ const STYLE = `
 .bcx-info{position:absolute;right:16px;bottom:86px;width:270px;display:none;padding:12px 14px;pointer-events:auto;
   background:linear-gradient(180deg,rgba(6,16,28,.92),rgba(4,9,18,.88));border:1px solid ${CYAN};box-shadow:0 0 22px rgba(39,230,255,.25);font-size:13px;line-height:1.45}
 .bcx-info.on{display:block}
+.bcx-info canvas{display:block;width:100%;height:170px;margin:4px 0 8px;border:1px solid rgba(39,230,255,.35);background:#03070e;cursor:grab}
 .bcx-info h3{margin:2px 0 6px;font-size:18px;letter-spacing:.02em}
 .bcx-info .sw{display:inline-block;width:12px;height:12px;border:1px solid #fff6;margin-right:6px;vertical-align:-1px}
 .bcx-info .x{position:absolute;right:8px;top:4px;cursor:pointer;opacity:.7;background:none;border:0;color:inherit;font:inherit}
@@ -259,10 +260,7 @@ export function mountViewer(container, options = {}) {
         <button data-a="prev" title="Back one move">&#9664; Step</button>
         <button data-a="play" class="main" title="Play or pause (space bar)">Pause</button>
         <button data-a="next" title="Forward one move">Step &#9654;</button>
-        <button data-a="speed" title="Change the speed">Speed 1&times;</button>
-        <button data-a="view" title="Switch between the photo and a plain dark wall">Wall: photo</button>
-        <button data-a="forces" title="Show or hide the force arrows" hidden>Forces: on</button>
-        <button data-a="follow" title="Keep the camera on the climber, or on the whole wall">Camera: wall</button>
+        <button data-a="mesh" title="Show the wall's 3D shape from the photo, or a flat wall with raised holds">3D wall: on</button>
         <button data-a="reset" title="Put the camera back">Reset view</button>
       </div>
     </div>`;
@@ -352,6 +350,7 @@ export function mountViewer(container, options = {}) {
   // Relief map from POST /depth: how far each part of the photo sticks out of the wall (0..1).
   let relief = null;                                    // { w, h, data: Float32Array }
   const RELIEF_M = opts.reliefMetres || 0.32;           // what 1.0 in the relief map is, in metres
+  let meshOn = opts.mesh !== false;                     // false: flat photo with raised holds, even when a relief map is loaded
   let photo = null;                                     // texture of the wall photo
   let viewMode = opts.view === "schematic" ? "schematic" : "photo";
   let showForces = true;
@@ -503,7 +502,7 @@ export function mountViewer(container, options = {}) {
 
   function reliefOf(h) {
     const kind = RELIEF[h.type] || RELIEF.unknown;
-    if (relief && h.type === "volume") return 0.015;     // the mesh already shows a big shape's real form
+    if (relief && meshOn && h.type === "volume") return 0.015;     // the mesh already shows a big shape's real form
     const small = Math.min(h.w || 30, h.h || 30) * S.mpp;
     return Math.max(0.012, Math.min(kind.out, small * (h.type === "volume" ? 0.55 : 0.9)));
   }
@@ -570,14 +569,20 @@ export function mountViewer(container, options = {}) {
       image, wallH, wallW, mpp, angleDeg, angle: angleDeg * Math.PI / 180,
       toWall: (x, y) => [(x - image.w / 2) * mpp, (image.h - y) * mpp],
       // How far the wall surface sticks out at a point given in wall metres (0 on a flat wall).
-      depthAt: (wx, wy) => {
+      depthAt: (wx, wy) => (meshOn ? reliefAt(wx, wy) : 0),
+    };
+    // Relief in metres at a point in wall metres, whether or not the mesh is shown (the hold close-up uses it).
+    function reliefAt(wx, wy) {
+      {
         if (!relief) return 0;
         const u = (wx / wallW + 0.5) * (relief.w - 1), v = (1 - wy / wallH) * (relief.h - 1);
         const x0 = Math.max(0, Math.min(relief.w - 2, Math.floor(u))), y0 = Math.max(0, Math.min(relief.h - 2, Math.floor(v)));
         const fx = Math.min(Math.max(u - x0, 0), 1), fy = Math.min(Math.max(v - y0, 0), 1), d = relief.data, W = relief.w;
         const a = d[y0 * W + x0], b = d[y0 * W + x0 + 1], c = d[(y0 + 1) * W + x0], e = d[(y0 + 1) * W + x0 + 1];
         return RELIEF_M * ((a * (1 - fx) + b * fx) * (1 - fy) + (c * (1 - fx) + e * fx) * fy);
-      },
+      }
+    }
+    S = { ...S, reliefAt,
       holds: new Map(), route: new Set(), start: new Set(solveRequest?.start || []), finish: new Set(solveRequest?.finish || []),
     };
     for (const h of analyze?.holds || []) S.holds.set(h.id, h);
@@ -586,7 +591,8 @@ export function mountViewer(container, options = {}) {
 
     // The wall surface: the photo, or a plain dark panel with a grid.
     let surfaceGeo;
-    if (relief) {
+    const showMesh = relief && meshOn;
+    if (showMesh) {
       // The wall as a mesh: one vertex per relief pixel (at most 192 across), pushed out by the relief.
       const cols = Math.min(relief.w, 256), rows = Math.max(2, Math.round(cols * relief.h / relief.w));
       surfaceGeo = new THREE.PlaneGeometry(wallW, wallH, cols - 1, rows - 1);
@@ -594,9 +600,9 @@ export function mountViewer(container, options = {}) {
       for (let i = 0; i < pos.count; i++) pos.setZ(i, S.depthAt(pos.getX(i) , pos.getY(i) + wallH / 2));
       surfaceGeo.computeVertexNormals();
     } else surfaceGeo = new THREE.PlaneGeometry(wallW, wallH);
-    const surface = new THREE.Mesh(surfaceGeo, relief ? new THREE.MeshLambertMaterial({ color: 0xffffff }) : new THREE.MeshBasicMaterial({ color: 0xffffff }));
+    const surface = new THREE.Mesh(surfaceGeo, showMesh ? new THREE.MeshLambertMaterial({ color: 0xffffff }) : new THREE.MeshBasicMaterial({ color: 0xffffff }));
     surface.position.set(0, wallH / 2, 0);
-    if (relief) {
+    if (showMesh) {
       // Height lines, like a map: one line every few centimetres of relief, so the shape of every
       // volume reads from any angle, without a busy wireframe.
       const lines = contourLines(wallW, wallH);
@@ -674,7 +680,7 @@ export function mountViewer(container, options = {}) {
       rest.children[0].material.opacity = 0.9;
       rest.children[1].material.opacity = 0.8;
     }
-    buttons.view.textContent = `Wall: ${usePhoto ? "photo" : "plain"}`;
+    if (buttons.mesh) { buttons.mesh.textContent = `3D wall: ${meshOn ? "on" : "off"}`; buttons.mesh.hidden = !relief; }
   }
 
   // ------------------------------------------------------------ camera
@@ -960,9 +966,9 @@ export function mountViewer(container, options = {}) {
     }
     ui.movebox.hidden = !K;
     ui.physbox.hidden = !(K && K.hasPhysics);
-    buttons.forces.hidden = !(K && K.hasPhysics);
-    for (const a of ["prev", "play", "next", "speed"]) buttons[a].hidden = !K || !K.moves.length;
-    buttons.follow.hidden = !K;
+    if (buttons.forces) buttons.forces.hidden = !(K && K.hasPhysics);
+    for (const a of ["prev", "play", "next"]) buttons[a].hidden = !K || !K.moves.length;
+    if (buttons.follow) buttons.follow.hidden = !K;
     ui.line.innerHTML = "";
     ui.line.style.display = K && K.moves.length ? "" : "none";
     if (K) {
@@ -994,9 +1000,9 @@ export function mountViewer(container, options = {}) {
 
   function updatePlayButton() {
     buttons.play.textContent = playing ? "Pause" : "Play";
-    buttons.speed.textContent = `Speed ${speed}×`;
-    buttons.forces.textContent = `Forces: ${showForces ? "on" : "off"}`;
-    buttons.follow.textContent = `Camera: ${following ? "climber" : "wall"}`;
+    if (buttons.speed) buttons.speed.textContent = `Speed ${speed}×`;
+    if (buttons.forces) buttons.forces.textContent = `Forces: ${showForces ? "on" : "off"}`;
+    if (buttons.follow) buttons.follow.textContent = `Camera: ${following ? "climber" : "wall"}`;
   }
 
   const live = { share: { LH: 0, RH: 0, LF: 0, RF: 0 }, effort: 0, tint: new THREE.Color() };
@@ -1158,9 +1164,64 @@ export function mountViewer(container, options = {}) {
     }
     showHold(best);
   });
+  // A small 3D close-up of one hold: that patch of the photo, raised by the depth map, with the
+  // hold itself puffed up from its outline so its shape reads even on a flat wall. It turns slowly;
+  // drag to turn it by hand.
+  let closeUp = null;
+  function holdCloseUp(canvas, h) {
+    closeUp?.stop();
+    const W = canvas.clientWidth || 240, Hc = canvas.clientHeight || 170;
+    const r = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    r.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+    r.setSize(W, Hc, false);
+    r.outputColorSpace = THREE.SRGBColorSpace;
+    const sc = new THREE.Scene(), cam = new THREE.PerspectiveCamera(32, W / Hc, 0.01, 20);
+    sc.add(new THREE.AmbientLight(0xffffff, 0.75));
+    const sun = new THREE.DirectionalLight(0xffffff, 2.4); sun.position.set(-1, 1.4, 1.6); sc.add(sun);
+    const [cx, cy] = S.toWall(h.x, h.y);
+    const hw = Math.max(h.w || 30, 8) * S.mpp / 2, hh = Math.max(h.h || 30, 8) * S.mpp / 2;
+    const size = Math.max(hw, hh) * 2 * 1.9 + 0.06;
+    const geo = new THREE.PlaneGeometry(size, size, 72, 72), pos = geo.attributes.position;
+    const base = S.reliefAt(cx, cy), out = Math.max(reliefOf(h), 0.025);
+    for (let i = 0; i < pos.count; i++) {
+      const x = pos.getX(i), y = pos.getY(i);
+      const e = (x / hw) ** 2 + (y / hh) ** 2;                          // inside the hold's ellipse when below 1
+      const dome = e < 1 ? out * Math.sqrt(1 - e) : 0;
+      pos.setZ(i, 2.2 * (S.reliefAt(cx + x, cy + y) - base) + dome);    // depth is exaggerated to make the shape clear
+    }
+    geo.computeVertexNormals();
+    let tex = null;
+    if (photo) {
+      tex = photo.clone();
+      tex.repeat.set(size / S.wallW, size / S.wallH);
+      tex.offset.set((cx - size / 2) / S.wallW + 0.5, (cy - size / 2) / S.wallH);
+      tex.needsUpdate = true;
+    }
+    const mesh = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ map: tex, color: tex ? 0xffffff : 0x2a3b55 }));
+    sc.add(mesh);
+    const edge = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.PlaneGeometry(size, size)), new THREE.LineBasicMaterial({ color: linear(CYAN) }));
+    sc.add(edge);
+    let az = 0.5, el = 0.5, dragging = null, alive = true;
+    const dist = size * 1.9;
+    canvas.onpointerdown = (e) => { dragging = [e.clientX, e.clientY]; canvas.setPointerCapture?.(e.pointerId); };
+    canvas.onpointermove = (e) => { if (!dragging) return; az -= (e.clientX - dragging[0]) * 0.012; el = clamp(el + (e.clientY - dragging[1]) * 0.01, 0.05, 1.3); dragging = [e.clientX, e.clientY]; };
+    canvas.onpointerup = () => { dragging = null; };
+    const tick = () => {
+      if (!alive) return;
+      if (!dragging) az += 0.006;
+      const a = clamp(Math.sin(az) * 0.9, -0.9, 0.9);                   // swing side to side in front of the wall
+      cam.position.set(dist * Math.sin(a) * Math.cos(el), dist * Math.sin(el) * 0.8, dist * Math.cos(a) * Math.cos(el) + 0.02);
+      cam.lookAt(0, 0, out * 0.4);
+      r.render(sc, cam);
+      requestAnimationFrame(tick);
+    };
+    tick();
+    closeUp = { stop() { alive = false; geo.dispose(); mesh.material.dispose(); tex?.dispose(); r.dispose(); closeUp = null; } };
+  }
+
   function showHold(h) {
     const box = ui.info;
-    if (!h) { box.classList.remove("on"); pickRing.visible = false; return; }
+    if (!h) { box.classList.remove("on"); pickRing.visible = false; closeUp?.stop(); return; }
     const [x, y] = S.toWall(h.x, h.y), size = Math.max(h.w || 30, h.h || 30) * S.mpp;
     pickRing.position.set(x, y, S.depthAt(x, y) + reliefOf(h) + 0.02);
     pickRing.scale.set(size * 0.62 + 0.03, size * 0.62 + 0.03, 0.25);
@@ -1172,6 +1233,7 @@ export function mountViewer(container, options = {}) {
     box.innerHTML = `<button class="x" title="Close">✕</button>
       <div class="bcx-tag">Hold ${esc(h.id)}</div>
       <h3>${esc(HOLD_LABEL[h.type] || "Grip")}</h3>
+      <canvas class="hold3d" title="Drag to turn"></canvas>
       <div>${esc(HOLD_ABOUT[h.type] || HOLD_ABOUT.unknown)}</div>
       <div class="bcx-rule"></div>
       <div><span class="sw" style="background:${esc(h.color || "#888")}"></span>${esc(h.color_name || "colour")}${h.route !== undefined && h.route !== null ? ` · in the ${esc(h.color_name || "")} group of holds` : ""}</div>
@@ -1181,11 +1243,13 @@ export function mountViewer(container, options = {}) {
       ${guesses ? `<div class="bcx-note">What the app thinks it is: ${esc(guesses)}${h.needs_review ? " (not sure, so it asks)" : ""}</div>` : ""}`;
     box.querySelector(".x").onclick = () => showHold(null);
     box.classList.add("on");
+    holdCloseUp(box.querySelector("canvas.hold3d"), h);
     emit("hold", h);
   }
 
   const api = {
     /** Show a new route and its solution. Either may be null: no request shows the bare wall, no solve shows the route only. */
+    setMesh(on) { meshOn = !!on; build(); prepare(); applyView(); return api; },
     setSolve(request, response) {
       solveRequest = request || null; solve = response || null;
       build(); prepare(); buildHud();
@@ -1296,10 +1360,7 @@ export function mountViewer(container, options = {}) {
   const actions = {
     prev: () => step(-1), next: () => step(1),
     play: () => (playing ? api.pause() : api.play()),
-    speed: () => api.setSpeed(speed >= 2 ? 0.5 : speed >= 1 ? 2 : 1),
-    view: () => api.setView(viewMode === "photo" && photo ? "schematic" : "photo"),
-    forces: () => { showForces = !showForces; updatePlayButton(); },
-    follow: () => api.setFollow(!following),
+    mesh: () => api.setMesh(!meshOn),
     reset: () => api.resetView(),
   };
   for (const [name, el] of Object.entries(buttons)) el.addEventListener("click", (e) => { e.stopPropagation(); actions[name](); });

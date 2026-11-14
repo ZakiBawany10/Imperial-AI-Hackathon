@@ -1,6 +1,6 @@
 """Depth from one wall photo, for the 3D wall mesh.
 
-Model: Depth Anything V2 Small (depth-anything/Depth-Anything-V2-Small-hf, Apache-2.0).
+Model: Depth Anything V2 Base (depth-anything/Depth-Anything-V2-Base-hf, CC BY-NC 4.0).
 It gives relative depth: bigger means closer to the camera, with no units.
 
 A straight-on wall photo has the wall itself as a big, nearly flat surface. We
@@ -16,7 +16,7 @@ import numpy as np
 import torch
 from PIL import Image, ImageFilter, ImageOps
 
-MODEL = "depth-anything/Depth-Anything-V2-Small-hf"
+MODEL = "depth-anything/Depth-Anything-V2-Base-hf"   # Base: sharper edges than Small; about 0.5 s a photo on the laptop GPU
 OUT_SIDE = 512          # long side of the relief map sent to the viewer
 _lock = threading.Lock()
 

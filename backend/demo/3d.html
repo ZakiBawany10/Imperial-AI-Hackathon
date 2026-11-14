@@ -12,165 +12,149 @@
   header { display:flex; flex-wrap:wrap; gap:6px 10px; align-items:center; padding:7px 12px;
     border-bottom:1px solid rgba(39,230,255,.3); background:#060b15; }
   header b { color:#ff2bd6; letter-spacing:.18em; text-transform:uppercase; font-size:12px; }
-  header button { font:inherit; font-size:12px; color:#d9f6ff; background:transparent; border:1px solid rgba(39,230,255,.4);
+  header button, header select { font:inherit; font-size:12px; color:#d9f6ff; background:#06101c; border:1px solid rgba(39,230,255,.4);
     padding:4px 9px; cursor:pointer; }
   header button.on { background:#27e6ff; color:#04060b; font-weight:700; }
-  header select { font:inherit; font-size:12px; color:#d9f6ff; background:#06101c; border:1px solid rgba(39,230,255,.4); padding:3px 6px; }
-  #status { color:rgba(217,246,255,.65); font-size:12px; margin-left:auto; }
+  #status { color:rgba(217,246,255,.7); font-size:12px; margin-left:auto; }
   #status.err { color:#ff6b81; }
   #stage { flex:1; min-height:0; position:relative; }
+  #guide { position:absolute; left:50%; top:16px; transform:translateX(-50%); z-index:5; display:none;
+    padding:10px 16px; background:rgba(4,10,20,.92); border:1px solid #27e6ff; box-shadow:0 0 22px rgba(39,230,255,.3);
+    font-size:14px; text-align:center; }
+  #guide.on { display:block; }
+  #guide .step { color:#27e6ff; font-weight:700; margin-right:6px; }
+  #guide button { margin-left:10px; font:inherit; font-size:12px; color:#04060b; background:#27e6ff; border:0; padding:4px 10px; cursor:pointer; }
+  #guide button.ghost { color:#d9f6ff; background:transparent; border:1px solid rgba(39,230,255,.4); }
 </style>
 </head>
 <body>
 <header>
-  <b>BetaCrux 3D wall</b>
-  <button data-src="mesh" title="A straight-on wall turned into a 3D mesh from its depth, with a climb solved live">3D mesh</button>
-  <select id="wallpick" title="Which wall photo to use in 3D mesh mode">
-    <option value="/demo/walls/seattle-bp-06.jpg">Wall 1 (blue, straight on)</option>
-    <option value="/demo/walls/seattle-bp-05.jpg">Wall 2 (blue, wide)</option>
-    <option value="/contract/wall.jpg">Wall 3 (rock, outdoor)</option>
+  <b>BetaCrux</b>
+  <select id="wallpick" title="Which wall to look at">
+    <option value="/demo/walls/seattle-bp-06.jpg">Wall 1</option>
+    <option value="/demo/walls/seattle-bp-05.jpg">Wall 2</option>
   </select>
-  <button data-src="example" title="The fixed example files in contract/, exactly as the server answers today">Example</button>
-  <button data-src="physics" title="A hand-made sample with foot moves and forces, to test what the physics engine will send">Sample with forces</button>
-  <button data-src="wall" title="The wall and its holds, before a route is solved">Wall only</button>
-  <button data-src="live" title="Send the example photo and route to this server now">Live from this server</button>
+  <button id="pick" title="Choose which climb to work out, and where it starts and ends">Pick a climb</button>
   <span id="status">Loading…</span>
 </header>
-<div id="stage"></div>
-
+<div id="stage"><div id="guide"></div></div>
 <script type="module">
-// A test page for the 3D viewer. The viewer itself is one module: viewer/betacrux-viewer.js.
-//
-// Address options:  ?live=1  ask this server instead of reading the example files
-//                   ?src=example | physics | wall | live     (same as the buttons)
-//                   ?view=schematic   plain dark wall      ?paused=1   do not start playing
-//                   ?sway=0   keep the camera still        ?bloom=0    no glow (for slow machines)
+// The BetaCrux 3D demo. The 3D view itself is one module: viewer/betacrux-viewer.js.
+// Address options: ?photo=<url> another wall photo   ?wall_m=<metres> height of wall shown (default 5)
 import { mountViewer } from "./viewer/betacrux-viewer.js";
 
 const query = new URLSearchParams(location.search);
-const stage = document.getElementById("stage"), status = document.getElementById("status");
+const stage = document.getElementById("stage"), status = document.getElementById("status"), guide = document.getElementById("guide");
 const say = (text, bad = false) => { status.textContent = text; status.className = bad ? "err" : ""; };
-const getJson = async (url) => {
-  const r = await fetch(url);
-  if (!r.ok) throw new Error(`${url} answered ${r.status}`);
-  return r.json();
-};
-const PHOTO = "/contract/wall.jpg";
-let viewer = null;
+const WALL_M = Number(query.get("wall_m")) || 5;
+let viewer = null, analyze = null, photoUrl = null, picking = null;
 
-// Each source gives { imageUrl, analyze, solveRequest, solve } for the viewer.
-const sources = {
-  async example() {
-    const [analyze, solveRequest, solve] = await Promise.all(
-      ["/contract/analyze.json", "/contract/solve_request.json", "/contract/solve.json"].map(getJson));
-    return { analyze, solveRequest, solve, note: "Example files from contract/ (what the server sends today: hand moves, no forces)." };
-  },
-  async physics() {
-    const [analyze, solveRequest, solve] = await Promise.all(
-      ["viewer/sample/analyze.json", "viewer/sample/solve_request.json", "viewer/sample/solve.json"].map(getJson));
-    return { analyze, solveRequest, solve, note: "Hand-made sample: foot moves and forces are made-up test numbers, not from the physics engine." };
-  },
-  async wall() {
-    return { analyze: await getJson("/contract/analyze.json"), solveRequest: null, solve: null, note: "The wall and every hold found on it. No route chosen." };
-  },
-  // A straight-on wall: find holds and routes, pick a climb, solve it, and build the 3D mesh from depth.
-  async mesh() {
-    const photoUrl = query.get("photo") || document.getElementById("wallpick")?.value || "/demo/walls/seattle-bp-06.jpg";
-    say("Finding the holds and the shape of the wall…");
-    const blob = await (await fetch(photoUrl)).blob();
-    const post = (path) => { const f = new FormData(); f.append("file", blob, "wall.jpg"); return fetch(path, { method: "POST", body: f }); };
-    const [found, depth] = await Promise.all([post("/analyze"), post("/depth")]);
-    if (!found.ok) throw new Error(`/analyze answered ${found.status}`);
-    const analyze = await found.json();
-    const reliefUrl = depth.ok ? URL.createObjectURL(await depth.blob()) : null;
-    const byId = new Map(analyze.holds.map((h) => [h.id, h]));
-    // Try the routes with the most height first; the first one the solver can climb is shown.
-    const routes = (analyze.routes || []).map((r) => ({ ...r, hs: r.holds.map((i) => byId.get(i)) }))
-      .filter((r) => r.hs.length >= 3)
-      // Colourful routes first (grey, white and black are often the wall or bolt-on chips), then the tallest.
-      .sort((a, b) => {
-        const dull = (r) => ["grey", "white", "black", "brown"].includes(r.color_name) ? 1 : 0;
-        const span = (r) => Math.max(...r.hs.map((h) => h.y)) - Math.min(...r.hs.map((h) => h.y));
-        return dull(a) - dull(b) || span(b) - span(a);
-      });
-    const wallM = Number(query.get("wall_m")) || 5;
-    const mpp = wallM / analyze.image.h;
-    for (const r of routes) {
-      const hs = [...r.hs].sort((a, b) => b.y - a.y);
-      // A climb starts from the ground: the lowest hold must be in reach of someone standing on the floor.
-      if ((analyze.image.h - hs[0].y) * mpp > 1.9) continue;
-      const req = { image: analyze.image, holds: hs, start: [hs[0].id], finish: [hs[hs.length - 1].id],
-                    climber_height_m: 1.75, wall_height_m: wallM, wall_angle_deg: 0 };
-      const res = await fetch("/solve", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(req) });
-      if (!res.ok) continue;
-      const solve = await res.json();
-      if (!solve.moves.length) continue;
-      return { imageUrl: photoUrl, reliefUrl, analyze, solveRequest: req, solve,
-               note: `3D mesh from the photo's depth · ${analyze.holds.length} holds · the ${r.color_name} climb, ${solve.moves.length} moves` };
-    }
-    return { imageUrl: photoUrl, reliefUrl, analyze, solveRequest: null, solve: null, note: "3D mesh from the photo's depth. No climb could be solved on this wall." };
-  },
-  async live() {
-    say("Asking the server to find the holds…");
-    const photo = await (await fetch(PHOTO)).blob();
-    const form = new FormData();
-    form.append("file", photo, "wall.jpg");
-    const found = await fetch("/analyze", { method: "POST", body: form });
-    if (!found.ok) throw new Error(`/analyze answered ${found.status}: ${(await found.json().catch(() => ({}))).detail || ""}`);
-    const analyze = await found.json();
-    // The example route was picked on an earlier scan. Find the same holds in this scan by position,
-    // keep the hold types the user confirmed, and use this scan's ids.
-    const example = await getJson("/contract/solve_request.json");
-    const used = new Set(), idMap = new Map();
-    let spare = Math.max(0, ...analyze.holds.map((h) => h.id)) + 1;
-    const holds = example.holds.map((h) => {
-      let best = null, bestD = Math.max(h.w, h.h, 40);
-      for (const a of analyze.holds) {
-        const d = Math.hypot(a.x - h.x, a.y - h.y);
-        if (d < bestD && !used.has(a.id)) { best = a; bestD = d; }
-      }
-      const out = best ? { ...best, type: h.type, quality: h.quality, needs_review: false } : { ...h, id: spare++ };
-      used.add(out.id);
-      idMap.set(h.id, out.id);
-      return out;
-    });
-    const solveRequest = { ...example, image: analyze.image, holds, start: example.start.map((i) => idMap.get(i)), finish: example.finish.map((i) => idMap.get(i)) };
-    say("Asking the server to solve the route…");
-    const solved = await fetch("/solve", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(solveRequest) });
-    if (!solved.ok) throw new Error(`/solve answered ${solved.status}: ${(await solved.json().catch(() => ({}))).detail || ""}`);
-    const solve = await solved.json();
-    const extras = solve.keyframes?.some((k) => k.physics) ? "with forces" : "hand moves only, no forces yet";
-    return { analyze, solveRequest, solve, note: `Live answer from this server: ${analyze.holds.length} holds found, ${solve.moves.length} moves (${extras}).` };
-  },
-};
+const solveReq = (holds, start, finish) => ({ image: analyze.image, holds, start, finish,
+  climber_height_m: 1.75, wall_height_m: WALL_M, wall_angle_deg: 0 });
+async function solve(req) {
+  const res = await fetch("/solve", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(req) });
+  const body = await res.json();
+  if (!res.ok) throw new Error(body.detail || `the server answered ${res.status}`);
+  return body;
+}
+const byId = (id) => analyze.holds.find((h) => h.id === id);
+const groupOf = (h) => h.route === null || h.route === undefined ? [h] : analyze.holds.filter((x) => x.route === h.route);
+const reachableFromFloor = (h) => (analyze.image.h - h.y) * WALL_M / analyze.image.h <= 1.9;
 
-async function show(name) {
-  for (const b of document.querySelectorAll("header button")) b.classList.toggle("on", b.dataset.src === name);
-  say("Loading…");
-  try {
-    const data = await sources[name]();
-    viewer?.dispose();
-    viewer = mountViewer(stage, {
-      imageUrl: data.imageUrl || PHOTO, reliefUrl: data.reliefUrl, analyze: data.analyze, solveRequest: data.solveRequest, solve: data.solve,
-      view: query.get("view") === "schematic" ? "schematic" : "photo",
-      autoplay: query.get("paused") !== "1",
-      sway: query.get("sway") !== "0",
-      bloom: query.get("bloom") !== "0",
+async function load() {
+  photoUrl = query.get("photo") || document.getElementById("wallpick").value;
+  say("Finding the holds and the shape of the wall…");
+  const blob = await (await fetch(photoUrl)).blob();
+  const post = (path) => { const f = new FormData(); f.append("file", blob, "wall.jpg"); return fetch(path, { method: "POST", body: f }); };
+  const [found, depth] = await Promise.all([post("/analyze"), post("/depth")]);
+  if (!found.ok) throw new Error(`could not find holds (${found.status})`);
+  analyze = await found.json();
+  const reliefUrl = depth.ok ? URL.createObjectURL(await depth.blob()) : null;
+  // Start on a climb that the app can solve: colourful groups first, then the tallest.
+  let first = null;
+  const routes = (analyze.routes || []).map((r) => r.holds.map(byId)).filter((hs) => hs.length >= 3)
+    .sort((a, b) => {
+      const dull = (hs) => ["grey", "white", "black", "brown"].includes(hs[0].color_name) ? 1 : 0;
+      const span = (hs) => Math.max(...hs.map((h) => h.y)) - Math.min(...hs.map((h) => h.y));
+      return dull(a) - dull(b) || span(b) - span(a);
     });
-    if (query.get("follow") === "1") viewer.setFollow(true);
-    viewer.on("move", (i) => { window.lastMove = i; });
-    window.viewer = viewer;             // for trying the methods from the browser console
-    say(data.note);
-  } catch (e) {
-    console.error(e);
-    say(`Could not load: ${e.message}`, true);
+  for (const hs of routes) {
+    const up = [...hs].sort((a, b) => b.y - a.y);
+    if (!reachableFromFloor(up[0])) continue;
+    const req = solveReq(up, [up[0].id], [up[up.length - 1].id]);
+    try { first = { req, out: await solve(req), name: up[0].color_name }; break; } catch { /* try the next */ }
   }
+  viewer?.dispose();
+  viewer = mountViewer(stage, { imageUrl: photoUrl, reliefUrl, analyze, solveRequest: first?.req || null, solve: first?.out || null,
+                                autoplay: true, sway: false, bloom: true, hud: true, mesh: false });
+  viewer.on("hold", onHold);
+  window.viewer = viewer;
+  say(first ? `${analyze.holds.length} holds found · showing the ${first.name} climb · click any hold to see it up close`
+            : `${analyze.holds.length} holds found · use "Pick a climb" to choose one`);
 }
 
-for (const b of document.querySelectorAll("header button")) b.addEventListener("click", () => show(b.dataset.src));
-document.getElementById("wallpick").addEventListener("change", () => show("mesh"));
-const first = query.get("live") === "1" ? "live" : query.get("src");
-show(first in sources ? first : "mesh");
+// ---- picking a climb: the climb's holds, then where the hands start, then the top
+function showGuide(html, buttons = []) {
+  guide.innerHTML = html;
+  for (const [label, fn, ghost] of buttons) {
+    const b = document.createElement("button");
+    b.textContent = label; if (ghost) b.className = "ghost"; b.onclick = fn; guide.appendChild(b);
+  }
+  guide.classList.add("on");
+}
+function endPicking() { picking = null; guide.classList.remove("on"); document.getElementById("pick").classList.remove("on"); }
+function preview() {
+  viewer.pause();
+  viewer.setSolve(solveReq(picking.holds, picking.start, picking.finish), null);
+}
+function startPicking() {
+  if (!analyze) return;
+  picking = { step: 1, holds: [], start: [], finish: [] };
+  document.getElementById("pick").classList.add("on");
+  showGuide(`<span class="step">1 of 3</span>Click a hold of the climb you want. Holds of the same colour come with it.`, [["Cancel", cancel, true]]);
+}
+async function cancel() { endPicking(); await load().catch(fail); }
+function onHold(h) {
+  if (!picking) return;
+  if (picking.step === 1) {
+    picking.holds = [...groupOf(h)].sort((a, b) => b.y - a.y);
+    picking.step = 2;
+    preview();
+    showGuide(`<span class="step">2 of 3</span>Click where the hands start: one or two holds, low enough to reach from the ground.`,
+              [["Next", () => { if (picking.start.length) toStep3(); }], ["Cancel", cancel, true]]);
+  } else if (picking.step === 2) {
+    if (!picking.holds.some((x) => x.id === h.id)) picking.holds.push(h);       // a hold outside the group can still be used
+    if (!reachableFromFloor(h)) { say("That hold is too high to start from the ground. Pick a lower one.", true); return; }
+    picking.start = picking.start.includes(h.id) ? picking.start.filter((i) => i !== h.id) : [...picking.start, h.id].slice(-2);
+    preview();
+    if (picking.start.length === 2) toStep3();
+  } else if (picking.step === 3) {
+    if (picking.start.includes(h.id)) return;
+    if (!picking.holds.some((x) => x.id === h.id)) picking.holds.push(h);
+    picking.finish = [h.id];
+    preview();
+    showGuide(`<span class="step">Ready</span>Work out how to climb it?`, [["Climb it", climbIt], ["Cancel", cancel, true]]);
+  }
+}
+function toStep3() {
+  picking.step = 3;
+  showGuide(`<span class="step">3 of 3</span>Click the top hold, where both hands finish.`, [["Cancel", cancel, true]]);
+}
+async function climbIt() {
+  const req = solveReq(picking.holds, picking.start, picking.finish);
+  endPicking();
+  say("Working out the moves…");
+  try {
+    const out = await solve(req);
+    viewer.setSolve(req, out).play();
+    say(`${out.moves.length} moves · click any hold to see it up close`);
+  } catch (e) { say(`Could not climb it: ${e.message}`, true); }
+}
+
+const fail = (e) => { console.error(e); say(`Could not load: ${e.message}`, true); };
+document.getElementById("pick").onclick = () => (picking ? cancel() : startPicking());
+document.getElementById("wallpick").onchange = () => { endPicking(); load().catch(fail); };
+load().catch(fail);
 </script>
 </body>
 </html>

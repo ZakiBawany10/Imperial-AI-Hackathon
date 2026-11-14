@@ -85,7 +85,7 @@ HAND = {
     "pocket":  (50.0, 1.2),    # finger hole
     "crimp":   (35.0, 1.6),    # thin edge: mostly downward
     "sloper":  (25.0, 3.0),    # rounded, no edge: the pull must press into it
-    "volume":  (30.0, 3.0),    # big shape
+    "volume":  (80.0, 1.5),    # big shape: pressed on from many directions, edges and corners to grab
     "foot":    (30.0, 2.0),    # a foot chip used by a hand
     "unknown": (50.0, 1.6),
 }
