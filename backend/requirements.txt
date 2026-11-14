@@ -12,3 +12,5 @@ pillow
 fastapi
 uvicorn[standard]
 python-multipart
+# hold detector training
+ultralytics

@@ -38,8 +38,10 @@ def _solver_pool():
 @asynccontextmanager
 async def lifespan(app):
     # Start the solver process and load the detector in the background so the first calls are not slow.
+    # BETACRUX_WARM=0 leaves the detector (about 2 GB) unloaded until the first /analyze.
     _solver_pool().submit(route.warm)
-    threading.Thread(target=analyze_mod.warm, daemon=True).start()
+    if os.environ.get("BETACRUX_WARM", "1") != "0":
+        threading.Thread(target=analyze_mod.warm, daemon=True).start()
     yield
     _solver_pool().shutdown(wait=False, cancel_futures=True)
 

@@ -36,57 +36,57 @@
   "comparison": [
     {
       "model": "trained on kilter only, tested on kilter",
-      "mae": 1.388,
-      "exact": 0.223,
-      "within1": 0.608
+      "mae": 1.302,
+      "exact": 0.244,
+      "within1": 0.643
     },
     {
       "model": "trained on kilter only, tested on moonboard",
-      "mae": 1.95,
-      "exact": 0.155,
-      "within1": 0.444
+      "mae": 1.844,
+      "exact": 0.156,
+      "within1": 0.468
     },
     {
       "model": "trained on kilter only, tested on kilter below 6b/V4 (n=3847)",
-      "mae": 1.442,
-      "exact": 0.221,
-      "within1": 0.597
+      "mae": 1.372,
+      "exact": 0.245,
+      "within1": 0.627
     },
     {
       "model": "trained on kilter + moonboard, tested on kilter",
-      "mae": 1.39,
-      "exact": 0.221,
-      "within1": 0.609
+      "mae": 1.31,
+      "exact": 0.235,
+      "within1": 0.637
     },
     {
       "model": "trained on kilter + moonboard, tested on moonboard",
-      "mae": 0.975,
-      "exact": 0.386,
-      "within1": 0.773
+      "mae": 0.942,
+      "exact": 0.379,
+      "within1": 0.789
     },
     {
       "model": "trained on kilter + moonboard, tested on kilter below 6b/V4 (n=3847)",
-      "mae": 1.46,
-      "exact": 0.214,
-      "within1": 0.591
+      "mae": 1.386,
+      "exact": 0.236,
+      "within1": 0.617
     },
     {
       "model": "trained on moonboard only, tested on kilter",
-      "mae": 3.584,
-      "exact": 0.084,
-      "within1": 0.254
+      "mae": 3.442,
+      "exact": 0.087,
+      "within1": 0.268
     },
     {
       "model": "trained on moonboard only, tested on moonboard",
-      "mae": 0.979,
-      "exact": 0.382,
-      "within1": 0.77
+      "mae": 0.938,
+      "exact": 0.39,
+      "within1": 0.788
     },
     {
       "model": "trained on moonboard only, tested on kilter below 6b/V4 (n=3847)",
-      "mae": 5.87,
+      "mae": 5.686,
       "exact": 0.0,
-      "within1": 0.006
+      "within1": 0.012
     }
   ]
 }

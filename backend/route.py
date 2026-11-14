@@ -17,7 +17,7 @@ import pose
 HERE = os.path.dirname(os.path.abspath(__file__))
 UNIT_M = 0.2             # one solver grid unit, for the reference climber
 REF_HEIGHT_M = 1.75
-LOAD_FULL_SCALE = 20.0   # solver move cost that is reported as load 1.0
+LOAD_FULL_SCALE = 30.0   # solver move cost that is reported as load 1.0
 
 # Kilter difficulty number -> (Font, V).
 GRADES = {10: ("4a", "V0"), 11: ("4b", "V0"), 12: ("4c", "V0"), 13: ("5a", "V1"), 14: ("5b", "V1"),

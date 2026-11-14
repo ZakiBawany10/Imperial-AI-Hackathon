@@ -18,15 +18,15 @@
     },
     {
       "model": "solver features, geometry only + angle",
-      "mae": 1.924,
-      "exact": 0.17,
-      "within1": 0.468
+      "mae": 1.853,
+      "exact": 0.173,
+      "within1": 0.489
     },
     {
       "model": "solver features, learned hold quality + angle",
-      "mae": 1.388,
-      "exact": 0.223,
-      "within1": 0.608
+      "mae": 1.302,
+      "exact": 0.244,
+      "within1": 0.643
     },
     {
       "model": "raw holds + angle",
@@ -36,15 +36,15 @@
     },
     {
       "model": "raw holds + solver features + angle",
-      "mae": 1.332,
-      "exact": 0.236,
-      "within1": 0.627
+      "mae": 1.256,
+      "exact": 0.248,
+      "within1": 0.656
     },
     {
       "model": "  ...same model, climbs below 6b/V4 only (n=3847)",
-      "mae": 1.422,
-      "exact": 0.231,
-      "within1": 0.601
+      "mae": 1.361,
+      "exact": 0.236,
+      "within1": 0.626
     }
   ]
 }

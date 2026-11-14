@@ -11,9 +11,14 @@ do features from a solved sequence predict the grade better than the raw holds?
 """
 import heapq
 import math
+import os
 
 REACH = 9.0          # max hand-to-hand span in grid units (about 0.2 m each)
 CROSS_LIMIT = 2      # how far the left hand may sit to the right of the right hand
+# Extra cost for moves near full reach: a move's distance cost is multiplied by
+# 1 + STRETCH * (span / REACH) ** 3. 0 turns it off (the original linear cost).
+# Grade error with 0 / 1.5 / 3:  Kilter 1.39 / 1.33 / 1.30,  MoonBoard 0.98 / 0.95 / 0.94.
+STRETCH = float(os.environ.get("BETA_STRETCH", "3"))
 
 
 def _dist(a, b):
@@ -66,7 +71,8 @@ def solve(holds, start_idx, end_idx, bad_left, bad_right, usable=None):
                 travel = _dist(holds[cur], holds[h])
                 b_new = badness(h, hand)
                 b_hold = badness(other, 1 - hand)
-                step = (0.6 * span + 0.4 * travel) * (1.0 + 1.5 * b_new) + 2.0 * b_hold + 0.5
+                step = ((0.6 * span + 0.4 * travel) * (1.0 + 1.5 * b_new) * (1.0 + STRETCH * (span / REACH) ** 3)
+                        + 2.0 * b_hold + 0.5)
                 new_cost = cost + step
                 if new_cost < best.get(nxt, 1e18):
                     best[nxt] = new_cost

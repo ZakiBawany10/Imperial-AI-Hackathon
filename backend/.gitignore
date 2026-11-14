@@ -1,0 +1,3 @@
+# training runs and downloaded pretrained weights
+runs/
+*.pt

@@ -18,55 +18,55 @@
     },
     {
       "model": "solver features only (24 numbers)",
-      "mae": 0.979,
-      "exact": 0.382,
-      "within1": 0.77
+      "mae": 0.938,
+      "exact": 0.39,
+      "within1": 0.788
     },
     {
       "model": "raw holds + solver features",
-      "mae": 0.885,
-      "exact": 0.419,
-      "within1": 0.804
+      "mae": 0.856,
+      "exact": 0.42,
+      "within1": 0.825
     },
     {
       "model": "  ...same model, benchmark problems only (n=66)",
-      "mae": 1.057,
-      "exact": 0.273,
-      "within1": 0.727
+      "mae": 0.849,
+      "exact": 0.424,
+      "within1": 0.788
     }
   ],
   "top_solver_features": [
     [
       "bad_mean_all",
-      3055
+      2610
     ],
     [
       "cost_max",
-      2525
-    ],
-    [
-      "span_mean",
-      2373
+      2380
     ],
     [
       "cost_sum",
-      2292
-    ],
-    [
-      "travel_mean",
-      2262
+      2361
     ],
     [
       "cost_top2",
-      1698
+      2283
+    ],
+    [
+      "travel_mean",
+      2281
+    ],
+    [
+      "span_mean",
+      2252
     ],
     [
       "cost_mean",
-      1608
+      1923
     ],
     [
       "travel_max",
-      1532
+      1600
     ]
   ]
 }

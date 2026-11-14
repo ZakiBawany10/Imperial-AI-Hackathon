@@ -1,0 +1,11 @@
+[
+  {
+    "detector": "zero-shot",
+    "split": "test",
+    "photos": 50,
+    "holds": 3433,
+    "found": 0.378,
+    "precision": 0.866,
+    "seconds_per_photo": 5.26
+  }
+]
