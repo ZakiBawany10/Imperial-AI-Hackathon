@@ -1,7 +1,7 @@
 import { useEffect, useState, type ButtonHTMLAttributes, type ReactNode } from "react";
 import { C, HOLD_COLOURS, holdPath, unsplash, type Hold } from "../lib/wall";
 
-export const MONO = "font-mono text-[12px] font-medium uppercase tracking-[0.14em]";
+export const MONO = "font-mono text-[13px] font-semibold uppercase tracking-[0.14em]";
 
 export function Screen({ name, children }: { name: string; children: ReactNode }) {
   return (
@@ -22,7 +22,7 @@ export function TopBar({ step, right }: { step: number; right?: ReactNode }) {
       <div className="flex h-10 items-center justify-between gap-4">
         <span
           data-name="topbar/wordmark"
-          className="font-display text-[20px] font-bold tracking-[-0.03em]"
+          className="font-display text-[20px] font-bold tracking-[0.005em]"
         >
           BetaCrux
         </span>

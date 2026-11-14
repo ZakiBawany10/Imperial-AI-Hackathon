@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700&family=Instrument+Sans:wght@400;600&family=JetBrains+Mono:wght@500&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600&display=swap");
 @import "tailwindcss";
 
 @theme {
@@ -12,9 +12,9 @@
   --color-tape-yellow: #e8b100;
   --color-tape-green: #2e8b57;
 
-  --font-display: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
-  --font-sans: "Instrument Sans", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --font-display: "Barlow Condensed", "Arial Narrow", ui-sans-serif, sans-serif;
+  --font-sans: "Barlow", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Barlow Semi Condensed", "Arial Narrow", ui-sans-serif, sans-serif;
 }
 
 @layer base {
@@ -34,6 +34,7 @@
     color: var(--color-ink);
     font-family: var(--font-sans);
     font-size: 16px;
+    font-variant-numeric: tabular-nums;
     -webkit-font-smoothing: antialiased;
   }
   ::selection {

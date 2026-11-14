@@ -349,7 +349,7 @@ function HoldsOverlay({
               textAnchor="middle"
               fill={C.surface}
               fontSize={22}
-              fontFamily="JetBrains Mono"
+              fontFamily="Barlow Semi Condensed"
               fontWeight={500}
               letterSpacing={1}
             >
@@ -390,7 +390,7 @@ function HoldsOverlay({
                 textAnchor="middle"
                 fill={C.surface}
                 fontSize={24}
-                fontFamily="JetBrains Mono"
+                fontFamily="Barlow Semi Condensed"
                 fontWeight={500}
               >
                 {k}
@@ -417,7 +417,7 @@ function HoldsOverlay({
               textAnchor="middle"
               fill={C.ink}
               fontSize={24}
-              fontFamily="JetBrains Mono"
+              fontFamily="Barlow Semi Condensed"
               fontWeight={500}
             >
               ?
@@ -634,7 +634,7 @@ function ConfirmHold({
         <Closeup hold={hold} photo={photo} aspect={aspect} />
         <h2
           data-name="confirm/question"
-          className="pb-1 font-display text-[32px] leading-[1.02] font-bold tracking-[-0.03em]"
+          className="pb-1 font-display text-[32px] leading-[1.02] font-bold tracking-[0.005em]"
         >
           What kind of hold is this?
         </h2>
@@ -706,7 +706,7 @@ function AllTypes({ onPick, onBack }: { onPick: (t: HoldType) => void; onBack: (
           Back
         </Btn>
       </div>
-      <h2 className="font-display text-[32px] leading-none font-bold tracking-[-0.03em]">
+      <h2 className="font-display text-[32px] leading-none font-bold tracking-[0.005em]">
         Pick the closest.
       </h2>
       <ul className="mt-4 min-h-0 flex-1 overflow-y-auto border-t border-hairline">

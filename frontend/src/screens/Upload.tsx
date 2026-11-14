@@ -39,7 +39,7 @@ export function UploadScreen({ photo, initialSheet = false, onPhoto, onCancel, o
         <div className="px-6 pt-4">
           <h1
             data-name="upload/headline"
-            className="font-display text-[40px] leading-[1.02] font-bold tracking-[-0.035em]"
+            className="font-display text-[40px] leading-[1.02] font-bold tracking-[0.005em]"
           >
             Photograph the wall.
           </h1>
@@ -146,7 +146,7 @@ export function UploadScreen({ photo, initialSheet = false, onPhoto, onCancel, o
       <BottomSheet name="sheet/how-it-works" open={howOpen} onClose={() => setHowOpen(false)}>
         <div className="px-6 pb-2">
           <p className={`${MONO} text-muted`}>How it works</p>
-          <h2 className="mt-2 font-display text-[32px] leading-none font-bold tracking-[-0.03em]">
+          <h2 className="mt-2 font-display text-[32px] leading-none font-bold tracking-[0.005em]">
             Three steps, one photo.
           </h2>
           <ol className="mt-6 border-t border-hairline">
@@ -209,7 +209,7 @@ function EmptySheet({ onTap }: { onTap: () => void }) {
           data-name="upload/label"
           className="rounded-[4px] border border-hairline bg-surface px-5 py-3 text-center"
         >
-          <span className="block font-display text-[20px] font-bold tracking-[-0.02em]">
+          <span className="block font-display text-[20px] font-bold tracking-[0.005em]">
             Drop a photo here
           </span>
           <span className={`${MONO} mt-1 block text-muted`}>or tap to browse</span>
@@ -245,7 +245,7 @@ function FindingSheet({ photo, onFound }: { photo: string; onFound?: () => void 
                 y={h.y + 9}
                 textAnchor="middle"
                 fill="#FBF8F2"
-                fontFamily="JetBrains Mono"
+                fontFamily="Barlow Semi Condensed"
                 fontSize={26}
                 fontWeight={500}
               >

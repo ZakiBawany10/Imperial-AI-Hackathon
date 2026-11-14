@@ -47,7 +47,7 @@ export function RouteOverlay({ strokeWidth = 3 }: { strokeWidth?: number }) {
             strokeWidth={5}
             paintOrder="stroke"
             fontSize={26}
-            fontFamily="JetBrains Mono"
+            fontFamily="Barlow Semi Condensed"
             fontWeight={500}
             letterSpacing={1}
           >
@@ -102,7 +102,7 @@ export function RouteScreen(p: Props) {
           </div>
           <p
             data-name="height/readout"
-            className="mt-2 font-mono text-[56px] leading-none font-medium tracking-[-0.02em]"
+            className="mt-2 font-mono text-[56px] leading-none font-medium tracking-[0.005em]"
           >
             {p.height.toFixed(2)}
             <span className="ml-2 text-[20px] text-muted">m</span>

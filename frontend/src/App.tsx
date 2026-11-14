@@ -181,7 +181,7 @@ function Row({ n, title, children }: { n: string; title: string; children: React
     <section data-name={`board/screen-${n}`} className="border-t border-ink pt-6 pb-16">
       <header className="mb-8 flex items-baseline gap-6">
         <span className={`${MONO} text-accent`}>Screen {n} / 4</span>
-        <h2 className="font-display text-[32px] leading-none font-bold tracking-[-0.03em]">
+        <h2 className="font-display text-[32px] leading-none font-bold tracking-[0.005em]">
           {title}
         </h2>
       </header>
@@ -293,7 +293,7 @@ export default function App() {
     <div data-name="board" className="min-h-screen bg-paper text-ink">
       <header className="sticky top-0 z-[60] flex items-center justify-between border-b border-hairline bg-paper px-16 py-4">
         <div className="flex items-baseline gap-6">
-          <span className="font-display text-[20px] font-bold tracking-[-0.03em]">BetaCrux</span>
+          <span className="font-display text-[20px] font-bold tracking-[0.005em]">BetaCrux</span>
           <span className={`${MONO} text-muted`}>Mobile · 390 x 844 · 4 screens</span>
         </div>
         <div

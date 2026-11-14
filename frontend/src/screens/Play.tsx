@@ -204,7 +204,7 @@ export function PlayScreen({
           <div className="flex items-baseline gap-2 border-r border-hairline px-4 py-2">
             <span
               data-name="grade/font"
-              className="font-mono text-[56px] leading-none font-medium tracking-[-0.04em]"
+              className="font-mono text-[56px] leading-none font-medium tracking-[0.005em]"
             >
               {g.grade}
             </span>
@@ -434,7 +434,7 @@ export function LiveScreen({
               textAnchor="middle"
               fill={C.surface}
               fontSize={17}
-              fontFamily="JetBrains Mono"
+              fontFamily="Barlow Semi Condensed"
               fontWeight={500}
               letterSpacing={1.5}
             >
@@ -456,7 +456,7 @@ export function LiveScreen({
               y={wrist.y + 44}
               fill={C.surface}
               fontSize={16}
-              fontFamily="JetBrains Mono"
+              fontFamily="Barlow Semi Condensed"
               fontWeight={500}
               letterSpacing={1.5}
             >
@@ -496,7 +496,7 @@ export function LiveScreen({
           <p className={`${MONO} text-muted`}>Next move</p>
           <p
             data-name="live/cue"
-            className="mt-1 font-display text-[32px] leading-[1.02] font-bold tracking-[-0.03em]"
+            className="mt-1 font-display text-[32px] leading-[1.02] font-bold tracking-[0.005em]"
           >
             {cue}
           </p>
