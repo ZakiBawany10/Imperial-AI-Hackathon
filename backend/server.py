@@ -9,7 +9,7 @@ import threading
 from concurrent.futures import ProcessPoolExecutor
 from concurrent.futures.process import BrokenProcessPool
 from contextlib import asynccontextmanager
-from typing import Optional
+from typing import Literal, Optional
 
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.exceptions import RequestValidationError
@@ -85,6 +85,7 @@ class SolveRequest(BaseModel):
     climber_height_m: float = Field(1.75, gt=1.0, lt=2.5)
     wall_height_m: float = Field(4.0, gt=0.5, lt=30)
     wall_angle_deg: float = Field(0, ge=-20, le=70)
+    limbs: Literal["all", "hands"] = "all"   # "hands": the original hands-only answer
 
 
 @app.get("/health")

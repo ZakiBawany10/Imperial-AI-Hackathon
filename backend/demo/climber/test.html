@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Climber test</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #05070d; color: #cfe9ff; font: 14px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; overflow: hidden; }
+  canvas { display: block; width: 100%; height: 100%; }
+  #bar { position: fixed; left: 0; right: 0; bottom: 0; padding: 10px 14px; display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center;
+         background: linear-gradient(to top, rgba(4, 8, 16, 0.92), rgba(4, 8, 16, 0.55)); border-top: 1px solid rgba(60, 220, 255, 0.25); }
+  #bar .group { display: flex; gap: 4px; align-items: center; }
+  #bar label { opacity: 0.7; margin-right: 2px; }
+  button { background: rgba(20, 40, 60, 0.8); color: #cfe9ff; border: 1px solid rgba(60, 220, 255, 0.35); border-radius: 6px; padding: 5px 10px; font: inherit; cursor: pointer; }
+  button.on { background: #19c8e6; color: #02131a; border-color: #19c8e6; }
+  #time { flex: 1 1 260px; min-width: 200px; accent-color: #19c8e6; }
+  #caption { position: fixed; left: 14px; top: 12px; max-width: 60ch; text-shadow: 0 1px 3px #000; }
+  #caption b { color: #fff; font-size: 16px; }
+  #err { position: fixed; right: 14px; top: 12px; color: #ff6b7a; white-space: pre-wrap; max-width: 50ch; }
+</style>
+</head>
+<body>
+<canvas id="view"></canvas>
+<div id="caption"></div>
+<div id="err"></div>
+<div id="bar">
+  <div class="group"><label>Look</label><button data-style="hologram">Hologram</button><button data-style="solid">Solid</button></div>
+  <div class="group"><button id="play">Pause</button></div>
+  <input id="time" type="range" min="0" max="4" step="0.001" value="0" aria-label="Moment in the climb">
+  <div class="group"><label>Camera</label><button data-view="front">Front</button><button data-view="three">Three-quarter</button><button data-view="side">Side</button><button id="follow">Follow</button></div>
+  <div class="group"><label>Wall</label><button data-bg="dark">Dark</button><button data-bg="photo">Photo</button></div>
+  <div class="group"><button id="strain">Struggling</button><button id="hard">Max effort</button></div>
+</div>
+
+<script type="module">
+// Test page for climber.js: the climber on a plain wall, playing the moves of /contract/solve.json.
+// URL options, mainly for screenshots: ?style=solid&view=side&bg=photo&t=1.5&paused=1&follow=1&dist=3.2&effort=0.9&stable=0
+import * as THREE from "/demo/viewer/vendor/three.module.min.js";
+import { OrbitControls } from "/demo/viewer/vendor/OrbitControls.js";
+import { createClimber, poseFromJoints2D, blendPoses } from "./climber.js";
+
+const errBox = document.getElementById("err");
+window.__errors = [];
+const fail = (m) => { window.__errors.push(String(m)); errBox.textContent = window.__errors.join("\n"); };
+window.addEventListener("error", (e) => fail(e.message));
+window.addEventListener("unhandledrejection", (e) => fail(e.reason));
+
+const q = new URLSearchParams(location.search);
+const solveUrl = q.get("solve") || "/contract/solve.json";
+const requestUrl = q.get("request") || "/contract/solve_request.json";
+const [solve, request] = await Promise.all([fetch(solveUrl).then((r) => r.json()), fetch(requestUrl).then((r) => r.json())]);
+
+const ctx = { imageW: request.image.w, imageH: request.image.h, wallHeightM: request.wall_height_m ?? 4, climberHeightM: request.climber_height_m ?? 1.75 };
+const m = ctx.wallHeightM / ctx.imageH, wallW = ctx.imageW * m, wallH = ctx.wallHeightM;
+const holdById = new Map(request.holds.map((h) => [h.id, h]));
+
+// ---- scene ----
+const canvas = document.getElementById("view");
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x05070d);
+const camera = new THREE.PerspectiveCamera(38, 1, 0.05, 100);
+const controls = new OrbitControls(camera, canvas);
+controls.enableDamping = true;
+
+// The wall: a dark panel with a faint grid, or the real photo.
+function gridTexture() {
+  const c = document.createElement("canvas"); c.width = 1024; c.height = Math.round(1024 * wallH / wallW);
+  const g = c.getContext("2d");
+  g.fillStyle = "#0b111c"; g.fillRect(0, 0, c.width, c.height);
+  const px = c.width / wallW;
+  for (let x = 0; x <= wallW + 0.01; x += 0.25) { g.strokeStyle = Math.abs(x % 1) < 0.01 ? "rgba(70,170,220,0.30)" : "rgba(70,170,220,0.10)"; g.beginPath(); g.moveTo(x * px, 0); g.lineTo(x * px, c.height); g.stroke(); }
+  for (let y = 0; y <= wallH + 0.01; y += 0.25) { g.strokeStyle = Math.abs(y % 1) < 0.01 ? "rgba(70,170,220,0.30)" : "rgba(70,170,220,0.10)"; g.beginPath(); g.moveTo(0, c.height - y * px); g.lineTo(c.width, c.height - y * px); g.stroke(); }
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t;
+}
+const darkTex = gridTexture();
+let photoTex = null;
+const wall = new THREE.Mesh(new THREE.PlaneGeometry(wallW, wallH), new THREE.MeshBasicMaterial({ map: darkTex }));
+wall.position.set(wallW / 2, wallH / 2, 0);
+scene.add(wall);
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(wallW, 5), new THREE.MeshBasicMaterial({ color: 0x070b13 }));
+floor.rotation.x = -Math.PI / 2; floor.position.set(wallW / 2, 0, 2.5);
+scene.add(floor);
+
+// Glowing dots for the route's holds: green where the climb starts, pink where it ends.
+function dotTexture() {
+  const c = document.createElement("canvas"); c.width = c.height = 128;
+  const g = c.getContext("2d"), grad = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+  grad.addColorStop(0, "rgba(255,255,255,1)"); grad.addColorStop(0.25, "rgba(255,255,255,0.55)"); grad.addColorStop(1, "rgba(255,255,255,0)");
+  g.fillStyle = grad; g.fillRect(0, 0, 128, 128);
+  return new THREE.CanvasTexture(c);
+}
+const dotTex = dotTexture();
+for (const h of request.holds) {
+  const colour = request.start.includes(h.id) ? 0x4dff9a : (request.finish.includes(h.id) ? 0xff4fd8 : 0x35d6ff);
+  const w = Math.max(h.w * m, 0.05), hh = Math.max(h.h * m, 0.05);
+  const nub = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 10), new THREE.MeshBasicMaterial({ color: colour }));
+  nub.scale.set(w * 0.42, hh * 0.42, 0.03);
+  nub.position.set(h.x * m, (ctx.imageH - h.y) * m, 0.005);
+  scene.add(nub);
+  const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: dotTex, color: colour, transparent: true, opacity: 0.55, depthWrite: false, blending: THREE.AdditiveBlending }));
+  halo.scale.set(Math.max(w, hh) * 3.2, Math.max(w, hh) * 3.2, 1);
+  halo.position.set(h.x * m, (ctx.imageH - h.y) * m, 0.02);
+  scene.add(halo);
+}
+
+// ---- the climber ----
+const climber = createClimber(THREE, { style: q.get("style") || "hologram" });
+scene.add(climber.group);
+const limbOf = (move) => move.limb;
+const poses = solve.keyframes.map((k, i) => {
+  // Each pose looks at the hold the next move goes to (the last one looks at the finish).
+  const next = solve.moves[Math.min(i, solve.moves.length - 1)];
+  const h = holdById.get(next.hold);
+  return poseFromJoints2D(k.joints, { ...ctx, lookAt: h ? [h.x, h.y] : undefined });
+});
+const nMoves = solve.moves.length;
+
+// ---- controls ----
+const ui = { time: document.getElementById("time"), play: document.getElementById("play"), caption: document.getElementById("caption") };
+ui.time.max = nMoves;
+const st = {
+  t: +(q.get("t") ?? 0), playing: q.get("paused") !== "1", style: climber.style, view: q.get("view") || "three", bg: q.get("bg") || "dark",
+  follow: q.get("follow") === "1", dist: +(q.get("dist") ?? 0), strain: q.get("stable") === "0", effort: q.has("effort") ? +q.get("effort") : null, hold: 0,
+};
+const LIMB_WORDS = { LH: "left hand", RH: "right hand", LF: "left foot", RF: "right foot" };
+
+function mark() {
+  document.querySelectorAll("[data-style]").forEach((b) => b.classList.toggle("on", b.dataset.style === st.style));
+  document.querySelectorAll("[data-view]").forEach((b) => b.classList.toggle("on", b.dataset.view === st.view));
+  document.querySelectorAll("[data-bg]").forEach((b) => b.classList.toggle("on", b.dataset.bg === st.bg));
+  document.getElementById("follow").classList.toggle("on", st.follow);
+  document.getElementById("strain").classList.toggle("on", st.strain);
+  document.getElementById("hard").classList.toggle("on", st.effort !== null);
+  ui.play.textContent = st.playing ? "Pause" : "Play";
+}
+function setBg(bg) {
+  st.bg = bg;
+  if (bg === "photo") {
+    if (!photoTex) { photoTex = new THREE.TextureLoader().load("/contract/wall.jpg"); photoTex.colorSpace = THREE.SRGBColorSpace; }
+    wall.material.map = photoTex;
+  } else wall.material.map = darkTex;
+  wall.material.needsUpdate = true;
+  mark();
+}
+let current = poses[0];
+function setView(view) {
+  st.view = view;
+  const c = current.chest, focus = st.follow ? new THREE.Vector3(c[0], c[1] - 0.25, 0.2) : new THREE.Vector3(1.05, wallH * 0.47, 0.1);
+  const d = st.dist || (st.follow ? 3.4 : 6.6);
+  const dir = { front: [0, 0.05, 1], three: [0.62, 0.22, 0.75], side: [1, 0.04, 0.02], left: [-0.7, 0.2, 0.7], below: [0.35, -0.45, 0.82], back: [0.2, 0.1, -1] }[view] || [0, 0, 1];
+  const v = new THREE.Vector3(...dir).normalize().multiplyScalar(d);
+  camera.position.copy(focus).add(v);
+  controls.target.copy(focus);
+  controls.update();
+  mark();
+}
+document.querySelectorAll("[data-style]").forEach((b) => b.onclick = () => { st.style = b.dataset.style; climber.setState({ style: st.style }); mark(); });
+document.querySelectorAll("[data-view]").forEach((b) => b.onclick = () => setView(b.dataset.view));
+document.querySelectorAll("[data-bg]").forEach((b) => b.onclick = () => setBg(b.dataset.bg));
+document.getElementById("follow").onclick = () => { st.follow = !st.follow; setView(st.view); };
+document.getElementById("strain").onclick = () => { st.strain = !st.strain; mark(); };
+document.getElementById("hard").onclick = () => { st.effort = st.effort === null ? 1 : null; mark(); };
+ui.play.onclick = () => { st.playing = !st.playing; if (st.playing && st.t >= nMoves) st.t = 0; mark(); };
+ui.time.oninput = () => { st.t = +ui.time.value; st.playing = false; mark(); };
+
+// ---- one frame ----
+function poseAt(t) {
+  const i = Math.min(Math.floor(t), nMoves - 1), f = t - i;
+  // A short rest on each keyframe, then the move.
+  const u = Math.min(Math.max((f - 0.06) / 0.86, 0), 1);
+  return { pose: blendPoses(poses[i], poses[i + 1], u, limbOf(solve.moves[i])), move: solve.moves[i], i, u };
+}
+function resize() {
+  const w = canvas.clientWidth, h = canvas.clientHeight;
+  if (canvas.width !== Math.round(w * renderer.getPixelRatio()) || canvas.height !== Math.round(h * renderer.getPixelRatio())) {
+    renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
+  }
+}
+let last = performance.now();
+function frame(now) {
+  // The first frame's timestamp can be slightly earlier than `last`; a negative step would index move -1.
+  const dt = Math.min(Math.max((now - last) / 1000, 0), 0.1); last = now;
+  if (st.playing) {
+    if (st.t >= nMoves) { st.hold += dt; if (st.hold > 1.6) { st.t = 0; st.hold = 0; } }
+    else st.t = Math.min(nMoves, st.t + dt * 0.42);
+    ui.time.value = st.t;
+  }
+  const { pose, move, i, u } = poseAt(st.t);
+  const moving = u > 0.02 && u < 0.98 ? move.limb : null;
+  const prevCentre = current.chest;
+  current = pose;
+  climber.setPose(pose);
+  climber.setState({ effort: st.effort ?? move.load, stable: !st.strain, movingLimb: moving });
+  climber.update(dt);
+  if (st.follow) {                                    // keep the climber in the middle of the picture
+    const dx = pose.chest[0] - prevCentre[0], dy = pose.chest[1] - prevCentre[1];
+    camera.position.x += dx; camera.position.y += dy; controls.target.x += dx; controls.target.y += dy;
+  }
+  ui.caption.innerHTML = `<b>Move ${i + 1} of ${nMoves}</b>: ${LIMB_WORDS[move.limb] || move.limb} to the next hold. Effort ${Math.round((st.effort ?? move.load) * 100)}%` +
+    `<br>Grade ${solve.grade.font} (${solve.grade.v}). Drag to turn the camera, scroll to zoom.`;
+  controls.update();
+  resize();
+  renderer.render(scene, camera);
+  requestAnimationFrame(frame);
+}
+
+setBg(st.bg);
+current = poseAt(st.t).pose;
+setView(st.view);
+mark();
+window.__test = { THREE, scene, camera, renderer, controls, climber, poses, st, setView, setBg, poseAt, solve };
+requestAnimationFrame(frame);
+window.__ready = true;
+</script>
+</body>
+</html>

@@ -1,0 +1,722 @@
+{
+  "detector": "models/holds.pt (tiled), as served by /analyze",
+  "data": "19 hand-labelled photos, wall training images/indoor-bouldering-photos (Tomáš Sláma)",
+  "rule": "a labelled hold is found when a predicted box overlaps its box with IoU >= 0.5; one prediction per hold",
+  "labels_complete": true,
+  "labels_note": "Every hold and volume in the 19 photos is outlined, down to chips a few pixels wide (checked by eye with the labels and predictions drawn on), so the share of predictions that are real holds can be measured. It reads slightly low: a few predictions counted as wrong sit on a real hold but do not overlap its label enough.",
+  "seconds_per_photo": 0.29,
+  "all": {
+    "photos": 19,
+    "holds": 1688,
+    "found": 0.868,
+    "predictions": 1549,
+    "predictions_real": 0.946
+  },
+  "by_kind": {
+    "hold": {
+      "labelled": 1597,
+      "found": 1384,
+      "found_share": 0.867
+    },
+    "volume": {
+      "labelled": 91,
+      "found": 82,
+      "found_share": 0.901
+    }
+  },
+  "by_size": {
+    "under 20 px": {
+      "labelled": 242,
+      "found": 111,
+      "found_share": 0.459
+    },
+    "20 to 40 px": {
+      "labelled": 449,
+      "found": 403,
+      "found_share": 0.898
+    },
+    "over 40 px": {
+      "labelled": 997,
+      "found": 952,
+      "found_share": 0.955
+    }
+  },
+  "not_a_copy": {
+    "photos": 18,
+    "holds": 1612,
+    "found": 0.87,
+    "predictions": 1478,
+    "predictions_real": 0.949
+  },
+  "new_wall": {
+    "photos": 1,
+    "holds": 34,
+    "found": 0.971,
+    "predictions": 33,
+    "predictions_real": 1.0
+  },
+  "independent": false,
+  "independence": {
+    "photos": 19,
+    "copy_in_training": 0,
+    "copy_in_validation": 1,
+    "same_wall_in_training": 18,
+    "new_wall": 1,
+    "clean_share": 0.053,
+    "training_photos_by_this_photographer": 205,
+    "training_photos": 300
+  },
+  "independence_note": "Not an independent test. 0 of the 19 photos are among the 300 training photos, and 1 is among the 60 validation photos (used to pick which training checkpoint to keep). But 18 of 19 show a wall, with the same holds on it, that is also in a training photo taken from another spot: the training set contains this photographer's photos of the same two gyms (205 of its 300 photos). Only 1 of 19 shows holds the detector has not seen, and it is in a gym it has seen; that is too few to be a score. Read these numbers as: new camera angles of walls the detector already knows.",
+  "per_photo": [
+    {
+      "photo": "images/boulderhaus-phone/126.jpg",
+      "size": [
+        1080,
+        1920
+      ],
+      "holds": 34,
+      "holds_found": 33,
+      "predictions": 33,
+      "found": 0.971,
+      "predictions_real": 1.0,
+      "overlap": {
+        "train": {
+          "photos_compared": 300,
+          "closest_thumbnail": "8eFdXYnyzajmNKhjR_jpg.rf.zlfHvf161ZhoKjwJdm21.jpg",
+          "thumbnail_correlation": 0.831,
+          "hash_bits_different": 116,
+          "same_photo": false,
+          "closest_wall": "0090.jpg",
+          "matched_details": 29
+        },
+        "validation": {
+          "photos_compared": 60,
+          "closest_thumbnail": "3FeHqx5JcjMqLQzvv_jpg.rf.IRhKCMksufHGOkFZtmWd.jpg",
+          "thumbnail_correlation": 0.837,
+          "hash_bits_different": 126,
+          "same_photo": false,
+          "closest_wall": "0000.jpg",
+          "matched_details": 26
+        },
+        "copy_of_a_photo_in": null,
+        "wall_in_training": false,
+        "by_eye": "closest training photos (0090.jpg, 0554.jpg) show the same gym with other holds"
+      }
+    },
+    {
+      "photo": "images/boulderhaus-phone/182.jpg",
+      "size": [
+        1080,
+        1920
+      ],
+      "holds": 39,
+      "holds_found": 37,
+      "predictions": 41,
+      "found": 0.949,
+      "predictions_real": 0.902,
+      "overlap": {
+        "train": {
+          "photos_compared": 300,
+          "closest_thumbnail": "3FpdCceKhosj2oPtx_jpg.rf.fl43n7N2YnS5gtt2nIul.jpg",
+          "thumbnail_correlation": 0.611,
+          "hash_bits_different": 117,
+          "same_photo": false,
+          "closest_wall": "191_left.jpg",
+          "matched_details": 39
+        },
+        "validation": {
+          "photos_compared": 60,
+          "closest_thumbnail": "0810.jpg",
+          "thumbnail_correlation": 0.701,
+          "hash_bits_different": 120,
+          "same_photo": false,
+          "closest_wall": "181_left.jpg",
+          "matched_details": 143
+        },
+        "copy_of_a_photo_in": null,
+        "wall_in_training": true,
+        "by_eye": "same wall as training photo 191_left.jpg: same red pyramid, white hold and pink shapes, from the left"
+      }
+    },
+    {
+      "photo": "images/boulderhaus-camera/0000.jpg",
+      "size": [
+        1920,
+        1278
+      ],
+      "holds": 76,
+      "holds_found": 64,
+      "predictions": 71,
+      "found": 0.842,
+      "predictions_real": 0.901,
+      "overlap": {
+        "train": {
+          "photos_compared": 300,
+          "closest_thumbnail": "0300.jpg",
+          "thumbnail_correlation": 0.726,
+          "hash_bits_different": 87,
+          "same_photo": false,
+          "closest_wall": "0106.jpg",
+          "matched_details": 44
+        },
+        "validation": {
+          "photos_compared": 60,
+          "closest_thumbnail": "0000.jpg",
+          "thumbnail_correlation": 1.0,
+          "hash_bits_different": 0,
+          "same_photo": true,
+          "closest_wall": "0000.jpg",
+          "matched_details": 1074
+        },
+        "copy_of_a_photo_in": "validation",
+        "wall_in_training": true
+      }
+    },
+    {
+      "photo": "images/boulderhaus-camera/0003.jpg",
+      "size": [
+        1920,
+        1278
+      ],
+      "holds": 9,
+      "holds_found": 8,
+      "predictions": 9,
+      "found": 0.889,
+      "predictions_real": 0.889,
+      "overlap": {
+        "train": {
+          "photos_compared": 300,
+          "closest_thumbnail": "340.jpg",
+          "thumbnail_correlation": 0.521,
+          "hash_bits_different": 71,
+          "same_photo": false,
+          "closest_wall": "0106.jpg",
+          "matched_details": 13
+        },
+        "validation": {
+          "photos_compared": 60,
+          "closest_thumbnail": "187_.jpg",
+          "thumbnail_correlation": 0.449,
+          "hash_bits_different": 87,
+          "same_photo": false,
+          "closest_wall": "0000.jpg",
+          "matched_details": 7
+        },
+        "copy_of_a_photo_in": null,
+        "wall_in_training": true,
+        "by_eye": "same wall as training photo 0554.jpg: same pink hold and white wedge at the foot of the wall"
+      }
+    },
+    {
+      "photo": "images/boulderhaus-camera/0006.jpg",
+      "size": [
+        1920,
+        1278
+      ],
+      "holds": 325,
+      "holds_found": 218,
+      "predictions": 224,
+      "found": 0.671,
+      "predictions_real": 0.973,
+      "overlap": {
+        "train": {
+          "photos_compared": 300,
+          "closest_thumbnail": "1015.jpg",
+          "thumbnail_correlation": 0.729,
+          "hash_bits_different": 94,
+          "same_photo": false,
+          "closest_wall": "1029.jpg",
+          "matched_details": 218
+        },
+        "validation": {
+          "photos_compared": 60,
+          "closest_thumbnail": "5Pdgs9XywdcZ3aXEe_jpg.rf.D1HXPlZPR4h0jmtycodQ.jpg",
+          "thumbnail_correlation": 0.78,
+          "hash_bits_different": 124,
+          "same_photo": false,
+          "closest_wall": "0196.jpg",
+          "matched_details": 168
+        },
+        "copy_of_a_photo_in": null,
+        "wall_in_training": true
+      }
+    },
+    {
+      "photo": "images/boulderhaus-camera/0074.jpg",
+      "size": [
+        1920,
+        1278
+      ],
+      "holds": 249,
+      "holds_found": 217,
+      "predictions": 222,
+      "found": 0.871,
+      "predictions_real": 0.977,
+      "overlap": {
+        "train": {
+          "photos_compared": 300,
+          "closest_thumbnail": "783.jpg",
+          "thumbnail_correlation": 0.632,
+          "hash_bits_different": 84,
+          "same_photo": false,
+          "closest_wall": "0046.jpg",
+          "matched_details": 376
+        },
+        "validation": {
+          "photos_compared": 60,
+          "closest_thumbnail": "5Pdgs9XywdcZ3aXEe_jpg.rf.D1HXPlZPR4h0jmtycodQ.jpg",
+          "thumbnail_correlation": 0.547,
+          "hash_bits_different": 108,
+          "same_photo": false,
+          "closest_wall": "0196.jpg",
+          "matched_details": 205
+        },
+        "copy_of_a_photo_in": null,
+        "wall_in_training": true
+      }
+    },
+    {
+      "photo": "images/boulderhaus-camera/0075.jpg",
+      "size": [
+        1920,
+        1278
+      ],
+      "holds": 63,
+      "holds_found": 63,
+      "predictions": 64,
+      "found": 1.0,
+      "predictions_real": 0.984,
+      "overlap": {
+        "train": {
+          "photos_compared": 300,
+          "closest_thumbnail": "0431.jpg",
+          "thumbnail_correlation": 0.669,
+          "hash_bits_different": 96,
+          "same_photo": false,
+          "closest_wall": "0056.jpg",
+          "matched_details": 151
+        },
+        "validation": {
+          "photos_compared": 60,
+          "closest_thumbnail": "147_.jpg",
+          "thumbnail_correlation": 0.588,
+          "hash_bits_different": 96,
+          "same_photo": false,
+          "closest_wall": "0184.jpg",
+          "matched_details": 50
+        },
+        "copy_of_a_photo_in": null,
+        "wall_in_training": true
+      }
+    },
+    {
+      "photo": "images/boulderhaus-camera/0132.jpg",
+      "size": [
+        1920,
+        1278
+      ],
+      "holds": 54,
+      "holds_found": 51,
+      "predictions": 61,
+      "found": 0.944,
+      "predictions_real": 0.836,
+      "overlap": {
+        "train": {
+          "photos_compared": 300,
+          "closest_thumbnail": "486.jpg",
+          "thumbnail_correlation": 0.58,
+          "hash_bits_different": 66,
+          "same_photo": false,
+          "closest_wall": "0147.jpg",
+          "matched_details": 110
+        },
+        "validation": {
+          "photos_compared": 60,
+          "closest_thumbnail": "400.jpg",
+          "thumbnail_correlation": 0.486,
+          "hash_bits_different": 101,
+          "same_photo": false,
+          "closest_wall": "0124.jpg",
+          "matched_details": 57
+        },
+        "copy_of_a_photo_in": null,
+        "wall_in_training": true
+      }
+    },
+    {
+      "photo": "images/boulderhaus-camera/0274.jpg",
+      "size": [
+        1920,
+        1278
+      ],
+      "holds": 87,
+      "holds_found": 70,
+      "predictions": 75,
+      "found": 0.805,
+      "predictions_real": 0.933,
+      "overlap": {
+        "train": {
+          "photos_compared": 300,
+          "closest_thumbnail": "076_left.jpg",
+          "thumbnail_correlation": 0.391,
+          "hash_bits_different": 124,
+          "same_photo": false,
+          "closest_wall": "0275.jpg",
+          "matched_details": 66
+        },
+        "validation": {
+          "photos_compared": 60,
+          "closest_thumbnail": "0051.jpg",
+          "thumbnail_correlation": 0.282,
+          "hash_bits_different": 99,
+          "same_photo": false,
+          "closest_wall": "0836.jpg",
+          "matched_details": 10
+        },
+        "copy_of_a_photo_in": null,
+        "wall_in_training": true
+      }
+    },
+    {
+      "photo": "images/boulderhaus-camera/0457.jpg",
+      "size": [
+        1920,
+        1278
+      ],
+      "holds": 83,
+      "holds_found": 82,
+      "predictions": 83,
+      "found": 0.988,
+      "predictions_real": 0.988,
+      "overlap": {
+        "train": {
+          "photos_compared": 300,
+          "closest_thumbnail": "340.jpg",
+          "thumbnail_correlation": 0.496,
+          "hash_bits_different": 105,
+          "same_photo": false,
+          "closest_wall": "0465.jpg",
+          "matched_details": 95
+        },
+        "validation": {
+          "photos_compared": 60,
+          "closest_thumbnail": "799.jpg",
+          "thumbnail_correlation": 0.449,
+          "hash_bits_different": 112,
+          "same_photo": false,
+          "closest_wall": "0460.jpg",
+          "matched_details": 160
+        },
+        "copy_of_a_photo_in": null,
+        "wall_in_training": true
+      }
+    },
+    {
+      "photo": "images/boulderhaus-camera/0502.jpg",
+      "size": [
+        1920,
+        1278
+      ],
+      "holds": 73,
+      "holds_found": 67,
+      "predictions": 72,
+      "found": 0.918,
+      "predictions_real": 0.931,
+      "overlap": {
+        "train": {
+          "photos_compared": 300,
+          "closest_thumbnail": "013_right.jpg",
+          "thumbnail_correlation": 0.558,
+          "hash_bits_different": 113,
+          "same_photo": false,
+          "closest_wall": "1015.jpg",
+          "matched_details": 189
+        },
+        "validation": {
+          "photos_compared": 60,
+          "closest_thumbnail": "3NBPMwfyWtQJiux6C_jpg.rf.p7kGXSaFA78ti1vFNsd2.jpg",
+          "thumbnail_correlation": 0.507,
+          "hash_bits_different": 125,
+          "same_photo": false,
+          "closest_wall": "0495.jpg",
+          "matched_details": 74
+        },
+        "copy_of_a_photo_in": null,
+        "wall_in_training": true
+      }
+    },
+    {
+      "photo": "images/boulderhaus-camera/0518.jpg",
+      "size": [
+        1920,
+        1278
+      ],
+      "holds": 51,
+      "holds_found": 49,
+      "predictions": 55,
+      "found": 0.961,
+      "predictions_real": 0.891,
+      "overlap": {
+        "train": {
+          "photos_compared": 300,
+          "closest_thumbnail": "3FpdCceKhosj2oPtx_jpg.rf.fl43n7N2YnS5gtt2nIul.jpg",
+          "thumbnail_correlation": 0.689,
+          "hash_bits_different": 132,
+          "same_photo": false,
+          "closest_wall": "0925.jpg",
+          "matched_details": 157
+        },
+        "validation": {
+          "photos_compared": 60,
+          "closest_thumbnail": "32inmmFSBKk9uNjZX_jpg.rf.9uMvBdkpl44Lj8rgGAdo.jpg",
+          "thumbnail_correlation": 0.577,
+          "hash_bits_different": 131,
+          "same_photo": false,
+          "closest_wall": "0810.jpg",
+          "matched_details": 339
+        },
+        "copy_of_a_photo_in": null,
+        "wall_in_training": true
+      }
+    },
+    {
+      "photo": "images/boulderhaus-camera/0530.jpg",
+      "size": [
+        1920,
+        1278
+      ],
+      "holds": 60,
+      "holds_found": 58,
+      "predictions": 63,
+      "found": 0.967,
+      "predictions_real": 0.921,
+      "overlap": {
+        "train": {
+          "photos_compared": 300,
+          "closest_thumbnail": "0268.jpg",
+          "thumbnail_correlation": 0.584,
+          "hash_bits_different": 130,
+          "same_photo": false,
+          "closest_wall": "0925.jpg",
+          "matched_details": 358
+        },
+        "validation": {
+          "photos_compared": 60,
+          "closest_thumbnail": "240.jpg",
+          "thumbnail_correlation": 0.41,
+          "hash_bits_different": 134,
+          "same_photo": false,
+          "closest_wall": "0810.jpg",
+          "matched_details": 254
+        },
+        "copy_of_a_photo_in": null,
+        "wall_in_training": true
+      }
+    },
+    {
+      "photo": "images/boulderhaus-camera/0647.jpg",
+      "size": [
+        1920,
+        1278
+      ],
+      "holds": 64,
+      "holds_found": 58,
+      "predictions": 66,
+      "found": 0.906,
+      "predictions_real": 0.879,
+      "overlap": {
+        "train": {
+          "photos_compared": 300,
+          "closest_thumbnail": "225_.jpg",
+          "thumbnail_correlation": 0.583,
+          "hash_bits_different": 120,
+          "same_photo": false,
+          "closest_wall": "0646.jpg",
+          "matched_details": 223
+        },
+        "validation": {
+          "photos_compared": 60,
+          "closest_thumbnail": "240.jpg",
+          "thumbnail_correlation": 0.447,
+          "hash_bits_different": 110,
+          "same_photo": false,
+          "closest_wall": "048_left.jpg",
+          "matched_details": 6
+        },
+        "copy_of_a_photo_in": null,
+        "wall_in_training": true
+      }
+    },
+    {
+      "photo": "images/boulderhaus-camera/0689.jpg",
+      "size": [
+        1920,
+        1278
+      ],
+      "holds": 124,
+      "holds_found": 114,
+      "predictions": 118,
+      "found": 0.919,
+      "predictions_real": 0.966,
+      "overlap": {
+        "train": {
+          "photos_compared": 300,
+          "closest_thumbnail": "447.jpg",
+          "thumbnail_correlation": 0.706,
+          "hash_bits_different": 88,
+          "same_photo": false,
+          "closest_wall": "0758.jpg",
+          "matched_details": 421
+        },
+        "validation": {
+          "photos_compared": 60,
+          "closest_thumbnail": "767.jpg",
+          "thumbnail_correlation": 0.649,
+          "hash_bits_different": 97,
+          "same_photo": false,
+          "closest_wall": "4EycEWLQ8LHE6Ciiv_jpg.rf.K9OkLZAoiR72OYgyDB0j.jpg",
+          "matched_details": 6
+        },
+        "copy_of_a_photo_in": null,
+        "wall_in_training": true
+      }
+    },
+    {
+      "photo": "images/boulderhaus-camera/0917.jpg",
+      "size": [
+        1920,
+        1278
+      ],
+      "holds": 85,
+      "holds_found": 80,
+      "predictions": 85,
+      "found": 0.941,
+      "predictions_real": 0.941,
+      "overlap": {
+        "train": {
+          "photos_compared": 300,
+          "closest_thumbnail": "428.jpg",
+          "thumbnail_correlation": 0.523,
+          "hash_bits_different": 101,
+          "same_photo": false,
+          "closest_wall": "0732.jpg",
+          "matched_details": 154
+        },
+        "validation": {
+          "photos_compared": 60,
+          "closest_thumbnail": "400.jpg",
+          "thumbnail_correlation": 0.436,
+          "hash_bits_different": 87,
+          "same_photo": false,
+          "closest_wall": "0348.jpg",
+          "matched_details": 238
+        },
+        "copy_of_a_photo_in": null,
+        "wall_in_training": true
+      }
+    },
+    {
+      "photo": "images/boulderhaus-camera/1037.jpg",
+      "size": [
+        1920,
+        1278
+      ],
+      "holds": 84,
+      "holds_found": 76,
+      "predictions": 81,
+      "found": 0.905,
+      "predictions_real": 0.938,
+      "overlap": {
+        "train": {
+          "photos_compared": 300,
+          "closest_thumbnail": "764.jpg",
+          "thumbnail_correlation": 0.629,
+          "hash_bits_different": 112,
+          "same_photo": false,
+          "closest_wall": "0179.jpg",
+          "matched_details": 68
+        },
+        "validation": {
+          "photos_compared": 60,
+          "closest_thumbnail": "139_.jpg",
+          "thumbnail_correlation": 0.522,
+          "hash_bits_different": 106,
+          "same_photo": false,
+          "closest_wall": "0124.jpg",
+          "matched_details": 73
+        },
+        "copy_of_a_photo_in": null,
+        "wall_in_training": true
+      }
+    },
+    {
+      "photo": "images/smichoff-camera/082.jpg",
+      "size": [
+        1920,
+        1278
+      ],
+      "holds": 25,
+      "holds_found": 25,
+      "predictions": 27,
+      "found": 1.0,
+      "predictions_real": 0.926,
+      "overlap": {
+        "train": {
+          "photos_compared": 300,
+          "closest_thumbnail": "259.jpg",
+          "thumbnail_correlation": 0.703,
+          "hash_bits_different": 82,
+          "same_photo": false,
+          "closest_wall": "819.jpg",
+          "matched_details": 19
+        },
+        "validation": {
+          "photos_compared": 60,
+          "closest_thumbnail": "799.jpg",
+          "thumbnail_correlation": 0.708,
+          "hash_bits_different": 74,
+          "same_photo": false,
+          "closest_wall": "4eD5vk63DR4DJ4c2J_jpg.rf.NUCVx5zFpYmUFt6W4hA0.jpg",
+          "matched_details": 5
+        },
+        "copy_of_a_photo_in": null,
+        "wall_in_training": true,
+        "by_eye": "same wall as training photo 819.jpg: same wall, small and far away in the training photo"
+      }
+    },
+    {
+      "photo": "images/smichoff-camera/108.jpg",
+      "size": [
+        1920,
+        1278
+      ],
+      "holds": 103,
+      "holds_found": 96,
+      "predictions": 99,
+      "found": 0.932,
+      "predictions_real": 0.97,
+      "overlap": {
+        "train": {
+          "photos_compared": 300,
+          "closest_thumbnail": "0094.jpg",
+          "thumbnail_correlation": 0.588,
+          "hash_bits_different": 92,
+          "same_photo": false,
+          "closest_wall": "089_.jpg",
+          "matched_details": 42
+        },
+        "validation": {
+          "photos_compared": 60,
+          "closest_thumbnail": "3FeHqx5JcjMqLQzvv_jpg.rf.IRhKCMksufHGOkFZtmWd.jpg",
+          "thumbnail_correlation": 0.545,
+          "hash_bits_different": 130,
+          "same_photo": false,
+          "closest_wall": "112_.jpg",
+          "matched_details": 66
+        },
+        "copy_of_a_photo_in": null,
+        "wall_in_training": true
+      }
+    }
+  ]
+}

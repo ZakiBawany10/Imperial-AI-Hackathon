@@ -66,7 +66,7 @@
         <label><input type="radio" name="mode" value="finish"><span>Mark the top</span></label>
       </div>
       <div class="row">
-        <label><input type="checkbox" id="same" checked> One click takes every hold of that colour</label>
+        <label><input type="checkbox" id="same" checked> One click takes the whole climb</label>
       </div>
       <div class="row">
         <button id="clear">Start again</button>
@@ -259,7 +259,10 @@ cv.addEventListener("click", e => {
   if (!hit) return;
   stopAnim(); solved = null; $("result").hidden = true;
   if (mode() === "route") {
-    const group = $("same").checked ? holds.filter(h => sameColour(hit, h)) : [hit];
+    // Use the backend's routes when it sends them; otherwise fall back to a simple colour rule.
+    const group = !$("same").checked ? [hit]
+      : hit.route !== undefined ? (hit.route === null ? [hit] : holds.filter(h => h.route === hit.route))
+      : holds.filter(h => sameColour(hit, h));
     const remove = route.has(hit.id);
     group.forEach(h => remove ? route.delete(h.id) : route.add(h.id));
     start = start.filter(id => route.has(id)); finish = finish.filter(id => route.has(id));

@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BetaCrux 3D wall</title>
+<link rel="icon" href="data:,">
+<style>
+  html, body { margin:0; height:100%; background:#04060b; color:#d9f6ff;
+    font:13px/1.4 ui-monospace,"SF Mono","JetBrains Mono",Menlo,Consolas,monospace; }
+  body { display:flex; flex-direction:column; }
+  header { display:flex; flex-wrap:wrap; gap:6px 10px; align-items:center; padding:7px 12px;
+    border-bottom:1px solid rgba(39,230,255,.3); background:#060b15; }
+  header b { color:#ff2bd6; letter-spacing:.18em; text-transform:uppercase; font-size:12px; }
+  header button { font:inherit; font-size:12px; color:#d9f6ff; background:transparent; border:1px solid rgba(39,230,255,.4);
+    padding:4px 9px; cursor:pointer; }
+  header button.on { background:#27e6ff; color:#04060b; font-weight:700; }
+  #status { color:rgba(217,246,255,.65); font-size:12px; margin-left:auto; }
+  #status.err { color:#ff6b81; }
+  #stage { flex:1; min-height:0; position:relative; }
+</style>
+</head>
+<body>
+<header>
+  <b>BetaCrux 3D wall</b>
+  <button data-src="example" title="The fixed example files in contract/, exactly as the server answers today">Example</button>
+  <button data-src="physics" title="A hand-made sample with foot moves and forces, to test what the physics engine will send">Sample with forces</button>
+  <button data-src="wall" title="The wall and its holds, before a route is solved">Wall only</button>
+  <button data-src="live" title="Send the example photo and route to this server now">Live from this server</button>
+  <span id="status">Loading…</span>
+</header>
+<div id="stage"></div>
+
+<script type="module">
+// A test page for the 3D viewer. The viewer itself is one module: viewer/betacrux-viewer.js.
+//
+// Address options:  ?live=1  ask this server instead of reading the example files
+//                   ?src=example | physics | wall | live     (same as the buttons)
+//                   ?view=schematic   plain dark wall      ?paused=1   do not start playing
+//                   ?sway=0   keep the camera still        ?bloom=0    no glow (for slow machines)
+import { mountViewer } from "./viewer/betacrux-viewer.js";
+
+const query = new URLSearchParams(location.search);
+const stage = document.getElementById("stage"), status = document.getElementById("status");
+const say = (text, bad = false) => { status.textContent = text; status.className = bad ? "err" : ""; };
+const getJson = async (url) => {
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(`${url} answered ${r.status}`);
+  return r.json();
+};
+const PHOTO = "/contract/wall.jpg";
+let viewer = null;
+
+// Each source gives { imageUrl, analyze, solveRequest, solve } for the viewer.
+const sources = {
+  async example() {
+    const [analyze, solveRequest, solve] = await Promise.all(
+      ["/contract/analyze.json", "/contract/solve_request.json", "/contract/solve.json"].map(getJson));
+    return { analyze, solveRequest, solve, note: "Example files from contract/ (what the server sends today: hand moves, no forces)." };
+  },
+  async physics() {
+    const [analyze, solveRequest, solve] = await Promise.all(
+      ["viewer/sample/analyze.json", "viewer/sample/solve_request.json", "viewer/sample/solve.json"].map(getJson));
+    return { analyze, solveRequest, solve, note: "Hand-made sample: foot moves and forces are made-up test numbers, not from the physics engine." };
+  },
+  async wall() {
+    return { analyze: await getJson("/contract/analyze.json"), solveRequest: null, solve: null, note: "The wall and every hold found on it. No route chosen." };
+  },
+  async live() {
+    say("Asking the server to find the holds…");
+    const photo = await (await fetch(PHOTO)).blob();
+    const form = new FormData();
+    form.append("file", photo, "wall.jpg");
+    const found = await fetch("/analyze", { method: "POST", body: form });
+    if (!found.ok) throw new Error(`/analyze answered ${found.status}: ${(await found.json().catch(() => ({}))).detail || ""}`);
+    const analyze = await found.json();
+    // The example route was picked on an earlier scan. Find the same holds in this scan by position,
+    // keep the hold types the user confirmed, and use this scan's ids.
+    const example = await getJson("/contract/solve_request.json");
+    const used = new Set(), idMap = new Map();
+    let spare = Math.max(0, ...analyze.holds.map((h) => h.id)) + 1;
+    const holds = example.holds.map((h) => {
+      let best = null, bestD = Math.max(h.w, h.h, 40);
+      for (const a of analyze.holds) {
+        const d = Math.hypot(a.x - h.x, a.y - h.y);
+        if (d < bestD && !used.has(a.id)) { best = a; bestD = d; }
+      }
+      const out = best ? { ...best, type: h.type, quality: h.quality, needs_review: false } : { ...h, id: spare++ };
+      used.add(out.id);
+      idMap.set(h.id, out.id);
+      return out;
+    });
+    const solveRequest = { ...example, image: analyze.image, holds, start: example.start.map((i) => idMap.get(i)), finish: example.finish.map((i) => idMap.get(i)) };
+    say("Asking the server to solve the route…");
+    const solved = await fetch("/solve", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(solveRequest) });
+    if (!solved.ok) throw new Error(`/solve answered ${solved.status}: ${(await solved.json().catch(() => ({}))).detail || ""}`);
+    const solve = await solved.json();
+    const extras = solve.keyframes?.some((k) => k.physics) ? "with forces" : "hand moves only, no forces yet";
+    return { analyze, solveRequest, solve, note: `Live answer from this server: ${analyze.holds.length} holds found, ${solve.moves.length} moves (${extras}).` };
+  },
+};
+
+async function show(name) {
+  for (const b of document.querySelectorAll("header button")) b.classList.toggle("on", b.dataset.src === name);
+  say("Loading…");
+  try {
+    const data = await sources[name]();
+    viewer?.dispose();
+    viewer = mountViewer(stage, {
+      imageUrl: PHOTO, analyze: data.analyze, solveRequest: data.solveRequest, solve: data.solve,
+      view: query.get("view") === "schematic" ? "schematic" : "photo",
+      autoplay: query.get("paused") !== "1",
+      sway: query.get("sway") !== "0",
+      bloom: query.get("bloom") !== "0",
+    });
+    if (query.get("follow") === "1") viewer.setFollow(true);
+    viewer.on("move", (i) => { window.lastMove = i; });
+    window.viewer = viewer;             // for trying the methods from the browser console
+    say(data.note);
+  } catch (e) {
+    console.error(e);
+    say(`Could not load: ${e.message}`, true);
+  }
+}
+
+for (const b of document.querySelectorAll("header button")) b.addEventListener("click", () => show(b.dataset.src));
+const first = query.get("live") === "1" ? "live" : query.get("src");
+show(first in sources ? first : "example");
+</script>
+</body>
+</html>
