@@ -1,0 +1,72 @@
+{
+  "n": 20710,
+  "n_test": 4142,
+  "hold_score_corr": 0.556,
+  "solved": 0.9999,
+  "results": [
+    {
+      "model": "always guess the median grade",
+      "mae": 1.674,
+      "exact": 0.144,
+      "within1": 0.667
+    },
+    {
+      "model": "raw holds only",
+      "mae": 0.884,
+      "exact": 0.406,
+      "within1": 0.812
+    },
+    {
+      "model": "solver features only (24 numbers)",
+      "mae": 1.288,
+      "exact": 0.283,
+      "within1": 0.67
+    },
+    {
+      "model": "raw holds + solver features",
+      "mae": 0.894,
+      "exact": 0.408,
+      "within1": 0.806
+    },
+    {
+      "model": "  ...same model, benchmark problems only (n=66)",
+      "mae": 1.053,
+      "exact": 0.273,
+      "within1": 0.727
+    }
+  ],
+  "top_solver_features": [
+    [
+      "cost_max",
+      3546
+    ],
+    [
+      "travel_mean",
+      3274
+    ],
+    [
+      "span_mean",
+      3233
+    ],
+    [
+      "cost_sum",
+      3091
+    ],
+    [
+      "cost_top2",
+      2461
+    ],
+    [
+      "travel_max",
+      2286
+    ],
+    [
+      "x_range",
+      1924
+    ],
+    [
+      "span_max",
+      1767
+    ]
+  ]
+}

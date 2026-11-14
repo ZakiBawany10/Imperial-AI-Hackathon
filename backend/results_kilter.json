@@ -1,0 +1,50 @@
+{
+  "rows": 54362,
+  "climbs": 29773,
+  "n_test": 10664,
+  "min_ascents": 5,
+  "results": [
+    {
+      "model": "always guess the median grade",
+      "mae": 3.74,
+      "exact": 0.088,
+      "within1": 0.196
+    },
+    {
+      "model": "wall angle only",
+      "mae": 3.271,
+      "exact": 0.101,
+      "within1": 0.248
+    },
+    {
+      "model": "solver features, geometry only + angle",
+      "mae": 1.924,
+      "exact": 0.17,
+      "within1": 0.468
+    },
+    {
+      "model": "solver features, learned hold quality + angle",
+      "mae": 1.388,
+      "exact": 0.223,
+      "within1": 0.608
+    },
+    {
+      "model": "raw holds + angle",
+      "mae": 1.55,
+      "exact": 0.216,
+      "within1": 0.567
+    },
+    {
+      "model": "raw holds + solver features + angle",
+      "mae": 1.332,
+      "exact": 0.236,
+      "within1": 0.627
+    },
+    {
+      "model": "  ...same model, climbs below 6b/V4 only (n=3847)",
+      "mae": 1.422,
+      "exact": 0.231,
+      "within1": 0.601
+    }
+  ]
+}

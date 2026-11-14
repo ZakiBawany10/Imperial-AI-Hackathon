@@ -1,0 +1,61 @@
+{
+  "chosen": "kilter + moonboard",
+  "kilter_rows": 54362,
+  "moonboard_problems": 20710,
+  "results": [
+    {
+      "model": "trained on kilter only, tested on kilter",
+      "mae": 1.388,
+      "exact": 0.223,
+      "within1": 0.608
+    },
+    {
+      "model": "trained on kilter only, tested on moonboard",
+      "mae": 1.95,
+      "exact": 0.155,
+      "within1": 0.444
+    },
+    {
+      "model": "trained on kilter only, tested on kilter below 6b/V4 (n=3847)",
+      "mae": 1.442,
+      "exact": 0.221,
+      "within1": 0.597
+    },
+    {
+      "model": "trained on kilter + moonboard, tested on kilter",
+      "mae": 1.39,
+      "exact": 0.221,
+      "within1": 0.609
+    },
+    {
+      "model": "trained on kilter + moonboard, tested on moonboard",
+      "mae": 0.975,
+      "exact": 0.386,
+      "within1": 0.773
+    },
+    {
+      "model": "trained on kilter + moonboard, tested on kilter below 6b/V4 (n=3847)",
+      "mae": 1.46,
+      "exact": 0.214,
+      "within1": 0.591
+    },
+    {
+      "model": "trained on moonboard only, tested on kilter",
+      "mae": 3.584,
+      "exact": 0.084,
+      "within1": 0.254
+    },
+    {
+      "model": "trained on moonboard only, tested on moonboard",
+      "mae": 0.979,
+      "exact": 0.382,
+      "within1": 0.77
+    },
+    {
+      "model": "trained on moonboard only, tested on kilter below 6b/V4 (n=3847)",
+      "mae": 5.87,
+      "exact": 0.0,
+      "within1": 0.006
+    }
+  ]
+}

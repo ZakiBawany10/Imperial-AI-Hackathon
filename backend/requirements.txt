@@ -1,0 +1,14 @@
+# solver + grade model
+numpy
+pandas
+scikit-learn
+lightgbm
+# hold detector
+torch
+torchvision
+transformers
+pillow
+# API server
+fastapi
+uvicorn[standard]
+python-multipart

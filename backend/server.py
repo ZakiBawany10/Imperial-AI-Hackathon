@@ -1,0 +1,111 @@
+"""BetaCrux API. The contract is in ../contract/ and ../Documents/PLAN.md.
+
+Run:  ./run.sh    (port 8010; PORT=9000 ./run.sh to change)
+"""
+import io
+import multiprocessing
+import os
+import threading
+from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures.process import BrokenProcessPool
+from contextlib import asynccontextmanager
+from typing import Optional
+
+from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from PIL import Image, UnidentifiedImageError
+from pydantic import BaseModel, ConfigDict, Field
+
+import analyze as analyze_mod
+import route
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+
+
+# /solve runs in its own process: the grade model (LightGBM) and the detector
+# (PyTorch) crash if they share one. See route._models.
+_solver = None
+
+
+def _solver_pool():
+    global _solver
+    if _solver is None:
+        _solver = ProcessPoolExecutor(max_workers=1, mp_context=multiprocessing.get_context("spawn"))
+    return _solver
+
+
+@asynccontextmanager
+async def lifespan(app):
+    # Start the solver process and load the detector in the background so the first calls are not slow.
+    _solver_pool().submit(route.warm)
+    threading.Thread(target=analyze_mod.warm, daemon=True).start()
+    yield
+    _solver_pool().shutdown(wait=False, cancel_futures=True)
+
+
+app = FastAPI(title="BetaCrux", lifespan=lifespan)
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+
+
+class ImageSize(BaseModel):
+    w: int = Field(gt=0)
+    h: int = Field(gt=0)
+
+
+class Hold(BaseModel):
+    model_config = ConfigDict(extra="allow")   # score, suggestions etc. are accepted and ignored
+    id: int
+    x: float
+    y: float
+    w: float = 0
+    h: float = 0
+    type: str = "unknown"
+    quality: float = Field(0.5, ge=0, le=1)
+    color: Optional[str] = None
+
+
+class SolveRequest(BaseModel):
+    image: ImageSize
+    holds: list[Hold] = Field(min_length=1)
+    start: list[int]
+    finish: list[int]
+    climber_height_m: float = Field(1.75, gt=1.0, lt=2.5)
+    wall_height_m: float = Field(4.0, gt=0.5, lt=30)
+    wall_angle_deg: float = Field(0, ge=-20, le=70)
+
+
+@app.get("/health")
+def health():
+    return {"ok": True}
+
+
+@app.get("/hold-types")
+def get_hold_types():
+    return analyze_mod.hold_types()
+
+
+@app.post("/analyze")
+def post_analyze(file: UploadFile = File(...)):
+    try:
+        image = Image.open(io.BytesIO(file.file.read()))
+        image.load()
+    except (UnidentifiedImageError, OSError):
+        raise HTTPException(400, "That file is not a photo this server can read (use JPEG or PNG).")
+    return analyze_mod.analyze(image)
+
+
+@app.post("/solve")
+def post_solve(req: SolveRequest):
+    global _solver
+    try:
+        return _solver_pool().submit(route.solve, req.model_dump()).result(timeout=60)
+    except route.RouteError as e:
+        raise HTTPException(422, str(e))
+    except BrokenProcessPool:
+        _solver = None                      # the next request starts a fresh solver process
+        raise HTTPException(503, "The solver restarted. Send the request again.")
+
+
+# Example pictures for the hold database, at /hold-types/<id>.svg
+app.mount("/hold-types", StaticFiles(directory=os.path.join(HERE, "hold_types")), name="hold-type-images")

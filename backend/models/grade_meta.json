@@ -1,0 +1,92 @@
+{
+  "features": [
+    "n_holds",
+    "n_start",
+    "n_end",
+    "x_range",
+    "y_range",
+    "bad_mean_all",
+    "bad_max_all",
+    "bad_min_all",
+    "solved",
+    "n_moves",
+    "cost_sum",
+    "cost_max",
+    "cost_mean",
+    "cost_top2",
+    "span_max",
+    "span_mean",
+    "travel_max",
+    "travel_mean",
+    "bad_path_max",
+    "bad_path_mean",
+    "bad_hold_max",
+    "holds_unused",
+    "hand_switches",
+    "rise_max",
+    "angle",
+    "n_foot_only"
+  ],
+  "trained_on": "kilter + moonboard",
+  "rows": 75072,
+  "quantiles": {
+    "low": 0.15,
+    "high": 0.85
+  },
+  "comparison": [
+    {
+      "model": "trained on kilter only, tested on kilter",
+      "mae": 1.388,
+      "exact": 0.223,
+      "within1": 0.608
+    },
+    {
+      "model": "trained on kilter only, tested on moonboard",
+      "mae": 1.95,
+      "exact": 0.155,
+      "within1": 0.444
+    },
+    {
+      "model": "trained on kilter only, tested on kilter below 6b/V4 (n=3847)",
+      "mae": 1.442,
+      "exact": 0.221,
+      "within1": 0.597
+    },
+    {
+      "model": "trained on kilter + moonboard, tested on kilter",
+      "mae": 1.39,
+      "exact": 0.221,
+      "within1": 0.609
+    },
+    {
+      "model": "trained on kilter + moonboard, tested on moonboard",
+      "mae": 0.975,
+      "exact": 0.386,
+      "within1": 0.773
+    },
+    {
+      "model": "trained on kilter + moonboard, tested on kilter below 6b/V4 (n=3847)",
+      "mae": 1.46,
+      "exact": 0.214,
+      "within1": 0.591
+    },
+    {
+      "model": "trained on moonboard only, tested on kilter",
+      "mae": 3.584,
+      "exact": 0.084,
+      "within1": 0.254
+    },
+    {
+      "model": "trained on moonboard only, tested on moonboard",
+      "mae": 0.979,
+      "exact": 0.382,
+      "within1": 0.77
+    },
+    {
+      "model": "trained on moonboard only, tested on kilter below 6b/V4 (n=3847)",
+      "mae": 5.87,
+      "exact": 0.0,
+      "within1": 0.006
+    }
+  ]
+}
