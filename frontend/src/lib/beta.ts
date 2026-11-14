@@ -3,7 +3,8 @@
 //  - mockBeta: the design mock in lib/wall.ts (the Board frames)
 // Everything is in overlay units (1000 wide, see lib/contract.ts).
 
-import type { Limb, SolveResponse } from "./api";
+import { describeMove } from "@coach/coachTools.js";
+import type { Limb, SolveRequest, SolveResponse } from "./api";
 import {
   HOLDS,
   TYPE_INFO,
@@ -27,6 +28,8 @@ export type BetaMove = {
   /** short label for the target hold, e.g. route number "04" */
   label: string;
   text: string;
+  /** real /solve: chance of falling off on this move (0 to 1) */
+  fall?: number;
 };
 export type BetaView = {
   moves: BetaMove[];
@@ -40,6 +43,8 @@ export type BetaView = {
   /** height / width of the photo; undefined for the square mock */
   aspect?: number;
   unitsPerMetre: number;
+  /** real /solve: chance of topping the route on this sequence (0 to 1) */
+  finishChance?: number;
   /** pose at t in [0, moves.length]: t = k is the pose after k moves */
   poseAt: (t: number) => Pose;
 };
@@ -83,6 +88,9 @@ export function mockBeta(height: number, wallH: number, angle = "vertical"): Bet
 export function realBeta(
   res: SolveResponse,
   o: {
+    /** the request that produced `res`, for the coach's move descriptions */
+    req?: SolveRequest;
+    holdTypes?: unknown;
     imageW: number;
     aspect: number;
     wallH: number;
@@ -121,6 +129,16 @@ export function realBeta(
   const num = new Map(o.route.map((h, i) => [h.id, String(i + 1).padStart(2, "0")]));
   const last = poses.length - 1;
 
+  // Same words the voice coach uses (coach/coachTools.js), when it can describe the move.
+  const coachSays = (i: number) => {
+    if (!o.req) return null;
+    try {
+      const d = describeMove(o.req, res, i, o.holdTypes);
+      return d?.say ? d.say.charAt(0).toLowerCase() + d.say.slice(1) : null;
+    } catch {
+      return null;
+    }
+  };
   const moves = res.moves.map((m, i): BetaMove => {
     const hold = m.hold === null ? undefined : o.byId.get(m.hold);
     if (!hold) {
@@ -128,7 +146,7 @@ export function realBeta(
       const at = poses[Math.min(i + 1, last)][m.limb];
       let text = `${who.toLowerCase()} smears on the wall.`;
       if (i === res.crux) text += " This is the crux.";
-      return { limb: m.limb, hold: null, at, label: "WALL", text };
+      return { limb: m.limb, hold: null, at, label: "WALL", text: coachSays(i) ?? text, fall: m.fall_chance };
     }
     const label = num.get(hold.id) ?? hold.tag;
     const who = LIMB_NAME[m.limb].toLowerCase();
@@ -141,7 +159,7 @@ export function realBeta(
       : `${who} ${isHand ? "to" : "up to"} the ${type}, hold ${label}.`;
     if (!matched && m.span_m >= 0.3) text += ` Reach ${m.span_m.toFixed(2)} m.`;
     if (i === res.crux) text += " This is the crux.";
-    return { limb: m.limb, hold, at: hold, label, text };
+    return { limb: m.limb, hold, at: hold, label, text: coachSays(i) ?? text, fall: m.fall_chance };
   });
 
   return {
@@ -153,6 +171,7 @@ export function realBeta(
     colour: o.colour,
     aspect: o.aspect,
     unitsPerMetre: (1000 * o.aspect) / o.wallH,
+    finishChance: res.physics?.finish_chance,
     poseAt: (t) => {
       const i = Math.max(0, Math.min(last, Math.floor(t)));
       const j = Math.min(last, i + 1);

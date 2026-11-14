@@ -35,7 +35,8 @@ export type ApiHoldType = {
 export const HOLD_DB = holdTypesJson as ApiHoldType[];
 export const EXAMPLE_WALL = { photo: wallUrl, analyze: analyzeJson as Analyze };
 
-const isType = (t: string): t is HoldType => (HOLD_TYPES as readonly string[]).includes(t);
+const isType = (t: string): t is HoldType =>
+  t === "unknown" || (HOLD_TYPES as readonly string[]).includes(t);
 
 /* ---- colour grouping ----
    The detector gives every hold its own hex, so "select every hold of that
@@ -93,7 +94,7 @@ export function prepare(photo: string, a: Analyze): Prepared {
     HOLD_COLOURS[g] = hex; // so screens can look the group up by name
   }
   const holds: Hold[] = withGroup.map(({ h, g }) => {
-    const type: HoldType = isType(h.type) ? h.type : "jug"; // "unknown" is always flagged below
+    const type: HoldType = isType(h.type) ? h.type : "unknown"; // "unknown" is always flagged below
     const r = (h.w * k) / 2;
     return {
       id: `h${h.id}`,
@@ -104,6 +105,7 @@ export function prepare(photo: string, a: Analyze): Prepared {
       sy: Math.min(3, Math.max(0.3, h.h / h.w)),
       colour: g,
       hex: groups[g].hex,
+      own: h.color,
       type,
       tag: String(h.id),
       guesses: h.suggestions
@@ -116,6 +118,58 @@ export function prepare(photo: string, a: Analyze): Prepared {
     .map((h) => `h${h.id}`);
   const api = Object.fromEntries(a.holds.map((h) => [`h${h.id}`, h]));
   return { photo, aspect: a.image.h / a.image.w, holds, unsure, groups, image: a.image, api };
+}
+
+/* ---- route selection ----
+   Tapping a hold selects its route: holds of a close colour that link to it
+   in a chain at climbing distances, minus duplicate detections. Plain hue
+   buckets leak across the whole wall (25 "yellow" holds on the example). */
+function hsv(hex: string) {
+  const [r, g, b] = rgb(hex).map((v) => v / 255);
+  const max = Math.max(r, g, b);
+  const d = max - Math.min(r, g, b);
+  let h = 0;
+  if (d) {
+    if (max === r) h = ((g - b) / d + 6) % 6;
+    else if (max === g) h = (b - r) / d + 2;
+    else h = (r - g) / d + 4;
+  }
+  return { h: h * 60, s: max ? d / max : 0, v: max };
+}
+const NEUTRAL = new Set(["black", "white", "grey"]);
+/** Longest link between two holds of one route, as a share of photo width.
+ *  Vertical gaps count for less: routes climb, so holds sit far apart vertically. */
+const LINK = 0.19;
+const V_WEIGHT = 0.6;
+
+export function selectRoute(holds: Hold[], tapped: Hold): string[] {
+  const t = hsv(tapped.own ?? tapped.hex ?? "#888888");
+  const neutral = NEUTRAL.has(tapped.colour);
+  const alike = (h: Hold) => {
+    if (h === tapped) return true;
+    const c = hsv(h.own ?? h.hex ?? "#888888");
+    if (neutral) return h.colour === tapped.colour && Math.abs(c.v - t.v) < 0.25;
+    const dh = Math.abs(((c.h - t.h + 540) % 360) - 180);
+    return !NEUTRAL.has(h.colour) && dh <= 14 && c.s >= Math.max(0.25, t.s * 0.5) && c.v >= t.v * 0.6;
+  };
+  const pool = holds.filter(alike);
+  const link = LINK * 1000;
+  const near = (a: Hold, b: Hold) => Math.hypot(a.x - b.x, (a.y - b.y) * V_WEIGHT) <= link;
+  const picked = new Set<Hold>([tapped]);
+  const queue = [tapped];
+  while (queue.length) {
+    const a = queue.pop()!;
+    for (const b of pool) if (!picked.has(b) && near(a, b)) (picked.add(b), queue.push(b));
+  }
+  // The detector sometimes finds one hold two or three times: drop a hold whose
+  // centre lies inside a bigger picked hold.
+  const list = [...picked];
+  const inside = (h: Hold, o: Hold) =>
+    o !== h &&
+    o.r > h.r &&
+    Math.abs(o.x - h.x) < o.r * (o.sx ?? 1) &&
+    Math.abs(o.y - h.y) < o.r * (o.sy ?? 1);
+  return list.filter((h) => h === tapped || !list.some((o) => inside(h, o))).map((h) => h.id);
 }
 
 /** What Review hands on: the chosen route (bottom to top) and the user's answers. */

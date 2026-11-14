@@ -1,0 +1,10 @@
+Example wall photos (copied from backend/demo/walls/, unchanged).
+
+seattle-bp-05.jpg, seattle-bp-06.jpg: Joe Mabel, "Bouldering Project (old University National Bank) 05 / 06 -
+ground floor climbing walls", Wikimedia Commons, CC BY-SA 4.0
+(https://commons.wikimedia.org/wiki/Category:University_National_Bank_Headquarters_-_interior).
+Resized to 1920 pixels wide by Wikimedia; otherwise unchanged.
+
+Optional: drop the backend's /analyze answer for a photo next to it as
+<photo name>.analyze.json (e.g. seattle-bp-05.analyze.json) and the app uses it
+instead of calling /analyze, so that example works instantly and offline.

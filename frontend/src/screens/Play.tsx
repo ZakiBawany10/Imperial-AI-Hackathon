@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { C, TYPE_INFO, betaFor, type Limb, type Pt } from "../lib/wall";
 import { LIMB_NAME, mockBeta, type BetaView, type Pose } from "../lib/beta";
+import type { Coach } from "../lib/coach";
 import { Btn, Flame, Glyph, Slider, MONO, Screen, StickyBar, TopBar, WallPhoto } from "../ui/kit";
 import { RouteOverlay } from "./Route";
 
@@ -268,6 +269,18 @@ export function PlayScreen({
             </span>{" "}
             {m.text}
           </p>
+          {(m.fall != null || beta.finishChance != null) && (
+            <p data-name="play/risk" className={`${MONO} mt-1 flex flex-wrap gap-x-4 text-muted`}>
+              {m.fall != null && (
+                <span className={m.fall >= 0.2 ? "text-accent" : ""}>
+                  {Math.round(m.fall * 100)}% fall chance
+                </span>
+              )}
+              {beta.finishChance != null && (
+                <span>{Math.round(beta.finishChance * 100)}% chance to top</span>
+              )}
+            </p>
+          )}
         </div>
 
         <div data-name="play/height" className="mt-4 border-t border-hairline px-6 pt-4 pb-4">
@@ -361,6 +374,7 @@ export function LiveScreen({
   move = 4,
   onExit,
   beta: real,
+  coach,
 }: {
   photo: string;
   height: number;
@@ -369,6 +383,8 @@ export function LiveScreen({
   move?: number;
   onExit?: () => void;
   beta?: BetaView;
+  /** the real ElevenLabs coach; without it the button cycles the design states */
+  coach?: Coach;
 }) {
   const beta = useBeta(real, height, wallH, "vertical");
   const n = beta.moves.length;
@@ -383,8 +399,22 @@ export function LiveScreen({
   const who = LIMB_NAME[hand];
   const kind = m.hold && m.hold.type !== "foot" ? TYPE_INFO[m.hold.type].name.toLowerCase() + " " : "";
   const cue = m.hold ? `${who} to ${kind}${m.label}` : `${who} smears on the wall`;
-  const next = () =>
+  const demoNext = () =>
     setVoice(voice === "idle" ? "listening" : voice === "listening" ? "speaking" : "idle");
+  const st = coach?.status;
+  const shown: Voice = coach ? (st === "speaking" ? "speaking" : st === "off" ? "idle" : "listening") : voice;
+  const next = coach ? (st === "off" ? coach.start : coach.stop) : demoNext;
+  const sub = coach
+    ? st === "off"
+      ? coach.available
+        ? "Tap to talk"
+        : "Not set up"
+      : st === "connecting"
+        ? "Connecting"
+        : st
+    : voice === "idle"
+      ? "Tap to talk"
+      : voice;
 
   return (
     <Screen name="screen/4-live">
@@ -517,32 +547,37 @@ export function LiveScreen({
             {cue}
           </p>
           <p className="mt-2 text-[14px] leading-[1.4] text-muted">{text}</p>
+          {coach?.error && (
+            <p data-name="live/coach-error" role="alert" className="mt-2 text-[14px] leading-[1.4] text-accent">
+              {coach.error}
+            </p>
+          )}
         </div>
         <button
-          data-name={`voice-coach/${voice}`}
+          data-name={`voice-coach/${shown}`}
           onClick={next}
-          aria-label={`Voice coach: ${voice}`}
+          aria-label={`Voice coach: ${shown}`}
           className="flex shrink-0 flex-col items-center gap-2"
         >
           <span className="relative flex size-20 items-center justify-center">
-            {voice === "listening" && (
+            {shown === "listening" && (
               <>
                 <span className="anim-pulse absolute inset-0 rounded-full border-2 border-accent" />
                 <span className="anim-pulse absolute inset-0 rounded-full border-2 border-accent [animation-delay:600ms]" />
               </>
             )}
             <span
-              className={`relative flex size-20 items-center justify-center rounded-full ${voice === "idle" ? "border border-ink bg-surface text-ink" : voice === "listening" ? "bg-accent text-surface" : "bg-ink text-surface"}`}
+              className={`relative flex size-20 items-center justify-center rounded-full ${shown === "idle" ? "border border-ink bg-surface text-ink" : shown === "listening" ? "bg-accent text-surface" : "bg-ink text-surface"}`}
             >
-              {voice === "speaking" ? <Waveform /> : <Mic />}
+              {shown === "speaking" ? <Waveform /> : <Mic />}
             </span>
           </span>
           <span className={`${MONO} text-center leading-tight`}>
             Voice coach
             <span
-              className={`block text-[12px] ${voice === "idle" ? "text-muted" : "text-accent"}`}
+              className={`block text-[12px] ${shown === "idle" ? "text-muted" : "text-accent"}`}
             >
-              {voice === "idle" ? "Tap to talk" : voice}
+              {sub}
             </span>
           </span>
         </button>

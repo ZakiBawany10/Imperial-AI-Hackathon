@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
-import { HOLDS, PHOTOS, unsplash } from "../lib/wall";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { HOLDS, PHOTOS, unsplash, type Hold } from "../lib/wall";
 import { BottomSheet, Btn, MONO, Screen, StickyBar, TopBar, WallPhoto } from "../ui/kit";
 import { HoldPin } from "../ui/HoldPins";
 import { C } from "../lib/wall";
 
-const EXAMPLES = [
+export type Example = { id: string; label: string; photo: string; credit?: string };
+const EXAMPLES: Example[] = [
   { id: "wall-01", label: "Wall 01", photo: PHOTOS.wall01 },
   { id: "wall-02", label: "Wall 02", photo: PHOTOS.wall02 },
   { id: "wall-03", label: "Wall 03", photo: PHOTOS.wall03 },
@@ -17,19 +18,39 @@ const FOUND_ORDER = [...HOLDS].sort((a, b) => b.y - a.y);
 type Props = {
   photo?: string | null;
   initialSheet?: boolean;
-  onPhoto?: (src: string) => void;
+  /** `file` is set for a photo the user picked, unset for an example. */
+  onPhoto?: (src: string, file?: File) => void;
   onCancel?: () => void;
   onFound?: () => void;
+  examples?: Example[];
+  /** Real detection (prototype flow). `found` stays null while /analyze runs. */
+  real?: { found: { holds: Hold[]; aspect: number } | null; aspect?: number; error?: string | null };
+  /** offered when detection failed */
+  onExample?: () => void;
 };
 
-export function UploadScreen({ photo, initialSheet = false, onPhoto, onCancel, onFound }: Props) {
+const srcOf = (p: string) =>
+  p.startsWith("/") || p.startsWith("blob:") || p.startsWith("http") || p.startsWith("data:")
+    ? p
+    : unsplash(p, 200);
+
+export function UploadScreen({
+  photo,
+  initialSheet = false,
+  onPhoto,
+  onCancel,
+  onFound,
+  examples = EXAMPLES,
+  real,
+  onExample,
+}: Props) {
   const [howOpen, setHowOpen] = useState(initialSheet);
   const camRef = useRef<HTMLInputElement>(null);
   const pickRef = useRef<HTMLInputElement>(null);
   const finding = !!photo;
 
   const file = (f?: File) => {
-    if (f && f.type.startsWith("image/")) onPhoto?.(URL.createObjectURL(f));
+    if (f && f.type.startsWith("image/")) onPhoto?.(URL.createObjectURL(f), f);
   };
 
   return (
@@ -50,7 +71,7 @@ export function UploadScreen({ photo, initialSheet = false, onPhoto, onCancel, o
 
         <div className="mt-6 px-6">
           {finding ? (
-            <FindingSheet photo={photo!} onFound={onFound} />
+            <FindingSheet photo={photo!} onFound={onFound} real={real} onExample={onExample} />
           ) : (
             <EmptySheet onTap={() => pickRef.current?.click()} />
           )}
@@ -61,7 +82,7 @@ export function UploadScreen({ photo, initialSheet = false, onPhoto, onCancel, o
             <div data-name="examples" className="mt-8">
               <p className="px-6 text-[14px] text-muted">Or try an example wall</p>
               <ul className="mt-3 flex snap-x snap-mandatory gap-3 overflow-x-auto px-6 pb-2 [scrollbar-width:none]">
-                {EXAMPLES.map((e) => (
+                {examples.map((e) => (
                   <li key={e.id} className="shrink-0 snap-start">
                     <button
                       data-name={`examples/thumb-${e.id}`}
@@ -70,7 +91,7 @@ export function UploadScreen({ photo, initialSheet = false, onPhoto, onCancel, o
                     >
                       <span className="block size-20 overflow-hidden rounded-[4px] border border-hairline bg-surface">
                         <img
-                          src={unsplash(e.photo, 200)}
+                          src={srcOf(e.photo)}
                           alt={`Example ${e.label}`}
                           className="h-full w-full object-cover"
                         />
@@ -80,6 +101,11 @@ export function UploadScreen({ photo, initialSheet = false, onPhoto, onCancel, o
                   </li>
                 ))}
               </ul>
+              {[...new Set(examples.map((e) => e.credit).filter(Boolean))].map((c) => (
+                <p key={c} data-name="examples/credit" className="px-6 pt-1 text-[12px] text-muted">
+                  {c}
+                </p>
+              ))}
             </div>
             <div className="px-6 pt-2 pb-6">
               <button
@@ -117,7 +143,7 @@ export function UploadScreen({ photo, initialSheet = false, onPhoto, onCancel, o
         {finding ? (
           <div className="flex flex-col gap-2">
             <Btn disabled className="w-full">
-              Finding holds
+              {real?.error ? "No holds found" : "Finding holds"}
             </Btn>
             <Btn variant="outline" size="md" className="w-full" onClick={onCancel}>
               Use another photo
@@ -219,55 +245,96 @@ function EmptySheet({ onTap }: { onTap: () => void }) {
   );
 }
 
-function FindingSheet({ photo, onFound }: { photo: string; onFound?: () => void }) {
+function FindingSheet({
+  photo,
+  onFound,
+  real,
+  onExample,
+}: {
+  photo: string;
+  onFound?: () => void;
+  real?: Props["real"];
+  onExample?: () => void;
+}) {
   const reduce =
     typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const [n, setN] = useState(reduce ? FOUND_ORDER.length : 0);
+  // Mock: the design's holds, one by one. Real: wait for /analyze, then pop its
+  // holds bottom to top in about two seconds however many there are.
+  const order = useMemo(
+    () => (real ? [...(real.found?.holds ?? [])].sort((a, b) => b.y - a.y) : FOUND_ORDER),
+    [real?.found], // eslint-disable-line react-hooks/exhaustive-deps
+  );
+  const ready = !real || !!real.found;
+  const stepBy = real ? Math.max(1, Math.ceil(order.length / 24)) : 1;
+  const [n, setN] = useState(reduce && !real ? FOUND_ORDER.length : 0);
   useEffect(() => {
-    if (n >= FOUND_ORDER.length) {
+    if (!ready) return;
+    if (n >= order.length) {
       if (!onFound) return;
       const t = setTimeout(onFound, 900);
       return () => clearTimeout(t);
     }
-    const t = setTimeout(() => setN((v) => v + 1), n === 0 ? 500 : 110);
+    const t = setTimeout(
+      () => setN((v) => (reduce ? order.length : Math.min(order.length, v + stepBy))),
+      n === 0 ? 500 : real ? 90 : 110,
+    );
     return () => clearTimeout(t);
-  }, [n, onFound]);
-  const done = n >= FOUND_ORDER.length;
+  }, [n, onFound, ready, order, stepBy, reduce, real]);
+  const done = ready && n >= order.length;
+  const error = real?.error;
+  const pinR = real ? 13 : 30;
   return (
     <div data-name="upload/finding">
       <PinnedSheet name="upload/photo-sheet">
-        <WallPhoto photo={photo}>
-          {FOUND_ORDER.slice(0, n).map((h, i) => (
+        <WallPhoto photo={photo} aspect={real?.found?.aspect ?? real?.aspect}>
+          {order.slice(0, n).map((h, i) => (
             <g key={h.id} className="anim-pop" style={{ transformOrigin: `${h.x}px ${h.y}px` }}>
-              <circle cx={h.x} cy={h.y} r={30} fill="#E8431F" stroke="#FBF8F2" strokeWidth={5} />
-              <text
-                x={h.x}
-                y={h.y + 9}
-                textAnchor="middle"
-                fill="#FBF8F2"
-                fontFamily="Barlow Semi Condensed"
-                fontSize={26}
-                fontWeight={500}
-              >
-                {i + 1}
-              </text>
+              <circle cx={h.x} cy={h.y} r={pinR} fill="#E8431F" stroke="#FBF8F2" strokeWidth={real ? 3 : 5} />
+              {!real && (
+                <text
+                  x={h.x}
+                  y={h.y + 9}
+                  textAnchor="middle"
+                  fill="#FBF8F2"
+                  fontFamily="Barlow Semi Condensed"
+                  fontSize={26}
+                  fontWeight={500}
+                >
+                  {i + 1}
+                </text>
+              )}
             </g>
           ))}
         </WallPhoto>
-        {!done && <span aria-hidden className="anim-scan absolute inset-x-0 h-px bg-surface" />}
+        {!done && !error && <span aria-hidden className="anim-scan absolute inset-x-0 h-px bg-surface" />}
       </PinnedSheet>
-      <div className="mt-6 flex items-center justify-between" aria-live="polite">
-        <p data-name="finding/caption" className={`${MONO} flex items-center gap-2`}>
-          <span
-            className={`inline-block size-1.5 rounded-full bg-accent ${done ? "" : "anim-blink"}`}
-            aria-hidden
-          />
-          Finding holds... {n} found
-        </p>
-        <span className={`${MONO} text-muted`}>
-          {done ? "Done" : `${Math.round((n / FOUND_ORDER.length) * 100)}%`}
-        </span>
-      </div>
+      {error ? (
+        <div data-name="finding/error" role="alert" className="mt-6">
+          <p className={`${MONO} flex items-center gap-2 text-accent`}>
+            <span className="inline-block size-1.5 rounded-full bg-accent" aria-hidden />
+            Couldn't find holds
+          </p>
+          <p className="mt-2 text-[16px] leading-[1.4]">{error}</p>
+          {onExample && (
+            <Btn variant="outline" size="md" className="mt-4 w-full" onClick={onExample}>
+              Use the example wall
+            </Btn>
+          )}
+        </div>
+      ) : (
+        <div className="mt-6 flex items-center justify-between" aria-live="polite">
+          <p data-name="finding/caption" className={`${MONO} flex items-center gap-2`}>
+            <span
+              className={`inline-block size-1.5 rounded-full bg-accent ${done ? "" : "anim-blink"}`}
+              aria-hidden
+            />
+            {ready ? `Finding holds... ${n} found` : "Finding holds..."}
+          </p>
+          <span className={`${MONO} text-muted`}>
+            {done ? "Done" : ready ? `${Math.round((n / Math.max(1, order.length)) * 100)}%` : ""}
+          </span>
+        </div>
+      )}
     </div>
   );
 }

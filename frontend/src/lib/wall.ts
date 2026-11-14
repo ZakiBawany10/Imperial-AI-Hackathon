@@ -26,7 +26,8 @@ export const HOLD_COLOURS: Record<string, string> = {
 export type HoldColour = string;
 
 export const HOLD_TYPES = ["jug", "crimp", "sloper", "pinch", "pocket", "volume", "foot"] as const;
-export type HoldType = (typeof HOLD_TYPES)[number];
+/** "unknown" is the contract's "not sure" type: the user may pick it, the detector never guesses it. */
+export type HoldType = (typeof HOLD_TYPES)[number] | "unknown";
 
 export const TYPE_INFO: Record<HoldType, { name: string; line: string }> = {
   jug: { name: "Jug", line: "deep, positive, wrap your whole hand" },
@@ -36,6 +37,7 @@ export const TYPE_INFO: Record<HoldType, { name: string; line: string }> = {
   pocket: { name: "Pocket", line: "a hole for one to three fingers" },
   volume: { name: "Volume", line: "big wooden shape, use its edges" },
   foot: { name: "Foot chip", line: "tiny, for feet only" },
+  unknown: { name: "Not sure", line: "the solver treats it as an average hold" },
 };
 
 export type Hold = {
@@ -51,6 +53,8 @@ export type Hold = {
   rot?: number;
   /** Real holds carry their own display colour (the group's average hex). */
   hex?: string;
+  /** Real holds: the detector's own colour for this hold. */
+  own?: string;
   guesses?: [HoldType, number][];
   added?: boolean;
 };

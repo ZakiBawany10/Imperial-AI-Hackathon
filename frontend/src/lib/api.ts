@@ -4,7 +4,7 @@
 
 import solveJson from "@contract/solve.json";
 import solveRequestJson from "@contract/solve_request.json";
-import { HOLD_DB, type ApiHold, type ApiHoldType } from "./contract";
+import { HOLD_DB, type Analyze, type ApiHold, type ApiHoldType } from "./contract";
 
 export const API_URL: string =
   (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, "") ??
@@ -34,10 +34,14 @@ export type SolveRequest = {
 };
 export type SolveResponse = {
   grade: { font: string; v: string; low: string; high: string };
+  /** live backend, not yet in the contract: physics summary incl. the chance of
+   *  topping the safest sequence */
+  physics?: { finish_chance?: number; sequence?: string; max_effort?: number };
   crux: number; // index into moves
   // hold is null when the live backend puts a foot on the wall or floor (a smear).
   // Not in the contract yet: reported to Krishna.
-  moves: { i: number; limb: Limb; hold: number | null; load: number; span_m: number }[];
+  // fall_chance: live backend, not yet in the contract.
+  moves: { i: number; limb: Limb; hold: number | null; load: number; span_m: number; fall_chance?: number }[];
   keyframes: { move: number; joints: Record<JointName, [number, number]> }[];
 };
 
@@ -58,7 +62,7 @@ async function call<T>(path: string, init?: RequestInit): Promise<T> {
     res = await fetch(API_URL + path, init);
   } catch (e) {
     if ((e as Error).name === "AbortError") throw e;
-    throw new ApiError(`Can't reach the solver at ${API_URL}.`, 0, true);
+    throw new ApiError(`Can't reach the BetaCrux server at ${API_URL}. Is backend/run.sh running?`, 0, true);
   }
   if (!res.ok) {
     let detail = `The server answered ${res.status}.`;
@@ -71,6 +75,34 @@ async function call<T>(path: string, init?: RequestInit): Promise<T> {
     throw new ApiError(detail, res.status);
   }
   return (await res.json()) as T;
+}
+
+/** POST /analyze (form field `file`). */
+export function analyze(photo: Blob, signal?: AbortSignal) {
+  const body = new FormData();
+  body.append("file", photo, "wall.jpg");
+  return call<Analyze>("/analyze", { method: "POST", body, signal });
+}
+
+/** Upright (EXIF applied, as <img> shows it) and at most `max` px on the long
+ *  side, so phone photos upload fast. The result is both sent and displayed,
+ *  so /analyze pixels match what is drawn. Falls back to the original file. */
+export async function shrinkPhoto(file: File, max = 2048): Promise<Blob> {
+  try {
+    const bmp = await createImageBitmap(file, { imageOrientation: "from-image" });
+    const k = Math.min(1, max / Math.max(bmp.width, bmp.height));
+    if (k === 1 && file.type === "image/jpeg") return file;
+    const c = document.createElement("canvas");
+    c.width = Math.round(bmp.width * k);
+    c.height = Math.round(bmp.height * k);
+    c.getContext("2d")!.drawImage(bmp, 0, 0, c.width, c.height);
+    bmp.close();
+    return await new Promise<Blob>((ok, no) =>
+      c.toBlob((b) => (b ? ok(b) : no(new Error("toBlob"))), "image/jpeg", 0.9),
+    );
+  } catch {
+    return file;
+  }
 }
 
 export function solve(req: SolveRequest, signal?: AbortSignal) {

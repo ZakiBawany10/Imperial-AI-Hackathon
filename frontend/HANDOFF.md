@@ -1,7 +1,7 @@
 # Frontend handoff (Adam, BetaCrux)
 
 Read this first, then `../CLAUDE.md` (repo rules) and `../Documents/PLAN.md` (plan + API contract).
-Last updated: Sat 14 Nov 2026, after A3 (real /solve in Route/Play/Live).
+Last updated: Sat 14 Nov 2026, after linking every ready backend piece (analyze, hold-types, solve physics, voice coach).
 
 ## Who and where
 - Working for **Adam**. Only write inside `frontend/`. `git config user.name` is set (repo-local) to "Adam Wilkinson"; check it before editing.
@@ -36,9 +36,19 @@ React 19 + Vite 8 + Tailwind v4 + TypeScript. Exported from Figma Make ("Design 
 - **A3 done**: Review `onNext(pick)` -> Route (real route holds over the real photo) -> `buildSolve()` in `contract.ts` makes the body (contract int ids, confirmed type + quality from hold DB, needs_review=false; user-added holds get new ids) -> `POST /solve` -> Play/Live draw the real keyframes and grade. Solving screen waits at least 1.2 s so the trace reads. Errors (422 message etc.) show on the solving screen with Back; if the server is unreachable there is also "Use example" (contract solve fixture, yellow "Example answer" badge). Play height slider re-solves (300 ms debounce, old beta stays up).
 - Tested headless against the real backend (venv in a scratchpad, not in backend/): yellow route 1.75 m -> 6a, 10 moves; 1.55 m -> 6b, 11 moves. Offline path and Board frames also checked.
 
+- **Backend linked** (all of it that is ready):
+  - `/analyze`: Upload sends the photo (shrunk to 2048 px, EXIF-upright, `shrinkPhoto` in api.ts) and pins the real holds when it answers; Review/Route/Play then use that wall (`wall` in Flow). Server down or no holds -> error + "Use the example wall". The example thumbnail is `contract/wall.jpg` (no request).
+  - `/hold-types`: "Other..." list (name, description, server SVG picture, sketch fallback offline); `unknown` is pickable ("Not sure"). Quality for /solve from the same list.
+  - `/solve` physics: per-move `fall_chance` and `physics.finish_chance` shown under the move text on Play.
+  - Coach: Play's move text is Zaki's `describeMove().say` (`@coach` alias -> `../coach`, read-only, typed in `src/coach.d.ts`). Live's mic button starts the ElevenLabs agent (`src/lib/coach.ts`, `@elevenlabs/client` pinned 1.32.1, loaded on first use) with `createCoachTools` reading the current request/answer; "set my height" re-solves; the coached move drives Live's move. Needs `VITE_ELEVENLABS_AGENT_ID` in `frontend/.env.local` (from Zaki; never commit). Mic needs https or localhost, so on a phone over LAN http it won't get the mic.
+  - Route selection (real data): `selectRoute` in contract.ts: holds within 14 deg hue of the tapped one, chained at <= 19% photo width (vertical gaps x0.6), duplicate detections dropped. Yellow example: 25 holds/14 questions -> 12/5.
+- **Example walls**: contract wall (instant, offline) + two Seattle walls in `public/examples/` (CC BY-SA 4.0, Joe Mabel; credit shown under the thumbnails, `CREDITS.txt`). A Seattle tap goes through `/analyze`, unless `public/examples/<name>.analyze.json` exists: then that saved answer is used (instant, offline). Ask Krishna to run his trained detector on both photos and send the two JSONs.
+- Not linked (deliberately): `/depth` (relief map, used by Krishna's 3D page; nothing in our screens needs it), keyframe `contacts`/`physics.forces` (could draw force arrows in Play later).
+
 ## Decisions and gotchas
-- Live backend returns things the contract does not describe yet (reported to Krishna via Adam): foot moves (`LF`/`RF`), extra move fields `effort`/`stable`, and `"hold": null` for a foot smearing on the wall. Frontend tolerates all three (null -> "smears on the wall").
-- Colour grouping is coarse: tapping a yellow hold selects 25 holds across both walls and 14 need confirming. Worth a tighter grouping (hue + distance?) before the demo, which promises "one or two" questions.
+- Backend: a foot move can come back with `fall_chance` 0.999 (effort 2.2, unstable) inside the "safest" sequence, so `finish_chance` collapses to 0.1% (seen on the 12-hold yellow selection; the contract's 7-hold route gives 96%). Reported to Krishna via Adam.
+- Untested end to end: real `/analyze` (the trained weights aren't in git, and the zero-shot fallback downloads ~900 MB), and a live ElevenLabs session (no agent id here). Both tested up to the call: analyze with a stubbed response, coach up to the "not set up" message.
+- Live backend returns things the contract does not describe yet (reported to Krishna via Adam): foot moves (`LF`/`RF`), extra move fields `effort`/`stable`/`fall_chance`, top-level `physics` (with `finish_chance`), keyframe `contacts`/`physics`, and `"hold": null` for a foot smearing on the wall. Frontend tolerates all of it.
 - Make's own `CLAUDE.md`, `AGENTS.md` and `.gitattributes` were deliberately NOT copied. `.gitattributes` sent all images to Git LFS (breaks teammates); Make's CLAUDE.md would overwrite the repo's rules and says a dev server is already running.
 - `.figma/` is kept (Make wants it for re-import).
 - Uploaded photos currently still show the example wall's holds (Flow always uses `EXAMPLE_WALL`). Wiring to the real `/analyze` is not done.
@@ -52,11 +62,10 @@ React 19 + Vite 8 + Tailwind v4 + TypeScript. Exported from Figma Make ("Design 
 No browser tool in the session. I used Chrome headless via `puppeteer-core` (installed in a scratchpad dir, not in the repo): viewport 390x844, `isMobile`, `hasTouch`, screenshots + DOM checks (`[data-hold]` count, `data-name` attributes). Chrome is at `/Applications/Google Chrome.app`. Recreate in a scratch dir outside the repo if needed.
 
 ## Next steps (PLAN.md)
-1. Tighten route colour grouping (see gotchas) so the demo asks about one or two holds.
-2. **A3b** already largely covered by the confirm sheet; the "Other" list is still hard-coded `HOLD_TYPES` in `wall.ts` (PLAN says never hard-code): render it from `getHoldTypes()`, images from `${API_URL}${image}`.
+1. Get the agent id from Zaki into `.env.local` and try the coach on a laptop (localhost). For the phone demo, serve over https (e.g. `vite --https` with a local cert) or the mic is blocked.
+2. Route selection still over-selects a little (12 vs the real 7 on the example): let tapping a selected, confirmed hold remove it from the route.
 3. **A4** mostly done by A3 (eased keyframe interpolation, crux, real grade card). Left: colour moves by `load`, nicer crux highlight on the photo.
 4. **A5** Live mode with in-browser pose tracking; **A6** voice coach via Zaki's agent in `coach/`.
-5. Hook up real `/analyze` for uploaded photos.
 6. Figma evidence screenshots for Zaki's slides; send Zaki the Figma link.
 7. Tell Zaki the README lines for the frontend (APIs/tools used).
 

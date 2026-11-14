@@ -18,7 +18,8 @@ import {
   type HoldColour,
   type HoldType,
 } from "../lib/wall";
-import type { Prepared, RoutePick } from "../lib/contract";
+import { API_URL, getHoldTypes } from "../lib/api";
+import { selectRoute, type Prepared, type RoutePick } from "../lib/contract";
 import {
   BottomSheet,
   Btn,
@@ -37,22 +38,24 @@ type Tool = "add" | "delete" | "start" | "finish" | null;
 type State = {
   holds: Hold[];
   route: HoldColour | null;
+  /** Real data: the selected route's hold ids. Mock: null, the route is the whole colour. */
+  ids: string[] | null;
   start: string[];
   finish: string[];
   confirmed: Record<string, HoldType>;
 };
 
 function presetState(p: ReviewPreset, data?: Prepared): State {
-  if (data) return { holds: data.holds, route: null, start: [], finish: [], confirmed: {} };
-  const base: State = { holds: HOLDS, route: null, start: [], finish: [], confirmed: {} };
+  if (data) return { holds: data.holds, route: null, ids: null, start: [], finish: [], confirmed: {} };
+  const base: State = { holds: HOLDS, route: null, ids: null, start: [], finish: [], confirmed: {} };
   if (p === "empty") return base;
   const routed = { ...base, route: "blue" as HoldColour, start: ["y1", "y2"], finish: ["y8"] };
   if (p === "route") return routed;
   return { ...routed, confirmed: { y3: "crimp", n5: "jug" } };
 }
 
-function autoEnds(holds: Hold[], c: HoldColour) {
-  const hands = holds.filter((h) => h.colour === c && h.type !== "foot").sort((a, b) => b.y - a.y);
+function autoEnds(route: Hold[]) {
+  const hands = route.filter((h) => h.type !== "foot").sort((a, b) => b.y - a.y);
   if (!hands.length) return { start: [], finish: [] };
   return {
     start: hands.slice(0, hands.length > 3 ? 2 : 1).map((h) => h.id),
@@ -82,8 +85,14 @@ export function ReviewScreen({
   );
 
   const routeHolds = useMemo(
-    () => (s.route ? s.holds.filter((h) => h.colour === s.route).sort((a, b) => b.y - a.y) : []),
-    [s.holds, s.route],
+    () => {
+      if (!s.route) return [];
+      const ids = s.ids && new Set(s.ids);
+      return s.holds
+        .filter((h) => (ids ? ids.has(h.id) : h.colour === s.route))
+        .sort((a, b) => b.y - a.y);
+    },
+    [s.holds, s.route, s.ids],
   );
   const routeIds = new Set(routeHolds.map((h) => h.id));
   // Real data: only holds on the chosen route are asked about (PLAN.md step 3).
@@ -121,6 +130,7 @@ export function ReviewScreen({
       setS({
         ...s,
         holds: s.holds.filter((h) => h.id !== id),
+        ids: s.ids && s.ids.filter((x) => x !== id),
         start: s.start.filter((x) => x !== id),
         finish: s.finish.filter((x) => x !== id),
       });
@@ -135,8 +145,12 @@ export function ReviewScreen({
       setS({ ...s, [key]: list, [other]: s[other].filter((x) => x !== id) });
       return;
     }
-    if (hold.colour !== s.route) {
-      setS({ ...s, route: hold.colour, ...autoEnds(s.holds, hold.colour) });
+    if (!routeIds.has(id)) {
+      const ids = data ? selectRoute(s.holds, hold) : null;
+      const route = ids
+        ? s.holds.filter((h) => ids.includes(h.id))
+        : s.holds.filter((h) => h.colour === hold.colour);
+      setS({ ...s, route: hold.colour, ids, confirmed: {}, ...autoEnds(route) });
       return;
     }
     if (isOpenQ(id)) {
@@ -149,11 +163,17 @@ export function ReviewScreen({
     if (tool !== "add") return;
     const colour = s.route ?? "blue";
     const id = `u${Date.now()}`;
-    setS({
-      ...s,
-      holds: [...s.holds, { id, x, y, r: 18, colour, type: "jug", tag: "NEW", added: true }],
-    });
-    if (!s.route) setS((p) => ({ ...p, route: colour, ...autoEnds(p.holds, colour) }));
+    const anchor = routeHolds[0];
+    const hold: Hold = {
+      id, x, y, r: 18, colour, type: "jug", tag: "NEW", added: true,
+      hex: anchor?.hex, own: anchor?.own,
+    };
+    const holds = [...s.holds, hold];
+    if (!s.route) {
+      const ids = data ? [id] : null;
+      const route = ids ? [hold] : holds.filter((h) => h.colour === colour);
+      setS({ ...s, holds, route: colour, ids, ...autoEnds(route) });
+    } else setS({ ...s, holds, ids: s.ids && [...s.ids, id] });
   };
 
   const caption =
@@ -165,7 +185,9 @@ export function ReviewScreen({
           ? "Tap route holds to mark the start"
           : tool === "finish"
             ? "Tap a route hold to mark the finish"
-            : "Tap a hold to select its whole colour";
+            : data
+              ? "Tap a hold to select its route"
+              : "Tap a hold to select its whole colour";
 
   const currentHold = s.holds.find((h) => h.id === current);
 
@@ -176,7 +198,7 @@ export function ReviewScreen({
         <WallPhoto photo={photo} name="review/photo" aspect={data?.aspect}>
           <HoldsOverlay
             holds={s.holds}
-            route={s.route}
+            inRoute={routeIds}
             routeHolds={routeHolds}
             start={s.start}
             finish={s.finish}
@@ -301,7 +323,7 @@ export function ReviewScreen({
         open={sheet === "other"}
         onClose={() => setSheet("confirm")}
       >
-        <AllTypes onPick={answer} onBack={() => setSheet("confirm")} />
+        <AllTypes onPick={answer} onBack={() => setSheet("confirm")} live={!!data} />
       </BottomSheet>
     </Screen>
   );
@@ -321,14 +343,14 @@ function Marker({ kind, small = false }: { kind: "S" | "F"; small?: boolean }) {
 
 function HoldsOverlay({
   holds,
-  route,
+  inRoute,
   routeHolds,
   start,
   finish,
   isOpenQ,
 }: {
   holds: Hold[];
-  route: HoldColour | null;
+  inRoute: Set<string>;
   routeHolds: Hold[];
   start: string[];
   finish: string[];
@@ -336,13 +358,14 @@ function HoldsOverlay({
 }) {
   const num = new Map(routeHolds.map((h, i) => [h.id, i + 1]));
   const ordered = [
-    ...holds.filter((h) => h.colour !== route),
-    ...holds.filter((h) => h.colour === route),
+    ...holds.filter((h) => !inRoute.has(h.id)),
+    ...holds.filter((h) => inRoute.has(h.id)),
   ];
+  const route = inRoute.size > 0;
   return (
     <g data-name="review/holds">
       {ordered.map((h) => {
-        const sel = route === h.colour;
+        const sel = inRoute.has(h.id);
         return (
           <g key={h.id} data-hold={h.id} style={{ cursor: "pointer" }}>
             {/* generous invisible hit area so small holds stay tappable */}
@@ -561,7 +584,10 @@ function ZoomPhoto({
 }
 
 function Closeup({ hold, photo, aspect }: { hold: Hold; photo: string; aspect?: number }) {
-  const span = Math.max(hold.r * (hold.sx ?? 1), hold.r * (hold.sy ?? 1)) * 3.4;
+  // Show about 3.4 hold-widths around the hold. Real photos zoom to fit that
+  // span so the outline sits on the hold; the design mock keeps its fixed 6x.
+  const span = Math.max(40, Math.max(hold.r * (hold.sx ?? 1), hold.r * (hold.sy ?? 1)) * 3.4);
+  const zoom = aspect ? (1000 / span) * 100 : 600; // % of the box
   return (
     <div
       data-name="confirm/closeup"
@@ -577,26 +603,48 @@ function Closeup({ hold, photo, aspect }: { hold: Hold; photo: string; aspect?: 
               : `https://images.unsplash.com/photo-${photo}?fit=crop&w=600&q=80`
           }
           alt=""
-          className="absolute w-[600%] max-w-none object-cover"
+          className="absolute max-w-none object-cover"
           style={{
-            height: aspect ? `${600 * aspect}%` : "600%",
-            left: `${50 - (hold.x / 1000) * 600}%`,
-            top: `${50 - (hold.y / 1000) * 600}%`,
-            filter: aspect ? "saturate(0.85)" : "grayscale(0.75) contrast(0.92)",
+            width: `${zoom}%`,
+            height: aspect ? `${zoom * aspect}%` : `${zoom}%`,
+            left: `${50 - (hold.x / 1000) * zoom}%`,
+            top: `${50 - (hold.y / 1000) * zoom}%`,
+            filter: aspect ? "none" : "grayscale(0.75) contrast(0.92)",
           }}
         />
         <svg
           viewBox={`${hold.x - span / 2} ${hold.y - span / 2} ${span} ${span}`}
           className="absolute inset-0 h-full w-full"
         >
-          <path
-            d={holdPath(hold)}
-            fill={hold.hex ?? HOLD_COLOURS[hold.colour]}
-            fillOpacity={0.9}
-            stroke={C.accent}
-            strokeWidth={3}
-            vectorEffect="non-scaling-stroke"
-          />
+          {aspect ? (
+            // real photo: outline only, so the hold itself stays visible
+            <>
+              <path
+                d={holdPath(hold, 1.25)}
+                fill="none"
+                stroke={C.surface}
+                strokeWidth={4}
+                strokeOpacity={0.8}
+                vectorEffect="non-scaling-stroke"
+              />
+              <path
+                d={holdPath(hold, 1.25)}
+                fill="none"
+                stroke={C.accent}
+                strokeWidth={2}
+                vectorEffect="non-scaling-stroke"
+              />
+            </>
+          ) : (
+            <path
+              d={holdPath(hold)}
+              fill={hold.hex ?? HOLD_COLOURS[hold.colour]}
+              fillOpacity={0.9}
+              stroke={C.accent}
+              strokeWidth={3}
+              vectorEffect="non-scaling-stroke"
+            />
+          )}
         </svg>
         <span
           className={`${MONO} absolute bottom-1 left-1 rounded-[3px] bg-ink px-1 text-[10px] text-surface`}
@@ -712,11 +760,45 @@ function TypeSketch({ type }: { type: HoldType }) {
       )}
       {type === "volume" && <path d="M8 38 L24 8 L40 38Z M24 8 L26 38" {...s} />}
       {type === "foot" && <circle cx="24" cy="28" r="5" {...s} />}
+      {type === "unknown" && (
+        <text x="24" y="31" textAnchor="middle" fontSize="20" fontFamily="Barlow Semi Condensed" fill={C.ink}>
+          ?
+        </text>
+      )}
     </svg>
   );
 }
 
-function AllTypes({ onPick, onBack }: { onPick: (t: HoldType) => void; onBack: () => void }) {
+/** Hold type picture from the API server, the drawn sketch when it can't load. */
+function TypePic({ type, image }: { type: HoldType; image?: string }) {
+  const [failed, setFailed] = useState(false);
+  if (!image || failed) return <TypeSketch type={type} />;
+  return (
+    <img
+      src={image.startsWith("http") ? image : API_URL + image}
+      alt=""
+      onError={() => setFailed(true)}
+      className="size-12 shrink-0 rounded-[3px] border border-hairline bg-paper object-contain"
+    />
+  );
+}
+
+function AllTypes({
+  onPick,
+  onBack,
+  live = false,
+}: {
+  onPick: (t: HoldType) => void;
+  onBack: () => void;
+  /** list from GET /hold-types (PLAN: never hard-coded) instead of the design list */
+  live?: boolean;
+}) {
+  const known = (t: string): t is HoldType => t === "unknown" || t in TYPE_INFO;
+  const items = live
+    ? getHoldTypes()
+        .filter((t) => known(t.id))
+        .map((t) => ({ id: t.id as HoldType, name: t.name, line: t.description, image: t.image }))
+    : HOLD_TYPES.map((t) => ({ id: t as HoldType, name: TYPE_INFO[t].name, line: TYPE_INFO[t].line, image: undefined }));
   return (
     <div className="flex min-h-0 flex-1 flex-col px-6">
       <div className="flex items-center justify-between">
@@ -729,17 +811,17 @@ function AllTypes({ onPick, onBack }: { onPick: (t: HoldType) => void; onBack: (
         Pick the closest.
       </h2>
       <ul className="mt-4 min-h-0 flex-1 overflow-y-auto border-t border-hairline">
-        {HOLD_TYPES.map((t) => (
-          <li key={t}>
+        {items.map((t) => (
+          <li key={t.id}>
             <button
-              data-name={`type/${t}`}
-              onClick={() => onPick(t)}
+              data-name={`type/${t.id}`}
+              onClick={() => onPick(t.id)}
               className="flex min-h-16 w-full items-center gap-4 border-b border-hairline py-2 text-left active:bg-paper"
             >
-              <TypeSketch type={t} />
+              <TypePic type={t.id} image={t.image} />
               <span className="min-w-0 flex-1">
-                <span className="block text-[16px] font-semibold">{TYPE_INFO[t].name}</span>
-                <span className="block text-[14px] text-muted">{TYPE_INFO[t].line}</span>
+                <span className="block text-[16px] font-semibold">{t.name}</span>
+                <span className="block text-[14px] text-muted">{t.line}</span>
               </span>
             </button>
           </li>
