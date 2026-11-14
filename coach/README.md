@@ -15,6 +15,7 @@ tools that run in the browser, so the backend stays stateless.
 | `setup_agent.mjs` | Creates or updates the agent on ElevenLabs from the files above |
 | `agent_ids.json` | Written by the setup script after each successful call: agent id and tool ids. Gitignored, see below |
 | `try_coach.mjs` | Text-only rehearsal of what the coach would say. No network |
+| `talk_test.html` | Browser page to talk to the live agent, with a log of every tool call |
 | `coachTools.test.js`, `test_fixture.js` | Tests, and test data in the contract's shape |
 
 ## Running it
@@ -31,6 +32,26 @@ node setup_agent.mjs --apply   # creates the agent (needs coach/.env, see .env.e
 
 If `--apply` fails halfway, run it again: every id created so far is already
 saved in `agent_ids.json`, so it updates those instead of creating duplicates.
+
+### Talking to the coach
+
+`talk_test.html` connects to the live agent by voice, with Start and Stop
+buttons, a status line, and a live log of every tool call, its result and the
+transcript. It uses `contract/solve.json` and `contract/analyze.json` when they
+exist, and the test fixture otherwise. The microphone needs `http://localhost`,
+not `file://`, so serve the repo root:
+
+```bash
+python3 -m http.server 8000 --bind 127.0.0.1   # from the repo root; open http://localhost:8000/coach/talk_test.html
+```
+
+Keep `--bind 127.0.0.1`. Without it the server is reachable from the whole
+network, and it serves every file in the repo, including `coach/.env`.
+
+The agent id fills in from `?agent=...`, from the last id typed, or from the
+local `agent_ids.json`. Height changes only re-label the route unless you give
+a backend URL (for example `http://localhost:8010`), in which case the page
+calls `/solve` again.
 
 The tests and `try_coach.mjs` use `contract/solve.json` and
 `contract/analyze.json` when they exist, and the test fixture otherwise.

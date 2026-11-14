@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BetaCrux coach: talk test</title>
+<style>
+  body { font: 15px/1.45 system-ui, sans-serif; max-width: 860px; margin: 24px auto; padding: 0 16px; color: #1b1b1b; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  .hint { color: #666; font-size: 13px; margin: 0 0 16px; }
+  fieldset { border: 1px solid #ddd; border-radius: 6px; margin: 0 0 12px; padding: 10px 12px; }
+  label { display: inline-block; margin: 4px 14px 4px 0; }
+  input[type=text] { width: 300px; }
+  button { font-size: 15px; padding: 8px 18px; margin-right: 8px; }
+  #status { font-weight: 600; margin: 12px 0; }
+  #log { border: 1px solid #ddd; border-radius: 6px; padding: 8px; height: 420px; overflow-y: auto; font: 13px/1.4 ui-monospace, Menlo, monospace; background: #fafafa; }
+  #log div { padding: 3px 0; border-bottom: 1px solid #eee; white-space: pre-wrap; word-break: break-word; }
+  .t { color: #888; }
+  .tool { color: #1a5fb4; }
+  .result { color: #26743b; }
+  .user { color: #8a4a00; }
+  .ai { color: #6c2a9a; }
+  .err { color: #b00020; font-weight: 600; }
+</style>
+</head>
+<body>
+<h1>BetaCrux coach: talk test</h1>
+<p class="hint">
+  Serve the repo root over HTTP (microphone access needs localhost, not file://):
+  <code>python3 -m http.server 8000 --bind 127.0.0.1</code>, then open
+  <code>http://localhost:8000/coach/talk_test.html</code>.
+</p>
+
+<fieldset>
+  <label>Agent id <input id="agent" type="text" placeholder="agent_..."></label>
+  <br>
+  <label>Route
+    <select id="route">
+      <option value="auto">contract/ files if present, else test fixture</option>
+      <option value="fixture">test fixture (hands only)</option>
+      <option value="mixed">test fixture (hands and feet)</option>
+    </select>
+  </label>
+  <label>Foot moves
+    <select id="feet">
+      <option value="merge">merge</option>
+      <option value="skip">skip</option>
+      <option value="call">call</option>
+    </select>
+  </label>
+  <br>
+  <label>Backend for height changes (optional)
+    <input id="backend" type="text" placeholder="http://localhost:8010">
+  </label>
+</fieldset>
+
+<button id="start">Start</button>
+<button id="stop" disabled>Stop</button>
+<div id="status">Status: idle</div>
+<div id="log"></div>
+
+<script type="module">
+import { Conversation } from "https://esm.sh/@elevenlabs/client@1.36.1";
+import { createCoachTools } from "./coachTools.js";
+import { fixtureRequest, fixtureSolve, fixtureHoldTypes, fixtureMixedRequest, fixtureMixedSolve } from "./test_fixture.js";
+
+const $ = (id) => document.getElementById(id);
+const logEl = $("log");
+const statusEl = $("status");
+let conversation = null;
+let state = null;
+let routeLabel = "";
+let mode = "";
+let status = "idle";
+
+function log(text, cls = "") {
+  const row = document.createElement("div");
+  const t = new Date().toLocaleTimeString();
+  row.innerHTML = `<span class="t">${t}</span> `;
+  const span = document.createElement("span");
+  span.className = cls;
+  span.textContent = text;
+  row.appendChild(span);
+  logEl.appendChild(row);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+function showStatus() {
+  statusEl.textContent = `Status: ${status}${mode ? `, agent ${mode}` : ""}${routeLabel ? `. Route: ${routeLabel}` : ""}`;
+}
+
+async function fetchJson(url) {
+  const r = await fetch(url, { cache: "no-store" });
+  if (!r.ok) throw new Error(`${url}: ${r.status}`);
+  return r.json();
+}
+
+// Agent id: ?agent=... in the URL, else the last one typed here, else the local
+// gitignored agent_ids.json written by setup_agent.mjs (only exists on Zaki's laptop).
+async function fillAgentId() {
+  const fromUrl = new URLSearchParams(location.search).get("agent");
+  const saved = localStorage.getItem("betacrux_agent_id");
+  if (fromUrl || saved) { $("agent").value = fromUrl || saved; return; }
+  try {
+    const ids = await fetchJson("./agent_ids.json");
+    if (ids.agent_id) { $("agent").value = ids.agent_id; log("Agent id loaded from coach/agent_ids.json."); }
+  } catch { /* not present: type it in */ }
+}
+
+async function loadState(choice) {
+  if (choice === "mixed") {
+    routeLabel = "test fixture, hands and feet";
+    return { request: fixtureMixedRequest, solve: fixtureMixedSolve, holdTypes: fixtureHoldTypes };
+  }
+  if (choice === "auto") {
+    try {
+      const [solve, analyze] = await Promise.all([fetchJson("../contract/solve.json"), fetchJson("../contract/analyze.json")]);
+      routeLabel = "contract/solve.json + analyze.json (wall height assumed 4.0 m)";
+      return {
+        request: { image: analyze.image, holds: analyze.holds, climber_height_m: 1.75, wall_height_m: 4.0 },
+        solve,
+      };
+    } catch {
+      log("contract/solve.json or analyze.json not found; using the test fixture.");
+    }
+  }
+  routeLabel = "test fixture, hands only";
+  return { request: fixtureRequest, solve: fixtureSolve, holdTypes: fixtureHoldTypes };
+}
+
+async function onHeightChange(heightM) {
+  const backend = $("backend").value.trim().replace(/\/$/, "");
+  const request = { ...state.request, climber_height_m: heightM };
+  if (!backend) {
+    state = { ...state, request };
+    log(`Height set to ${heightM} m (no backend given, so the route is only re-labelled, not re-solved).`);
+    return;
+  }
+  log(`POST ${backend}/solve with climber_height_m ${heightM}`);
+  const r = await fetch(`${backend}/solve`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(request),
+  });
+  if (!r.ok) throw new Error(`/solve returned ${r.status}`);
+  state = { ...state, request, solve: await r.json() };
+  log(`Re-solved: ${state.solve.moves?.length ?? "?"} moves, grade ${state.solve.grade?.font ?? "?"}.`, "result");
+}
+
+// Log every tool call and its result, and log errors instead of swallowing them.
+function withLogging(clientTools) {
+  const wrapped = {};
+  for (const [name, fn] of Object.entries(clientTools)) {
+    wrapped[name] = async (params) => {
+      log(`tool call  ${name}(${JSON.stringify(params ?? {})})`, "tool");
+      try {
+        const result = await fn(params);
+        let shown = result;
+        try { shown = JSON.stringify(JSON.parse(result), null, 2); } catch { /* not JSON */ }
+        log(`result     ${name} -> ${shown}`, "result");
+        return result;
+      } catch (e) {
+        log(`error      ${name}: ${e.message}`, "err");
+        throw e;
+      }
+    };
+  }
+  return wrapped;
+}
+
+$("start").onclick = async () => {
+  const agentId = $("agent").value.trim();
+  if (!agentId) { log("Enter the agent id first.", "err"); return; }
+  localStorage.setItem("betacrux_agent_id", agentId);
+  $("start").disabled = true;
+  try {
+    state = await loadState($("route").value);
+    const coach = createCoachTools({
+      getState: () => state,
+      onHeightChange,
+      onStepChange: (i) => log(`step       now on solve.moves[${i}]`),
+      footMoves: $("feet").value,
+    });
+    status = "asking for microphone";
+    showStatus();
+    await navigator.mediaDevices.getUserMedia({ audio: true });
+    status = "connecting";
+    showStatus();
+    conversation = await Conversation.startSession({
+      agentId,
+      connectionType: "webrtc",
+      clientTools: withLogging(coach.clientTools),
+      onConnect: () => log("Connected."),
+      onDisconnect: (d) => { log(`Disconnected${d?.reason ? `: ${d.reason}` : ""}.`); finish(); },
+      onError: (message) => log(`Error: ${message}`, "err"),
+      onStatusChange: ({ status: s }) => { status = s; showStatus(); },
+      onModeChange: ({ mode: m }) => { mode = m; showStatus(); },
+      onMessage: ({ message, source, role }) => {
+        const who = role || source;
+        log(`${who === "user" ? "climber" : "coach  "}    ${message}`, who === "user" ? "user" : "ai");
+      },
+      onUnhandledClientToolCall: (call) => log(`Agent called a tool this page doesn't have: ${call?.tool_name}`, "err"),
+    });
+    $("stop").disabled = false;
+  } catch (e) {
+    log(`Could not start: ${e.message}`, "err");
+    finish();
+  }
+};
+
+$("stop").onclick = async () => {
+  $("stop").disabled = true;
+  try { await conversation?.endSession(); } finally { finish(); }
+};
+
+function finish() {
+  conversation = null;
+  mode = "";
+  status = "idle";
+  showStatus();
+  $("start").disabled = false;
+  $("stop").disabled = true;
+}
+
+if (location.protocol === "file:") {
+  log("Opened from file://. The microphone and module imports need http://localhost; see the command above.", "err");
+}
+await fillAgentId();
+showStatus();
+</script>
+</body>
+</html>
