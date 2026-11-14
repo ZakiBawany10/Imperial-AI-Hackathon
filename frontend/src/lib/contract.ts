@@ -7,6 +7,7 @@
 import analyzeJson from "@contract/analyze.json";
 import holdTypesJson from "@contract/hold_types.json";
 import wallUrl from "@contract/wall.jpg";
+import type { SolveRequest } from "./api";
 import { HOLD_COLOURS, HOLD_TYPES, type Hold, type HoldType } from "./wall";
 
 export type ApiHold = {
@@ -67,6 +68,9 @@ export type Prepared = {
   /** ids (in route-hold order of the detector) of holds needing review */
   unsure: string[];
   groups: Record<string, { hex: string; count: number }>;
+  image: Analyze["image"];
+  /** the detector's hold behind each overlay hold, by overlay id */
+  api: Record<string, ApiHold>;
 };
 
 export function prepare(photo: string, a: Analyze): Prepared {
@@ -110,5 +114,67 @@ export function prepare(photo: string, a: Analyze): Prepared {
   const unsure = a.holds
     .filter((h) => h.needs_review || h.type === "unknown")
     .map((h) => `h${h.id}`);
-  return { photo, aspect: a.image.h / a.image.w, holds, unsure, groups };
+  const api = Object.fromEntries(a.holds.map((h) => [`h${h.id}`, h]));
+  return { photo, aspect: a.image.h / a.image.w, holds, unsure, groups, image: a.image, api };
+}
+
+/** What Review hands on: the chosen route (bottom to top) and the user's answers. */
+export type RoutePick = {
+  colour: string;
+  holds: Hold[];
+  start: string[];
+  finish: string[];
+  confirmed: Record<string, HoldType>;
+};
+
+/** POST /solve body from a picked route (PLAN.md: set type, copy quality from
+ *  the hold database, needs_review=false). Ids go back to the contract's ints;
+ *  `byId` maps them to the overlay holds for drawing the answer. */
+export function buildSolve(
+  p: Prepared,
+  pick: RoutePick,
+  o: { height: number; wallH: number; angleDeg: number },
+  qualityOf: (type: string) => number,
+): { req: SolveRequest; byId: Map<number, Hold> } {
+  const k = 1000 / p.image.w;
+  let next = Math.max(-1, ...Object.values(p.api).map((h) => h.id)) + 1;
+  const byId = new Map<number, Hold>();
+  const intId = new Map<string, number>();
+  const holds = pick.holds.map((h): ApiHold => {
+    const orig = p.api[h.id];
+    const answer = pick.confirmed[h.id];
+    const base: ApiHold = orig
+      ? { ...orig }
+      : {
+          // added by the user on Review
+          id: next++,
+          x: Math.round(h.x / k),
+          y: Math.round(h.y / k),
+          w: Math.round((2 * h.r) / k),
+          h: Math.round((2 * h.r) / k),
+          type: h.type,
+          quality: qualityOf(h.type),
+          color: h.hex ?? HOLD_COLOURS[h.colour] ?? "#888888",
+          score: 1,
+          needs_review: false,
+          suggestions: [],
+        };
+    if (answer) Object.assign(base, { type: answer, quality: qualityOf(answer), needs_review: false });
+    byId.set(base.id, h);
+    intId.set(h.id, base.id);
+    return base;
+  });
+  const ids = (list: string[]) => list.map((id) => intId.get(id)).filter((n): n is number => n !== undefined);
+  return {
+    req: {
+      image: p.image,
+      holds,
+      start: ids(pick.start),
+      finish: ids(pick.finish),
+      climber_height_m: +o.height.toFixed(2),
+      wall_height_m: +o.wallH.toFixed(1),
+      wall_angle_deg: o.angleDeg,
+    },
+    byId,
+  };
 }

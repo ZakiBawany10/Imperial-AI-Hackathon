@@ -18,7 +18,7 @@ import {
   type HoldColour,
   type HoldType,
 } from "../lib/wall";
-import type { Prepared } from "../lib/contract";
+import type { Prepared, RoutePick } from "../lib/contract";
 import {
   BottomSheet,
   Btn,
@@ -70,7 +70,7 @@ export function ReviewScreen({
   preset?: ReviewPreset;
   /** Real detector output (contract/analyze.json). Without it, the design mock is shown. */
   data?: Prepared;
-  onNext?: () => void;
+  onNext?: (pick: RoutePick) => void;
 }) {
   const [s, setS] = useState<State>(() => presetState(preset, data));
   const [tool, setTool] = useState<Tool>(null);
@@ -93,7 +93,8 @@ export function ReviewScreen({
   const isOpenQ = (id: string) =>
     (data ? s.route !== null : true) && unsure.includes(id) && !s.confirmed[id];
   const routeLeft = routeHolds.filter((h) => isOpenQ(h.id)).length;
-  const ready = !!s.route && routeLeft === 0;
+  const ends = s.start.length > 0 && s.finish.length > 0;
+  const ready = !!s.route && routeLeft === 0 && ends;
 
   const nextUnsure = (from: string, confirmed: Record<string, HoldType>) => {
     const i = unsure.indexOf(from);
@@ -225,7 +226,20 @@ export function ReviewScreen({
       </div>
 
       <StickyBar>
-        <Btn className="w-full" disabled={!ready} onClick={onNext}>
+        <Btn
+          className="w-full"
+          disabled={!ready}
+          onClick={() =>
+            s.route &&
+            onNext?.({
+              colour: s.route,
+              holds: routeHolds,
+              start: s.start,
+              finish: s.finish,
+              confirmed: s.confirmed,
+            })
+          }
+        >
           Next: set climber
         </Btn>
         <button
@@ -242,6 +256,11 @@ export function ReviewScreen({
         >
           {!s.route ? (
             "Pick a route colour first"
+          ) : routeLeft === 0 && !ends ? (
+            <>
+              <span className="size-1.5 rounded-full bg-tape-yellow" />
+              Mark a start and a finish hold
+            </>
           ) : ready ? (
             <>
               <span className="size-1.5 rounded-full bg-tape-green" /> All route holds confirmed

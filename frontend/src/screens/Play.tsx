@@ -1,16 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import {
-  C,
-  TYPE_INFO,
-  betaFor,
-  gradeFor,
-  holdById,
-  placementAt,
-  placements,
-  skeleton,
-  type Limb,
-  type Pt,
-} from "../lib/wall";
+import { C, TYPE_INFO, betaFor, type Limb, type Pt } from "../lib/wall";
+import { LIMB_NAME, mockBeta, type BetaView, type Pose } from "../lib/beta";
 import { Btn, Flame, Glyph, Slider, MONO, Screen, StickyBar, TopBar, WallPhoto } from "../ui/kit";
 import { RouteOverlay } from "./Route";
 
@@ -23,28 +13,35 @@ type Props = {
   initialMove?: number;
   onNewWall?: () => void;
   onLive?: (move: number) => void;
+  /** Real /solve answer; without it the design mock for `height` is shown. */
+  beta?: BetaView;
+  /** a re-solve for a new height is in flight */
+  resolving?: boolean;
+  /** the last re-solve failed */
+  solveError?: string | null;
+  /** the beta is the fixed contract example (server unreachable) */
+  example?: boolean;
 };
 
-const handOf = (limbs: Partial<Record<Limb, string>>): Limb | undefined =>
-  limbs.RH ? "RH" : limbs.LH ? "LH" : undefined;
+/** The mock beta changes only when the height crosses a band, so memo on that. */
+function useBeta(beta: BetaView | undefined, height: number, wallH: number, angle: string) {
+  const band = betaFor(height).band;
+  const mock = useMemo(
+    () => (beta ? null : mockBeta(height, wallH, angle)),
+    [beta, band, wallH, angle], // eslint-disable-line react-hooks/exhaustive-deps
+  );
+  return beta ?? mock!;
+}
 
 export function Climber({
-  t,
-  height,
-  wallH,
-  list,
+  pose: sk,
   activeLimb,
   trail,
 }: {
-  t: number;
-  height: number;
-  wallH: number;
-  list: ReturnType<typeof placements>;
+  pose: Pose;
   activeLimb?: Limb;
   trail?: Pt[];
 }) {
-  const H = (height * 1000) / wallH;
-  const sk = skeleton(placementAt(list, t), H);
   const seg = (a: Pt, b: Pt, k: string) => <line key={k} x1={a.x} y1={a.y} x2={b.x} y2={b.y} />;
   const joints: Pt[] = [sk.shL, sk.shR, sk.elL, sk.elR, sk.hip, sk.knL, sk.knR];
   const ends: Pt[] = [sk.LH, sk.RH, sk.LF, sk.RF];
@@ -110,7 +107,7 @@ export function Climber({
     </g>
   );
 }
-function bones(sk: ReturnType<typeof skeleton>, seg: (a: Pt, b: Pt, k: string) => ReactNode) {
+function bones(sk: Pose, seg: (a: Pt, b: Pt, k: string) => ReactNode) {
   return [
     seg(sk.neck, sk.hip, "spine"),
     seg(sk.shL, sk.shR, "sh"),
@@ -135,12 +132,14 @@ export function PlayScreen({
   initialMove = 4,
   onNewWall,
   onLive,
+  beta: real,
+  resolving,
+  solveError,
+  example,
 }: Props) {
-  const band = betaFor(height).band;
-  const beta = useMemo(() => betaFor(height), [band]); // eslint-disable-line react-hooks/exhaustive-deps
+  const beta = useBeta(real, height, wallH, angle);
   const n = beta.moves.length;
-  const list = useMemo(() => placements(beta.moves), [beta]);
-  const g = gradeFor(height, angle);
+  const g = beta.grade;
   const [t, setT] = useState(Math.min(initialMove, n));
   const [playing, setPlaying] = useState(false);
   const [speed, setSpeed] = useState<1 | 0.5>(1);
@@ -169,8 +168,10 @@ export function PlayScreen({
 
   const move = Math.max(1, Math.min(n, Math.ceil(t - 0.001)));
   const m = beta.moves[move - 1];
-  const active = handOf(m.limbs) ?? (m.limbs.LF ? "LF" : "RF");
-  const trail = list.slice(Math.max(0, move - 3), move + 1).map((pl) => pl[active]);
+  const active = m.limb;
+  const trail = Array.from({ length: move + 1 - Math.max(0, move - 3) }, (_, i) =>
+    beta.poseAt(Math.max(0, move - 3) + i)[active],
+  );
   const go = (k: number) => {
     setPlaying(false);
     setT(Math.max(0, Math.min(n, k)));
@@ -180,20 +181,21 @@ export function PlayScreen({
     <Screen name="screen/4-play">
       <TopBar step={4} />
       <div data-name="play/photo" className="relative h-[calc(58%-var(--sat)*0.42-74px)] shrink-0">
-        <WallPhoto photo={photo} dim={0.3}>
-          <RouteOverlay strokeWidth={1.5} />
-          <Climber
-            t={t}
-            height={height}
-            wallH={wallH}
-            list={list}
-            activeLimb={active}
-            trail={trail}
-          />
+        <WallPhoto photo={photo} dim={0.3} aspect={beta.aspect}>
+          <RouteOverlay strokeWidth={1.5} route={beta.route} others={beta.others} />
+          <Climber pose={beta.poseAt(t)} activeLimb={active} trail={trail} />
         </WallPhoto>
         <span className={`${MONO} absolute top-3 left-3 rounded-[4px] bg-surface px-2 py-1`}>
           {height.toFixed(2)} m · {wallH.toFixed(1)} m wall
         </span>
+        {example && (
+          <span
+            data-name="play/example-badge"
+            className={`${MONO} absolute top-3 right-3 rounded-[4px] bg-tape-yellow px-2 py-1 text-ink`}
+          >
+            Example answer
+          </span>
+        )}
       </div>
 
       <div data-name="play/scroll" className="relative z-10 -mt-6 min-h-0 flex-1 overflow-y-auto">
@@ -206,7 +208,7 @@ export function PlayScreen({
               data-name="grade/font"
               className="font-mono text-[56px] leading-none font-medium tracking-[0.005em]"
             >
-              {g.grade}
+              {g.font}
             </span>
             <span data-name="grade/v" className="font-mono text-[20px] font-medium text-muted">
               {g.v}
@@ -287,7 +289,19 @@ export function PlayScreen({
               onChange={setHeight}
             />
           </div>
-          <p className={`${MONO} mt-2 text-muted`}>Drag to resolve: the sequence changes</p>
+          <p
+            data-name="play/height-status"
+            className={`${MONO} mt-2 ${solveError ? "text-accent" : "text-muted"}`}
+            aria-live="polite"
+          >
+            {resolving
+              ? "Solving for this height..."
+              : solveError
+                ? solveError
+                : example
+                  ? "Example answer: start the solver to re-solve"
+                  : "Drag to resolve: the sequence changes"}
+          </p>
         </div>
       </div>
 
@@ -346,6 +360,7 @@ export function LiveScreen({
   voice: initialVoice = "idle",
   move = 4,
   onExit,
+  beta: real,
 }: {
   photo: string;
   height: number;
@@ -353,20 +368,21 @@ export function LiveScreen({
   voice?: Voice;
   move?: number;
   onExit?: () => void;
+  beta?: BetaView;
 }) {
-  const beta = betaFor(height);
+  const beta = useBeta(real, height, wallH, "vertical");
   const n = beta.moves.length;
-  const k = Math.min(move, n);
-  const list = useMemo(() => placements(beta.moves), [beta]);
+  const k = Math.max(1, Math.min(move, n));
   const [voice, setVoice] = useState<Voice>(initialVoice);
   const m = beta.moves[k - 1];
-  const hand = handOf(m.limbs) ?? "RH";
-  const target = holdById((m.limbs[hand] ?? m.limbs.LF ?? m.limbs.RF)!);
-  const wrist = list[k - 1][hand];
-  const cm = Math.round((Math.hypot(target.x - wrist.x, target.y - wrist.y) / 1000) * wallH * 100);
+  const hand = m.limb;
+  const target = m.at;
+  const wrist = beta.poseAt(k - 1)[hand];
+  const cm = Math.round((Math.hypot(target.x - wrist.x, target.y - wrist.y) / beta.unitsPerMetre) * 100);
   const text = m.text.charAt(0).toUpperCase() + m.text.slice(1);
-  const who = { LH: "Left hand", RH: "Right hand", LF: "Left foot", RF: "Right foot" }[hand];
-  const cue = `${who} to ${target.type === "foot" ? "" : TYPE_INFO[target.type].name.toLowerCase() + " "}${target.tag}`;
+  const who = LIMB_NAME[hand];
+  const kind = m.hold && m.hold.type !== "foot" ? TYPE_INFO[m.hold.type].name.toLowerCase() + " " : "";
+  const cue = m.hold ? `${who} to ${kind}${m.label}` : `${who} smears on the wall`;
   const next = () =>
     setVoice(voice === "idle" ? "listening" : voice === "listening" ? "speaking" : "idle");
 
@@ -389,8 +405,8 @@ export function LiveScreen({
         data-name="live/feed"
         className="relative h-[calc(70%-var(--sat)*0.3-74px)] shrink-0 bg-ink"
       >
-        <WallPhoto photo={photo} name="live/camera">
-          <Climber t={k - 1} height={height} wallH={wallH} list={list} />
+        <WallPhoto photo={photo} name="live/camera" aspect={beta.aspect}>
+          <Climber pose={beta.poseAt(k - 1)} />
           <line
             x1={wrist.x}
             y1={wrist.y}
@@ -438,7 +454,7 @@ export function LiveScreen({
               fontWeight={500}
               letterSpacing={1.5}
             >
-              NEXT {target.tag}
+              NEXT {m.label}
             </text>
           </g>
           <g data-name="live/wrist-point">
@@ -460,7 +476,7 @@ export function LiveScreen({
               fontWeight={500}
               letterSpacing={1.5}
             >
-              WRIST · {cm} CM
+              {hand === "LH" || hand === "RH" ? "WRIST" : "FOOT"} · {cm} CM
             </text>
           </g>
         </WallPhoto>

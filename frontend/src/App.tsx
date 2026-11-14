@@ -3,16 +3,26 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useRef,
   useState,
   type CSSProperties,
   type ReactNode,
 } from "react";
 import { PHOTOS } from "./lib/wall";
-import { EXAMPLE_WALL, prepare } from "./lib/contract";
+import { EXAMPLE_WALL, buildSolve, prepare, type RoutePick } from "./lib/contract";
+import {
+  ApiError,
+  EXAMPLE_SOLVE,
+  loadHoldTypes,
+  qualityOf,
+  solve,
+  type SolveResponse,
+} from "./lib/api";
+import { realBeta, type BetaView } from "./lib/beta";
 import { MONO } from "./ui/kit";
 import { UploadScreen } from "./screens/Upload";
 import { ReviewScreen, type ReviewPreset } from "./screens/Review";
-import { RouteScreen, type Angle } from "./screens/Route";
+import { ANGLES, RouteScreen, type Angle } from "./screens/Route";
 import { LiveScreen, PlayScreen, type Voice } from "./screens/Play";
 
 const WALL = PHOTOS.wall01;
@@ -32,6 +42,11 @@ function useMedia(q: string) {
 
 /* ---------- prototype: the real flow ---------- */
 type Step = "upload" | "finding" | "review" | "route" | "solving" | "play" | "live";
+type Solved = { beta: BetaView; example?: boolean };
+
+const errText = (e: unknown) =>
+  e instanceof ApiError ? e.message : "Something went wrong talking to the solver.";
+const isAbort = (e: unknown) => (e as Error)?.name === "AbortError";
 
 function Flow() {
   const [step, setStep] = useState<Step>("upload");
@@ -40,8 +55,110 @@ function Flow() {
   const [wallH, setWallH] = useState(4.0);
   const [angle, setAngle] = useState<Angle>("vertical");
   const [move, setMove] = useState(4);
+  const [pick, setPick] = useState<RoutePick | null>(null);
+  const [solved, setSolved] = useState<Solved | null>(null);
+  const [solveErr, setSolveErr] = useState<{ msg: string; offline: boolean } | null>(null);
+  const [resolving, setResolving] = useState(false);
+  const [resolveErr, setResolveErr] = useState<string | null>(null);
+  const inflight = useRef<AbortController | null>(null);
   const toReview = useCallback(() => setStep("review"), []);
-  const toPlay = useCallback(() => setStep("play"), []);
+
+  useEffect(() => {
+    loadHoldTypes(); // quality per type comes from GET /hold-types when the server is up
+  }, []);
+
+  const routeIds = new Set(pick?.holds.map((h) => h.id));
+  const others = REAL.holds.filter((h) => !routeIds.has(h.id));
+
+  /** POST /solve for the current pick; resolves to the drawable beta. */
+  const runSolve = async (h: number, signal: AbortSignal) => {
+    const deg = ANGLES.find((a) => a.k === angle)!.deg;
+    const { req, byId } = buildSolve(REAL, pick!, { height: h, wallH, angleDeg: deg }, qualityOf);
+    const res: SolveResponse = await solve(req, signal);
+    return realBeta(res, {
+      imageW: REAL.image.w,
+      aspect: REAL.aspect,
+      wallH,
+      colour: pick!.colour,
+      route: pick!.holds,
+      others,
+      byId,
+    });
+  };
+
+  const startSolve = async () => {
+    inflight.current?.abort();
+    const ctl = new AbortController();
+    inflight.current = ctl;
+    setSolveErr(null);
+    setStep("solving");
+    // Hold the tracing animation long enough to read; the solver takes ~0.1 s.
+    const minWait = new Promise((r) => setTimeout(r, 1200));
+    try {
+      const beta = await runSolve(height, ctl.signal);
+      await minWait;
+      if (ctl.signal.aborted) return;
+      setSolved({ beta });
+      setResolveErr(null);
+      setMove(0);
+      setStep("play");
+    } catch (e) {
+      if (isAbort(e)) return;
+      await minWait;
+      setSolveErr({ msg: errText(e), offline: e instanceof ApiError && e.offline });
+    }
+  };
+
+  // The fixed contract pair, for demos with no server. Its route replaces the pick.
+  const showExample = () => {
+    const { req, res } = EXAMPLE_SOLVE;
+    const byId = new Map(req.holds.map((h) => [h.id, REAL.holds.find((x) => x.id === `h${h.id}`)!]));
+    const route = [...byId.values()].sort((a, b) => b.y - a.y);
+    const ids = new Set(route.map((h) => h.id));
+    const beta = realBeta(res, {
+      imageW: req.image.w,
+      aspect: req.image.h / req.image.w,
+      wallH: req.wall_height_m,
+      colour: route[0].colour,
+      route,
+      others: REAL.holds.filter((h) => !ids.has(h.id)),
+      byId,
+    });
+    setHeight(req.climber_height_m);
+    setWallH(req.wall_height_m);
+    setSolved({ beta, example: true });
+    setSolveErr(null);
+    setMove(0);
+    setStep("play");
+  };
+
+  // Play: dragging the height re-solves (debounced); the old beta stays up meanwhile.
+  const pendingHeight = useRef<number | null>(null);
+  useEffect(() => {
+    if (step !== "play" || !solved || solved.example || pendingHeight.current === null) return;
+    const h = pendingHeight.current;
+    const ctl = new AbortController();
+    setResolving(true);
+    const t = setTimeout(async () => {
+      try {
+        const beta = await runSolve(h, ctl.signal);
+        if (ctl.signal.aborted) return;
+        pendingHeight.current = null;
+        setSolved({ beta });
+        setResolveErr(null);
+      } catch (e) {
+        if (isAbort(e)) return;
+        console.error(e);
+        setResolveErr(errText(e));
+      } finally {
+        if (!ctl.signal.aborted) setResolving(false);
+      }
+    }, 300);
+    return () => {
+      clearTimeout(t);
+      ctl.abort();
+    };
+  }, [height]); // eslint-disable-line react-hooks/exhaustive-deps
 
   switch (step) {
     case "upload":
@@ -58,22 +175,51 @@ function Flow() {
         />
       );
     case "review":
-      return <ReviewScreen photo={REAL.photo} data={REAL} onNext={() => setStep("route")} />;
+      return (
+        <ReviewScreen
+          photo={REAL.photo}
+          data={REAL}
+          onNext={(p) => {
+            setPick(p);
+            setStep("route");
+          }}
+        />
+      );
     case "route":
     case "solving":
       return (
         <RouteScreen
-          {...{ photo, height, setHeight, wallH, setWallH, angle, setAngle }}
+          {...{ height, setHeight, wallH, setWallH, angle, setAngle }}
+          photo={REAL.photo}
+          aspect={REAL.aspect}
+          route={pick?.holds}
+          others={others}
+          colour={pick?.colour}
           solving={step === "solving"}
-          onSolve={() => setStep("solving")}
-          onCancel={() => setStep("route")}
-          onSolved={toPlay}
+          error={solveErr?.msg}
+          onSolve={startSolve}
+          onCancel={() => {
+            inflight.current?.abort();
+            setSolveErr(null);
+            setStep("route");
+          }}
+          onExample={solveErr?.offline ? showExample : undefined}
         />
       );
     case "play":
       return (
         <PlayScreen
-          {...{ photo, height, setHeight, wallH, angle }}
+          {...{ wallH, angle }}
+          photo={REAL.photo}
+          height={height}
+          setHeight={(h) => {
+            pendingHeight.current = h;
+            setHeight(h);
+          }}
+          beta={solved!.beta}
+          example={solved!.example}
+          resolving={resolving}
+          solveError={resolveErr}
           initialMove={move}
           onNewWall={() => setStep("upload")}
           onLive={(m) => {
@@ -83,7 +229,14 @@ function Flow() {
         />
       );
     case "live":
-      return <LiveScreen {...{ photo, height, wallH, move }} onExit={() => setStep("play")} />;
+      return (
+        <LiveScreen
+          {...{ height, wallH, move }}
+          photo={REAL.photo}
+          beta={solved!.beta}
+          onExit={() => setStep("play")}
+        />
+      );
   }
 }
 

@@ -1,7 +1,7 @@
 # Frontend handoff (Adam, BetaCrux)
 
 Read this first, then `../CLAUDE.md` (repo rules) and `../Documents/PLAN.md` (plan + API contract).
-Last updated: Sat 14 Nov 2026, after A2 + PWA + font change.
+Last updated: Sat 14 Nov 2026, after A3 (real /solve in Route/Play/Live).
 
 ## Who and where
 - Working for **Adam**. Only write inside `frontend/`. `git config user.name` is set (repo-local) to "Adam Wilkinson"; check it before editing.
@@ -24,14 +24,21 @@ Make's default binds 0.0.0.0:8443; I bind to localhost on purpose.
 React 19 + Vite 8 + Tailwind v4 + TypeScript. Exported from Figma Make ("Design BetaCrux Upload Screen"), then extended.
 - Screens in `src/screens/`: Upload, Review, Route, Play (Play includes Live mode). `src/App.tsx` has `Flow` (real flow), `Board` (all design frames side by side, desktop), and picks phone layout at `max-width:520px` or coarse pointer up to 1024px.
 - `src/ui/kit.tsx` shared UI (Screen, TopBar, BottomSheet, WallPhoto, HoldShape...). `src/ui/HoldPins.tsx` custom bolted-hold illustrations pinning the upload sheet.
-- `src/lib/wall.ts` = original MOCK wall/beta data (1000x1000 space). Route + Play still run on this mock.
+- `src/lib/wall.ts` = original MOCK wall/beta data (1000x1000 space). Only the Board frames use it now.
+- `src/lib/api.ts` = API client. Base URL `VITE_API_URL`, else `http://<page host>:8010`. `solve()`, `loadHoldTypes()`/`qualityOf()` (GET /hold-types, falls back to the contract list), `EXAMPLE_SOLVE` (contract fixture pair). `ApiError.offline` = server unreachable.
+- `src/lib/beta.ts` = `BetaView`, the one shape Route/Play/Live draw: moves (limb, target hold or null, label, text), crux (1-based), grade, route/others holds, aspect, `poseAt(t)` (eased keyframe interpolation). `realBeta(res, ...)` from /solve, `mockBeta(height, ...)` for the Board.
 - `src/lib/contract.ts` = adapter from the real contract (`@contract` alias -> `../contract`, allowed in `vite.config.ts` `server.fs.allow`). `prepare(photo, analyze)` converts photo pixels to a 1000-wide overlay space (1 px = 1000/image.w), groups holds into colour groups by hue (detector gives every hold its own hex, 178 distinct), and returns holds, unsure ids, aspect.
 - **A2 done**: Review shows the 178 real holds over `contract/wall.jpg`. Tap = select colour group; start/finish; "?" badges and confirm sheet appear only for holds on the chosen route (PLAN step 3); close-up + real top-3 suggestions.
 - **PWA done**: `public/manifest.webmanifest`, `public/sw.js` (app shell offline; never caches /analyze /solve /hold-types /demo), icons (192/512/maskable/apple-touch, generated custom), meta tags in `index.html`. SW registers in production builds only. Verified: no installability errors, loads offline.
 - Fonts: Barlow Condensed (display), Barlow (body), Barlow Semi Condensed caps (the `MONO` class labels). Chosen because the previous fonts looked "vibecoded". Wired in `src/index.css` only.
 - Design tokens: paper #F4EFE6, surface #FBF8F2, ink #1B1A17, muted #6B665C, hairline #D9D2C3, accent #E8431F, tape blue #2F6FDE / yellow #E8B100 / green #2E8B57. Light mode only, 4px card radius, 6px buttons, no gradients/blur/emoji.
 
+- **A3 done**: Review `onNext(pick)` -> Route (real route holds over the real photo) -> `buildSolve()` in `contract.ts` makes the body (contract int ids, confirmed type + quality from hold DB, needs_review=false; user-added holds get new ids) -> `POST /solve` -> Play/Live draw the real keyframes and grade. Solving screen waits at least 1.2 s so the trace reads. Errors (422 message etc.) show on the solving screen with Back; if the server is unreachable there is also "Use example" (contract solve fixture, yellow "Example answer" badge). Play height slider re-solves (300 ms debounce, old beta stays up).
+- Tested headless against the real backend (venv in a scratchpad, not in backend/): yellow route 1.75 m -> 6a, 10 moves; 1.55 m -> 6b, 11 moves. Offline path and Board frames also checked.
+
 ## Decisions and gotchas
+- Live backend returns things the contract does not describe yet (reported to Krishna via Adam): foot moves (`LF`/`RF`), extra move fields `effort`/`stable`, and `"hold": null` for a foot smearing on the wall. Frontend tolerates all three (null -> "smears on the wall").
+- Colour grouping is coarse: tapping a yellow hold selects 25 holds across both walls and 14 need confirming. Worth a tighter grouping (hue + distance?) before the demo, which promises "one or two" questions.
 - Make's own `CLAUDE.md`, `AGENTS.md` and `.gitattributes` were deliberately NOT copied. `.gitattributes` sent all images to Git LFS (breaks teammates); Make's CLAUDE.md would overwrite the repo's rules and says a dev server is already running.
 - `.figma/` is kept (Make wants it for re-import).
 - Uploaded photos currently still show the example wall's holds (Flow always uses `EXAMPLE_WALL`). Wiring to the real `/analyze` is not done.
@@ -45,9 +52,9 @@ React 19 + Vite 8 + Tailwind v4 + TypeScript. Exported from Figma Make ("Design 
 No browser tool in the session. I used Chrome headless via `puppeteer-core` (installed in a scratchpad dir, not in the repo): viewport 390x844, `isMobile`, `hasTouch`, screenshots + DOM checks (`[data-hold]` count, `data-name` attributes). Chrome is at `/Applications/Google Chrome.app`. Recreate in a scratch dir outside the repo if needed.
 
 ## Next steps (PLAN.md)
-1. **A3** Review -> Route -> real `POST /solve`: build the body from the confirmed route holds (set `type`, copy `quality` from `GET /hold-types`, `needs_review=false`), `start`/`finish` ids as NUMBERS (the contract ids are ints; my overlay ids are `h<id>`), `climber_height_m`, `wall_height_m`, `wall_angle_deg`. Fixtures: `contract/solve_request.json`, `contract/solve.json`. Backend lives in `backend/` (see its README for running it; `/demo/` test page exists). Replace the mock beta in Route/Play.
-2. **A3b** already largely covered by the confirm sheet; add the full list from `/hold-types` (currently hard-coded `HOLD_TYPES` in `wall.ts`, PLAN says never hard-code).
-3. **A4** Play: animate the real `keyframes` with smooth interpolation, crux highlight, grade card from `grade` (`font`, `v`, `low`, `high`).
+1. Tighten route colour grouping (see gotchas) so the demo asks about one or two holds.
+2. **A3b** already largely covered by the confirm sheet; the "Other" list is still hard-coded `HOLD_TYPES` in `wall.ts` (PLAN says never hard-code): render it from `getHoldTypes()`, images from `${API_URL}${image}`.
+3. **A4** mostly done by A3 (eased keyframe interpolation, crux, real grade card). Left: colour moves by `load`, nicer crux highlight on the photo.
 4. **A5** Live mode with in-browser pose tracking; **A6** voice coach via Zaki's agent in `coach/`.
 5. Hook up real `/analyze` for uploaded photos.
 6. Figma evidence screenshots for Zaki's slides; send Zaki the Figma link.

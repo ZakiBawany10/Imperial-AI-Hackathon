@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { C, HOLDS, betaFor, holdById, holdPath } from "../lib/wall";
+import { C, HOLDS, betaFor, holdPath, type Hold } from "../lib/wall";
 import {
   Btn,
   Glyph,
@@ -21,15 +21,25 @@ export const ANGLES: { k: Angle; label: string; deg: number }[] = [
   { k: "30", label: "30°+", deg: 30 },
 ];
 
-const ROUTE = HOLDS.filter((h) => h.colour === "blue").sort((a, b) => b.y - a.y);
+const MOCK_ROUTE = HOLDS.filter((h) => h.colour === "blue").sort((a, b) => b.y - a.y);
+const MOCK_OTHERS = HOLDS.filter((h) => h.colour !== "blue");
 
-export function RouteOverlay({ strokeWidth = 3 }: { strokeWidth?: number }) {
+/** Route holds numbered bottom to top, the rest of the wall faded. */
+export function RouteOverlay({
+  strokeWidth = 3,
+  route = MOCK_ROUTE,
+  others = MOCK_OTHERS,
+}: {
+  strokeWidth?: number;
+  route?: Hold[];
+  others?: Hold[];
+}) {
   return (
     <>
-      {HOLDS.filter((h) => h.colour !== "blue").map((h) => (
+      {others.map((h) => (
         <HoldShape key={h.id} hold={h} opacity={0.22} strokeWidth={0.75} />
       ))}
-      {ROUTE.map((h, i) => (
+      {route.map((h, i) => (
         <g key={h.id}>
           <path
             d={holdPath(h, 1.15)}
@@ -70,25 +80,34 @@ type Props = {
   solving?: boolean;
   onSolve?: () => void;
   onCancel?: () => void;
+  /** Board only: leave the solving frame after a fixed delay. */
   onSolved?: () => void;
+  /** The real route from Review; without it the design mock is shown. */
+  route?: Hold[];
+  others?: Hold[];
+  colour?: string;
+  aspect?: number;
+  /** /solve failed: message for the user */
+  error?: string | null;
+  /** offered when the server is unreachable */
+  onExample?: () => void;
 };
 
 export function RouteScreen(p: Props) {
+  const route = p.route ?? MOCK_ROUTE;
   if (p.solving)
-    return (
-      <Solving photo={p.photo} height={p.height} onCancel={p.onCancel} onSolved={p.onSolved} />
-    );
-  const beta = betaFor(p.height);
+    return <Solving {...p} route={route} />;
+  const mockMoves = p.route ? null : betaFor(p.height).moves.length;
   return (
     <Screen name="screen/3-route">
       <TopBar step={3} />
       <div data-name="route/photo" className="relative h-[40%] shrink-0">
-        <WallPhoto photo={p.photo} dim={0.45}>
-          <RouteOverlay />
+        <WallPhoto photo={p.photo} dim={0.45} aspect={p.aspect}>
+          <RouteOverlay route={route} others={p.others} />
         </WallPhoto>
         <MeasureLine metres={p.wallH} />
         <span className={`${MONO} absolute top-3 right-3 rounded-[4px] bg-surface px-2 py-1`}>
-          {ROUTE.length} holds · blue
+          {route.length} holds · {p.colour ?? "blue"}
         </span>
       </div>
 
@@ -98,7 +117,7 @@ export function RouteScreen(p: Props) {
             <label htmlFor="height" className={`${MONO} text-muted`}>
               Your height
             </label>
-            <span className={`${MONO} text-muted`}>{beta.moves.length} moves</span>
+            {mockMoves !== null && <span className={`${MONO} text-muted`}>{mockMoves} moves</span>}
           </div>
           <p
             data-name="height/readout"
@@ -217,32 +236,28 @@ function AngleSketch({ deg }: { deg: number }) {
 function Solving({
   photo,
   height,
+  wallH,
+  aspect,
+  route,
+  others,
+  error,
   onCancel,
   onSolved,
-}: {
-  photo: string;
-  height: number;
-  onCancel?: () => void;
-  onSolved?: () => void;
-}) {
+  onExample,
+}: Props & { route: Hold[] }) {
   useEffect(() => {
     if (!onSolved) return;
     const t = setTimeout(onSolved, 3600);
     return () => clearTimeout(t);
   }, [onSolved]);
-  const beta = betaFor(height);
-  const seq = [
-    "y1",
-    "y2",
-    ...beta.moves.flatMap((m) => [m.limbs.LH, m.limbs.RH].filter((x): x is string => !!x)),
-  ];
-  const path = seq.map((id, i) => `${i ? "L" : "M"}${holdById(id).x} ${holdById(id).y}`).join(" ");
+  // No sequence yet: trace the route bottom to top while the solver works.
+  const path = route.map((h, i) => `${i ? "L" : "M"}${h.x} ${h.y}`).join(" ");
   return (
     <Screen name="screen/3-solving">
       <TopBar step={3} />
       <div data-name="solving/photo" className="relative min-h-0 flex-1">
-        <WallPhoto photo={photo} dim={0.45}>
-          <RouteOverlay strokeWidth={2} />
+        <WallPhoto photo={photo} dim={0.45} aspect={aspect}>
+          <RouteOverlay strokeWidth={2} route={route} others={others} />
           <path
             d={path}
             fill="none"
@@ -252,35 +267,55 @@ function Solving({
             strokeLinejoin="round"
             strokeLinecap="round"
           />
-          <path
-            data-name="solving/trace"
-            d={path}
-            pathLength={100}
-            fill="none"
-            stroke={C.accent}
-            strokeWidth={5}
-            strokeLinejoin="round"
-            strokeLinecap="round"
-            className="anim-trace"
-          />
+          {!error && (
+            <path
+              data-name="solving/trace"
+              d={path}
+              pathLength={100}
+              fill="none"
+              stroke={C.accent}
+              strokeWidth={5}
+              strokeLinejoin="round"
+              strokeLinecap="round"
+              className="anim-trace"
+            />
+          )}
         </WallPhoto>
-        <MeasureLine metres={4} />
+        <MeasureLine metres={wallH} />
       </div>
       <StickyBar>
-        <p
-          data-name="solving/caption"
-          className={`${MONO} flex h-14 items-center gap-2`}
-          aria-live="polite"
-        >
-          <span className="anim-blink inline-block size-1.5 rounded-full bg-accent" aria-hidden />
-          Solving the best sequence...
-        </p>
-        <div className="mt-1 flex items-center justify-between">
-          <span className={`${MONO} text-muted`}>{height.toFixed(2)} m climber</span>
-          <Btn variant="text" size="md" className="-mr-2 px-2" onClick={onCancel}>
-            Cancel
-          </Btn>
-        </div>
+        {error ? (
+          <div data-name="solving/error" role="alert">
+            <p className={`${MONO} flex items-center gap-2 pt-2 text-accent`}>
+              <span className="inline-block size-1.5 rounded-full bg-accent" aria-hidden />
+              Couldn't solve this route
+            </p>
+            <p className="mt-2 text-[16px] leading-[1.4]">{error}</p>
+            <div className={`mt-4 grid gap-3 ${onExample ? "grid-cols-2" : ""}`}>
+              <Btn variant="outline" onClick={onCancel}>
+                Back
+              </Btn>
+              {onExample && <Btn onClick={onExample}>Use example</Btn>}
+            </div>
+          </div>
+        ) : (
+          <>
+            <p
+              data-name="solving/caption"
+              className={`${MONO} flex h-14 items-center gap-2`}
+              aria-live="polite"
+            >
+              <span className="anim-blink inline-block size-1.5 rounded-full bg-accent" aria-hidden />
+              Solving the best sequence...
+            </p>
+            <div className="mt-1 flex items-center justify-between">
+              <span className={`${MONO} text-muted`}>{height.toFixed(2)} m climber</span>
+              <Btn variant="text" size="md" className="-mr-2 px-2" onClick={onCancel}>
+                Cancel
+              </Btn>
+            </div>
+          </>
+        )}
       </StickyBar>
     </Screen>
   );
