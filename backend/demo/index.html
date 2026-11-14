@@ -26,7 +26,7 @@
   .modes input { display:none; }
   .modes input:checked + span { color:var(--accent); font-weight:600; }
   input[type=range] { flex:1; min-width:0; }
-  .grade { font-size:44px; font-weight:700; line-height:1; }
+  .grade { font-size:34px; font-weight:700; line-height:1.1; }
   .grade small { font-size:15px; font-weight:400; color:var(--dim); margin-left:8px; }
   #status { color:var(--dim); min-height:1.4em; }
   #status.err { color:var(--bad); }
@@ -42,7 +42,7 @@
 <body>
 <header>
   <h1>BetaCrux backend test page</h1>
-  <span>A plain page for checking the API. The real app is in frontend/.</span>
+  <span>Photo of a climbing wall in, the moves and how hard it is out. A plain test page; the real app is in frontend/.</span>
 </header>
 <main>
   <div>
@@ -51,7 +51,7 @@
   </div>
   <div>
     <div class="panel">
-      <h2>1. Photo</h2>
+      <h2>1. Choose a wall photo</h2>
       <div class="row">
         <button id="example" class="primary">Use example wall</button>
         <input id="file" type="file" accept="image/*">
@@ -59,35 +59,35 @@
       <p class="hint" id="found"></p>
     </div>
     <div class="panel">
-      <h2>2. Pick the route</h2>
+      <h2>2. Pick one climb</h2>
       <div class="row modes">
-        <label><input type="radio" name="mode" value="route" checked><span>Route holds</span></label>
-        <label><input type="radio" name="mode" value="start"><span>Start</span></label>
-        <label><input type="radio" name="mode" value="finish"><span>Finish</span></label>
+        <label><input type="radio" name="mode" value="route" checked><span>Add holds</span></label>
+        <label><input type="radio" name="mode" value="start"><span>Mark the start</span></label>
+        <label><input type="radio" name="mode" value="finish"><span>Mark the top</span></label>
       </div>
       <div class="row">
-        <label><input type="checkbox" id="same" checked> A click takes every hold of that colour</label>
+        <label><input type="checkbox" id="same" checked> One click takes every hold of that colour</label>
       </div>
       <div class="row">
-        <button id="clear">Clear route</button>
-        <button id="demo">Pick the yellow route for me</button>
+        <button id="clear">Start again</button>
+        <button id="demo">Show me an example</button>
       </div>
-      <p class="hint">Click holds on the photo. Start: one or two holds. Finish: one hold.</p>
+      <p class="hint">In a gym, each climb uses holds of one colour. Click a hold to pick its climb, then mark where the hands start (one or two holds) and the hold at the top.</p>
     </div>
     <div class="panel">
-      <h2>3. Climber and wall</h2>
-      <div class="row"><span>Climber</span><input id="height" type="range" min="1.5" max="2.0" step="0.05" value="1.75"><span id="heightv">1.75 m</span></div>
-      <div class="row"><span>Wall in photo</span><input id="wall" type="range" min="2" max="8" step="0.25" value="4"><span id="wallv">4.00 m</span></div>
-      <button id="solve" class="primary" disabled>Solve</button>
+      <h2>3. Who is climbing</h2>
+      <div class="row"><span>Climber's height</span><input id="height" type="range" min="1.5" max="2.0" step="0.05" value="1.75"><span id="heightv">1.75 m</span></div>
+      <div class="row"><span>Wall height in photo</span><input id="wall" type="range" min="2" max="8" step="0.25" value="4"><span id="wallv">4.00 m</span></div>
+      <button id="solve" class="primary" disabled>Work out the climb</button>
     </div>
     <div class="panel" id="result" hidden>
-      <h2>Result</h2>
+      <h2>How hard is it</h2>
       <div class="grade" id="grade"></div>
       <p class="hint" id="range"></p>
       <ul id="moves" style="margin-top:8px"></ul>
     </div>
     <div class="panel" id="routepanel" hidden>
-      <h2>Route holds and types</h2>
+      <h2>Holds in this climb</h2>
       <ul id="routelist"></ul>
     </div>
   </div>
@@ -100,6 +100,13 @@ let img = null, holds = [], types = [], route = new Set(), start = [], finish = 
 const status = (msg, err) => { $("status").textContent = msg; $("status").className = err ? "err" : ""; };
 const mode = () => document.querySelector("input[name=mode]:checked").value;
 const byId = id => holds.find(h => h.id === id);
+// Plain words for people who do not climb.
+const PLAIN = { jug: "big easy grip", crimp: "thin edge", sloper: "rounded hold with no edge", pinch: "squeeze grip",
+                pocket: "finger hole", volume: "big shape", foot: "foot-only hold", unknown: "hold" };
+const LIMB = { LH: "Left hand", RH: "Right hand", LF: "Left foot", RF: "Right foot" };
+const BANDS = [["5a", "Beginner"], ["6a", "Improver"], ["6c", "Intermediate"], ["7a+", "Advanced"], ["9c", "Expert"]];
+const ORDER = ["4a","4b","4c","5a","5b","5c","6a","6a+","6b","6b+","6c","6c+","7a","7a+","7b","7b+","7c","7c+","8a","8a+","8b","8b+"];
+const band = font => (BANDS.find(([top]) => ORDER.indexOf(font) <= ORDER.indexOf(top)) || BANDS[BANDS.length - 1])[1];
 
 function hsv(hex) {
   const r = parseInt(hex.slice(1, 3), 16) / 255, g = parseInt(hex.slice(3, 5), 16) / 255, b = parseInt(hex.slice(5, 7), 16) / 255;
@@ -134,8 +141,8 @@ async function analyze(blob) {
   if (!res.ok) return status(data.detail || "Analyze failed", true);
   holds = data.holds;
   const review = holds.filter(h => h.needs_review).length;
-  $("found").textContent = `${holds.length} holds found in ${((performance.now() - t0) / 1000).toFixed(1)} s. ${review} have an unsure type (dashed).`;
-  status("Click holds to build a route, then mark start and finish.");
+  $("found").textContent = `Found ${holds.length} holds in ${((performance.now() - t0) / 1000).toFixed(1)} seconds. Dashed boxes (${review}) are holds where it is not sure what kind of hold it is.`;
+  status("Click a hold to pick its climb, then mark the start and the top.");
   refresh();
 }
 
@@ -149,11 +156,11 @@ function refresh() {
     const name = document.createElement("span"); name.textContent = `#${h.id}`;
     li.append(sw, name);
     if (start.includes(h.id) || finish.includes(h.id)) {
-      const tag = document.createElement("span"); tag.className = "tag"; tag.textContent = start.includes(h.id) ? "start" : "finish"; li.append(tag);
+      const tag = document.createElement("span"); tag.className = "tag"; tag.textContent = start.includes(h.id) ? "start" : "top"; li.append(tag);
     }
-    if (h.needs_review) { const tag = document.createElement("span"); tag.className = "tag"; tag.textContent = "unsure"; li.append(tag); }
+    if (h.needs_review) { const tag = document.createElement("span"); tag.className = "tag"; tag.textContent = "check"; tag.title = "The app is not sure what kind of hold this is. Pick the right one."; li.append(tag); }
     const sel = document.createElement("select");
-    types.forEach(t => { const o = document.createElement("option"); o.value = t.id; o.textContent = t.name; sel.append(o); });
+    types.forEach(t => { const o = document.createElement("option"); o.value = t.id; o.textContent = PLAIN[t.id][0].toUpperCase() + PLAIN[t.id].slice(1); o.title = t.description; sel.append(o); });
     sel.value = h.type;
     sel.onchange = () => {                               // what the real frontend does when the user confirms a type
       h.type = sel.value; h.quality = types.find(t => t.id === sel.value).quality; h.needs_review = false;
@@ -181,7 +188,7 @@ function draw(pose) {
   ctx.font = `${u * 7}px system-ui`; ctx.textBaseline = "bottom";
   const label = (id, text, colour) => { const h = byId(id); if (!h) return; ctx.fillStyle = colour; ctx.fillText(text, h.x - h.w / 2, h.y - h.h / 2 - u * 1.5); };
   start.forEach(id => label(id, "START", "#7CFC9A"));
-  finish.forEach(id => label(id, "FINISH", "#ffb020"));
+  finish.forEach(id => label(id, "TOP", "#ffb020"));
   if (pose) drawFigure(pose.joints, u, pose.crux);
 }
 
@@ -227,16 +234,19 @@ async function solve() {
   const data = await res.json();
   if (!res.ok) { solved = null; $("result").hidden = true; draw(); return status(data.detail || "Solve failed", true); }
   solved = data;
-  $("grade").textContent = data.grade.font; const small = document.createElement("small"); small.textContent = data.grade.v; $("grade").append(small);
-  $("range").textContent = `Likely between ${data.grade.low} and ${data.grade.high}. ${data.moves.length} moves for a ${(+$("height").value).toFixed(2)} m climber.`;
+  $("grade").textContent = band(data.grade.font); const small = document.createElement("small"); small.textContent = `grade ${data.grade.font} (${data.grade.v})`; $("grade").append(small);
+  $("range").textContent = `Grades run from 4a (easiest) to 9c (hardest). This climb is most likely ${data.grade.font}, and could be anywhere from ${data.grade.low} to ${data.grade.high}. It takes ${data.moves.length} moves for someone ${(+$("height").value).toFixed(2)} m tall.`;
   const ul = $("moves"); ul.replaceChildren();
   data.moves.forEach((m, i) => {
     const li = document.createElement("li"); if (i === data.crux) li.className = "crux";
-    li.textContent = `${i + 1}. ${m.limb === "LH" ? "Left" : "Right"} hand to #${m.hold} · reach ${m.span_m.toFixed(2)} m · effort ${Math.round(m.load * 100)}%${i === data.crux ? " · crux" : ""}`;
+    const target = m.hold === null || m.hold === undefined ? null : byId(m.hold);
+    const where = !target ? "onto the wall" : m.span_m < 0.05 && m.limb[1] === "H" ? "joins the other hand on the same hold" : `to a ${PLAIN[target.type] || "hold"}`;
+    const reach = m.span_m >= 0.05 ? ` · ${m.span_m.toFixed(1)} m between the hands` : "";
+    li.textContent = `${i + 1}. ${LIMB[m.limb] || m.limb} ${where}${reach} · effort ${Math.round(m.load * 100)}%${i === data.crux ? " · hardest move" : ""}`;
     ul.append(li);
   });
   $("result").hidden = false;
-  status("Playing the solved sequence. Drag the height slider to re-solve.");
+  status("Playing the climb. Drag the height slider to see how it changes for a taller or shorter person.");
   animate();
 }
 
@@ -260,13 +270,13 @@ cv.addEventListener("click", e => {
     route.add(hit.id); start = start.filter(id => id !== hit.id);
     finish = finish.includes(hit.id) ? [] : [hit.id];
   }
-  status(`${route.size} holds in the route.`);
+  status(`${route.size} holds in this climb.` + (start.length ? "" : " Now mark where the hands start.") + (start.length && !finish.length ? " Now mark the hold at the top." : ""));
   refresh();
 });
 
 $("example").onclick = async () => analyze(await (await fetch("/contract/wall.jpg")).blob());
 $("file").onchange = e => e.target.files[0] && analyze(e.target.files[0]);
-$("clear").onclick = () => { stopAnim(); solved = null; route.clear(); start = []; finish = []; $("result").hidden = true; status("Route cleared."); refresh(); };
+$("clear").onclick = () => { stopAnim(); solved = null; route.clear(); start = []; finish = []; $("result").hidden = true; status("Cleared. Click a hold to pick a climb."); refresh(); };
 $("solve").onclick = solve;
 $("height").oninput = () => { $("heightv").textContent = (+$("height").value).toFixed(2) + " m"; };
 $("height").onchange = () => { if (solved) solve(); };
