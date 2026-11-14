@@ -420,3 +420,108 @@ def features(result):
         "phys_pull_max": max(pull),
         "phys_feet_on_holds": mean([sum(1 for v in f["on"].values() if v == "hold") for f in frames]),
     }
+
+
+# ---- the safest sequence -------------------------------------------------------------------
+#
+# The hand search in beta_solver.py finds the cheapest sequence by a geometric cost; the grade
+# model was trained on its numbers, so it stays as it is for grading. The sequence SHOWN to the
+# user is chosen differently: the one a climber is least likely to fall off.
+#
+# Chance of falling while making one move: the move is made with the moving hand in the air,
+# hanging on the other hand and the feet. That position's effort e (share of grip strength, from
+# physics.py, feet chosen as well as they can be) gives the chance of slipping off during the move:
+#     p(e) = 1 / (1 + exp(-(e - FALL_AT) / FALL_SPREAD))
+# so a move at 50% effort is almost always made, one at 95% half the time, and one the climber
+# cannot hold at all almost never. A long reach adds a little more (a move at the end of the arm
+# is hard to control). The chance of finishing is the product of (1 - p) over the moves, so the
+# safest sequence is the one with the smallest sum of -log(1 - p): a shortest-path search.
+
+FALL_AT = 0.95           # effort at which a move is a coin flip
+FALL_SPREAD = 0.08       # how quickly that changes around FALL_AT
+REACH_RISK = 0.15        # extra chance of falling on a move at full arm span, falling off to 0 at 80% of it
+MOVE_COST = 0.01         # tiny cost per move, so among equally safe sequences the shorter wins
+SEARCH_FEET = 3          # footholds tried per move during the search (the final plan tries TOP_FEET)
+NEXT_HOLDS = 5           # holds a hand considers going to next: the nearest ones the other hand can reach with
+
+
+def fall_chance(effort, reach_share=0.0):
+    p = 1.0 / (1.0 + math.exp(-(min(effort, 5.0) - FALL_AT) / FALL_SPREAD))
+    p += REACH_RISK * max(0.0, (reach_share - 0.8) / 0.2) ** 2
+    return min(p, 0.999)
+
+
+def safest_hands(pts, start, finish, kinds=None, quality=None, angle_deg=0.0, height=HEIGHT,
+                 body_out=BODY_OUT, floor=None, hand_ok=None):
+    """The hand sequence least likely to end in a fall.
+
+    pts: [(x, y)] every hold, solver units, y up. start: one or two hold indices for the
+    hands; finish: hold indices that end the climb. hand_ok: indices hands may use (default
+    all). Returns {"states": [(left, right), ...], "risks": [chance of falling on each move]}
+    or None when no sequence reaches the finish."""
+    import heapq
+    n = len(pts)
+    kinds = list(kinds) if kinds is not None else ["unknown"] * n
+    quality = list(quality) if quality is not None else [0.5] * n
+    usable = set(range(n)) if hand_ok is None else set(hand_ok)
+    span_max = 2 * pose.ARM * height * 0.97
+    if len(start) >= 2:
+        s0 = tuple(sorted(start[:2], key=lambda i: pts[i][0]))
+    else:
+        s0 = (start[0], start[0])
+    ends = set(finish)
+
+    def move_risk(cur, nxt, mover):
+        key = (cur, nxt)
+        if key in seen:
+            return seen[key]
+        p = _Planner(pts, [cur, nxt], kinds, quality, quality, None, angle_deg, height, body_out, floor)
+        p.top = [t[:SEARCH_FEET] for t in p.top]        # the search only needs a good foot choice, not the best
+        options = p.candidates(1)
+        best = min(options, key=lambda f: p.quick(1, f, mover).effort)
+        e_air = p.quick(1, best, mover).effort         # the moving hand in the air
+        e_after = p.quick(1, best).effort              # both hands on, after the move
+        other = nxt[1] if mover == "LH" else nxt[0]
+        target = nxt[0] if mover == "LH" else nxt[1]
+        reach = math.dist(pts[other], pts[target]) / span_max
+        seen[key] = max(fall_chance(e_air, reach), fall_chance(e_after))
+        return seen[key]
+
+    seen = {}
+    best = {s0: 0.0}
+    prev = {}
+    heap = [(0.0, s0)]
+    goal = None
+    while heap:
+        cost, state = heapq.heappop(heap)
+        if cost > best.get(state, math.inf):
+            continue
+        if state[0] in ends and state[1] in ends:      # both hands on the finish
+            goal = state
+            break
+        low_y = min(pts[state[0]][1], pts[state[1]][1])
+        for hand in (0, 1):
+            other = state[1 - hand]
+            near = sorted((j for j in usable if j != state[hand] and pts[j][1] >= low_y - 0.25 * height
+                           and math.dist(pts[other], pts[j]) <= span_max),
+                          key=lambda j: math.dist(pts[other], pts[j]))
+            if ends & set(near[NEXT_HOLDS:]):            # the finish is always worth trying
+                near = near[:NEXT_HOLDS] + [j for j in near[NEXT_HOLDS:] if j in ends]
+            for j in near[:NEXT_HOLDS] + [j for j in near[NEXT_HOLDS:] if j in ends]:
+                nxt = (j, other) if hand == 0 else (other, j)
+                if pts[nxt[0]][0] - pts[nxt[1]][0] > 0.25 * height:      # arms crossed too far
+                    continue
+                r = move_risk(state, nxt, "LH" if hand == 0 else "RH")
+                c = cost - math.log(1.0 - r) + MOVE_COST
+                if c < best.get(nxt, math.inf):
+                    best[nxt] = c
+                    prev[nxt] = (state, r)
+                    heapq.heappush(heap, (c, nxt))
+    if goal is None:
+        return None
+    states, risks = [goal], []
+    while states[-1] in prev:
+        s, r = prev[states[-1]]
+        states.append(s)
+        risks.append(r)
+    return {"states": states[::-1], "risks": risks[::-1]}

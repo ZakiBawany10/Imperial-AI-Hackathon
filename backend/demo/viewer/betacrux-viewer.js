@@ -764,6 +764,7 @@ export function mountViewer(container, options = {}) {
         text: describeMove({ limb, hold: m.hold }, hold, joins),
         effort, load: typeof m.load === "number" ? m.load : 0,
         stable: m.stable !== false && (effort === null || effort < 1),
+        fall: typeof m.fall_chance === "number" ? m.fall_chance : null,
       };
     });
     let at = TIME.start;
@@ -991,7 +992,8 @@ export function mountViewer(container, options = {}) {
       }
       const ph = solve.physics;
       setText(ui.physsum, ph && typeof ph.max_effort === "number"
-        ? `Whole climb: highest effort ${Math.round(ph.max_effort * 100)}%, average ${Math.round((ph.mean_effort ?? 0) * 100)}%.` +
+        ? (typeof ph.finish_chance === "number" ? `Chance of reaching the top: ${Math.round(ph.finish_chance * 100)}% (the safest way up). ` : "") +
+          `Highest effort ${Math.round(ph.max_effort * 100)}%, average ${Math.round((ph.mean_effort ?? 0) * 100)}%.` +
           (ph.unstable_positions ? ` ${ph.unstable_positions} position${ph.unstable_positions > 1 ? "s" : ""} cannot be held still.` : "")
         : "");
     }
@@ -1016,6 +1018,7 @@ export function mountViewer(container, options = {}) {
     let effort = 0, word = "";
     if (m) {
       if (m.effort !== null) { effort = m.effort; word = `${Math.round(effort * 100)}% of full grip strength`; }
+      if (m.fall !== null && m.fall !== undefined) word += ` · ${m.fall < 0.01 ? "under 1" : Math.round(m.fall * 100)}% chance of slipping`;
       else { effort = m.load; word = effort < 0.34 ? "light" : effort < 0.67 ? "moderate" : "heavy"; }
     } else if (st.A.physics) { effort = st.A.physics.effort; word = `${Math.round(effort * 100)}% of full grip strength`; }
     const unstable = m ? !m.stable : st.A.physics ? !st.A.physics.stable : false;

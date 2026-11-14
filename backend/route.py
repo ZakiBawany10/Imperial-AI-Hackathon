@@ -138,7 +138,25 @@ def solve(req):
                                 px_states, height_px, image_h)
         return {"grade": grade, "crux": crux, "moves": out_moves, "keyframes": frames}
 
-    # All four limbs. A climb is finished with both hands on the top hold, so if the search
+    # All four limbs. The sequence shown is the one a climber is least likely to fall off
+    # (limbs.safest_hands); the grade above still comes from the geometric search it was trained on.
+    fall = None
+    safe = limbs.safest_hands(pts, s_idx, e_idx, kinds=[h.get("type") or "unknown" for h in hand],
+                              quality=[float(h.get("quality", 0.5)) for h in hand],
+                              angle_deg=float(req.get("wall_angle_deg", 0)), floor=2 * m_per_px / unit_m,
+                              body_out=physics.BODY_OUT_M / unit_m)
+    if safe and len(safe["states"]) > 1:
+        states, fall = safe["states"], safe["risks"]
+        px_states = [(pos[hand[a]["id"]], pos[hand[b]["id"]]) for a, b in states]
+        out_moves = []
+        for i, (a, b) in enumerate(zip(states, states[1:])):
+            moving = 0 if a[0] != b[0] else 1
+            to, other = b[moving], b[1 - moving]
+            out_moves.append({"i": i, "limb": "LH" if moving == 0 else "RH", "hold": hand[to]["id"],
+                              "load": round(min(fall[i] * 4, 1.0), 2), "span_m": round(math.dist(pts[to], pts[other]) * unit_m, 2)})
+        crux = max(range(len(fall)), key=lambda i: fall[i])
+
+    # A climb is finished with both hands on the top hold, so if the search
     # ended with one hand there, the other hand matches it as a last move.
     last = states[-1]
     if last[0] != last[1] and (last[0] in e_idx or last[1] in e_idx):
@@ -200,6 +218,10 @@ def solve(req):
                     "span_m": round(math.dist(frame["points"]["LF"], frame["points"]["RF"]) * unit_m, 2)}
         move["effort"] = effort
         move["stable"] = bool(m["balanced"] and effort < 1.0)
+        if fall is not None:
+            # Chance of falling off on this move: hand moves from the safest-route search,
+            # foot moves from their own effort (a foot move is made on both hands).
+            move["fall_chance"] = round(fall[m["hand_move"]] if m["hand_move"] is not None else limbs.fall_chance(effort), 3)
         moves.append(move)
     # The hardest move stays the one the hand solver found hardest, at its new place in the list.
     crux = next((i for i, m in enumerate(plan["moves"]) if m["hand_move"] == crux), 0)
@@ -207,6 +229,9 @@ def solve(req):
     summary = {"model": "static-2.5d", "max_effort": max(efforts),
                "mean_effort": round(sum(efforts) / len(efforts), 3),
                "unstable_positions": sum(1 for m in moves if not m["stable"])}
+    if fall is not None:
+        summary["finish_chance"] = round(math.prod(1 - m["fall_chance"] for m in moves), 3)
+        summary["sequence"] = "safest"
     return {"grade": grade, "crux": crux, "moves": moves, "keyframes": keyframes, "physics": summary}
 
 

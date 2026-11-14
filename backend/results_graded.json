@@ -1,0 +1,875 @@
+{
+ "wall": "The A spray wall, Minneapolis",
+ "problems": 110,
+ "pages": 31,
+ "could_not_use": [],
+ "assumed": {
+  "wall_height_m": 4.0,
+  "wall_angle_deg": 0.0,
+  "hold_quality": 0.5,
+  "hold_type": "unknown",
+  "climber_height_m": 1.75
+ },
+ "results": {
+  "random": {
+   "always guess the middle grade": {
+    "mae_v": 2.15,
+    "within_1_v": 0.409,
+    "exact": 0.127,
+    "spearman": -0.151
+   },
+   "served model, as the app answers": {
+    "mae_v": 2.2,
+    "within_1_v": 0.409,
+    "exact": 0.164,
+    "spearman": 0.17
+   },
+   "served model, rescaled to this wall": {
+    "mae_v": 2.13,
+    "within_1_v": 0.364,
+    "exact": 0.136,
+    "spearman": 0.056
+   },
+   "fitted here: solver numbers": {
+    "mae_v": 1.84,
+    "within_1_v": 0.536,
+    "exact": 0.118,
+    "spearman": 0.407
+   },
+   "fitted here: physics numbers": {
+    "mae_v": 1.81,
+    "within_1_v": 0.5,
+    "exact": 0.155,
+    "spearman": 0.4
+   },
+   "fitted here: solver + physics numbers": {
+    "mae_v": 1.91,
+    "within_1_v": 0.5,
+    "exact": 0.109,
+    "spearman": 0.377
+   },
+   "fitted here: served grade + physics numbers": {
+    "mae_v": 1.83,
+    "within_1_v": 0.455,
+    "exact": 0.173,
+    "spearman": 0.379
+   }
+  },
+  "test": {
+   "always guess the middle grade": {
+    "mae_v": 2.21,
+    "within_1_v": 0.436,
+    "exact": 0.118,
+    "spearman": -0.36
+   },
+   "served model, as the app answers": {
+    "mae_v": 2.2,
+    "within_1_v": 0.409,
+    "exact": 0.164,
+    "spearman": 0.17
+   },
+   "served model, rescaled to this wall": {
+    "mae_v": 2.19,
+    "within_1_v": 0.373,
+    "exact": 0.136,
+    "spearman": -0.138
+   },
+   "fitted here: solver numbers": {
+    "mae_v": 1.78,
+    "within_1_v": 0.491,
+    "exact": 0.2,
+    "spearman": 0.411
+   },
+   "fitted here: physics numbers": {
+    "mae_v": 1.87,
+    "within_1_v": 0.491,
+    "exact": 0.155,
+    "spearman": 0.287
+   },
+   "fitted here: solver + physics numbers": {
+    "mae_v": 1.85,
+    "within_1_v": 0.464,
+    "exact": 0.2,
+    "spearman": 0.357
+   },
+   "fitted here: served grade + physics numbers": {
+    "mae_v": 1.86,
+    "within_1_v": 0.5,
+    "exact": 0.209,
+    "spearman": 0.285
+   }
+  }
+ },
+ "per_problem": [
+  {
+   "name": "Grab N Go",
+   "v": 0,
+   "page": "v15-9",
+   "n_holds": 7,
+   "served_v": 3
+  },
+  {
+   "name": "Buckets",
+   "v": 0,
+   "page": "v15-9",
+   "n_holds": 7,
+   "served_v": 3
+  },
+  {
+   "name": "Grey Jugs Right",
+   "v": 0,
+   "page": "v15-13",
+   "n_holds": 10,
+   "served_v": 2
+  },
+  {
+   "name": "Blue Jugs",
+   "v": 1,
+   "page": "v15-13",
+   "n_holds": 13,
+   "served_v": 1
+  },
+  {
+   "name": "Purple Jugs",
+   "v": 1,
+   "page": "v15-13",
+   "n_holds": 13,
+   "served_v": 2
+  },
+  {
+   "name": "Black Escape Jugs",
+   "v": 1,
+   "page": "v15-13",
+   "n_holds": 11,
+   "served_v": 2
+  },
+  {
+   "name": "Grey Jugs Left",
+   "v": 0,
+   "page": "v15-13",
+   "n_holds": 13,
+   "served_v": 2
+  },
+  {
+   "name": "Orange Jugs",
+   "v": 1,
+   "page": "v15-13",
+   "n_holds": 15,
+   "served_v": 2
+  },
+  {
+   "name": "White Moon",
+   "v": 2,
+   "page": "v15-14",
+   "n_holds": 9,
+   "served_v": 2
+  },
+  {
+   "name": "Wood Jugs",
+   "v": 2,
+   "page": "v15-14",
+   "n_holds": 10,
+   "served_v": 2
+  },
+  {
+   "name": "Green Crimps",
+   "v": 2,
+   "page": "v15-14",
+   "n_holds": 13,
+   "served_v": 2
+  },
+  {
+   "name": "Red Finger Jugs",
+   "v": 3,
+   "page": "v15-14",
+   "n_holds": 10,
+   "served_v": 3
+  },
+  {
+   "name": "Wood Tension",
+   "v": 4,
+   "page": "v15-14",
+   "n_holds": 16,
+   "served_v": 2
+  },
+  {
+   "name": "Yellow Jugs",
+   "v": 2,
+   "page": "v15-14",
+   "n_holds": 12,
+   "served_v": 3
+  },
+  {
+   "name": "Straight Up",
+   "v": 0,
+   "page": "v15-15",
+   "n_holds": 8,
+   "served_v": 3
+  },
+  {
+   "name": "Castoff Crown SDS",
+   "v": 0,
+   "page": "v15-15",
+   "n_holds": 11,
+   "served_v": 3
+  },
+  {
+   "name": "Wifey and A Mistress",
+   "v": 1,
+   "page": "v15-15",
+   "n_holds": 12,
+   "served_v": 1
+  },
+  {
+   "name": "U Boat",
+   "v": 1,
+   "page": "v15-15",
+   "n_holds": 10,
+   "served_v": 3
+  },
+  {
+   "name": "Holds the Cold",
+   "v": 1,
+   "page": "v15-15",
+   "n_holds": 8,
+   "served_v": 3
+  },
+  {
+   "name": "Romantic Raccoon",
+   "v": 1,
+   "page": "v15-16",
+   "n_holds": 9,
+   "served_v": 3
+  },
+  {
+   "name": "Lemon Meringue",
+   "v": 1,
+   "page": "v15-16",
+   "n_holds": 12,
+   "served_v": 2
+  },
+  {
+   "name": "Twisted and Turned",
+   "v": 2,
+   "page": "v15-16",
+   "n_holds": 15,
+   "served_v": 3
+  },
+  {
+   "name": "Ask Me, Again",
+   "v": 2,
+   "page": "v15-16",
+   "n_holds": 8,
+   "served_v": 1
+  },
+  {
+   "name": "Zach be Fakin'",
+   "v": 3,
+   "page": "v15-16",
+   "n_holds": 8,
+   "served_v": 3
+  },
+  {
+   "name": "Zach White in your Area",
+   "v": 3,
+   "page": "v15-16",
+   "n_holds": 9,
+   "served_v": 2
+  },
+  {
+   "name": "Potions Master",
+   "v": 3,
+   "page": "v15-17",
+   "n_holds": 13,
+   "served_v": 1
+  },
+  {
+   "name": "Medium Rock",
+   "v": 4,
+   "page": "v15-17",
+   "n_holds": 10,
+   "served_v": 3
+  },
+  {
+   "name": "Escape Wood",
+   "v": 5,
+   "page": "v15-17",
+   "n_holds": 12,
+   "served_v": 2
+  },
+  {
+   "name": "Suitcase",
+   "v": 4,
+   "page": "v15-17",
+   "n_holds": 6,
+   "served_v": 2
+  },
+  {
+   "name": "The Demeter",
+   "v": 4,
+   "page": "v15-17",
+   "n_holds": 7,
+   "served_v": 3
+  },
+  {
+   "name": "Head Rippa",
+   "v": 4,
+   "page": "v15-17",
+   "n_holds": 11,
+   "served_v": 2
+  },
+  {
+   "name": "Crimp Ladder",
+   "v": 6,
+   "page": "v15-18",
+   "n_holds": 10,
+   "served_v": 3
+  },
+  {
+   "name": "Blursing Akhenaten",
+   "v": 6,
+   "page": "v15-18",
+   "n_holds": 9,
+   "served_v": 4
+  },
+  {
+   "name": "Wood Center",
+   "v": 7,
+   "page": "v15-18",
+   "n_holds": 9,
+   "served_v": 3
+  },
+  {
+   "name": "Wood Pistola",
+   "v": 8,
+   "page": "v15-19",
+   "n_holds": 9,
+   "served_v": 4
+  },
+  {
+   "name": "Struthers Cobble",
+   "v": 9,
+   "page": "v15-19",
+   "n_holds": 6,
+   "served_v": 3
+  },
+  {
+   "name": "Wood 45",
+   "v": 10,
+   "page": "v15-19",
+   "n_holds": 8,
+   "served_v": 3
+  },
+  {
+   "name": "(Easy)\u00b2",
+   "v": 0,
+   "page": "v15-21",
+   "n_holds": 8,
+   "served_v": 2
+  },
+  {
+   "name": "Super Easy Rock",
+   "v": 1,
+   "page": "v15-21",
+   "n_holds": 8,
+   "served_v": 1
+  },
+  {
+   "name": "1-2 Rock",
+   "v": 0,
+   "page": "v15-21",
+   "n_holds": 6,
+   "served_v": 1
+  },
+  {
+   "name": "First Rock",
+   "v": 3,
+   "page": "v15-21",
+   "n_holds": 9,
+   "served_v": 1
+  },
+  {
+   "name": "Easy Rock",
+   "v": 3,
+   "page": "v15-21",
+   "n_holds": 10,
+   "served_v": 2
+  },
+  {
+   "name": "Rock Pinches",
+   "v": 8,
+   "page": "v15-22",
+   "n_holds": 8,
+   "served_v": 3
+  },
+  {
+   "name": "Short Rock",
+   "v": 1,
+   "page": "v15-22",
+   "n_holds": 8,
+   "served_v": 3
+  },
+  {
+   "name": "Rock Tuah",
+   "v": 5,
+   "page": "v15-22",
+   "n_holds": 11,
+   "served_v": 2
+  },
+  {
+   "name": "Rock Locks",
+   "v": 5,
+   "page": "v15-22",
+   "n_holds": 9,
+   "served_v": 2
+  },
+  {
+   "name": "Rock Pinches 2",
+   "v": 6,
+   "page": "v15-22",
+   "n_holds": 9,
+   "served_v": 2
+  },
+  {
+   "name": "Rock Bump",
+   "v": 7,
+   "page": "v15-23",
+   "n_holds": 10,
+   "served_v": 2
+  },
+  {
+   "name": "Rock 45",
+   "v": 7,
+   "page": "v15-23",
+   "n_holds": 13,
+   "served_v": 3
+  },
+  {
+   "name": "Hard Rock",
+   "v": 7,
+   "page": "v15-23",
+   "n_holds": 10,
+   "served_v": 2
+  },
+  {
+   "name": "King Rock",
+   "v": 9,
+   "page": "v15-23",
+   "n_holds": 17,
+   "served_v": 3
+  },
+  {
+   "name": "Golem",
+   "v": 4,
+   "page": "v15-25",
+   "n_holds": 14,
+   "served_v": 2
+  },
+  {
+   "name": "Geodude",
+   "v": 2,
+   "page": "v15-25",
+   "n_holds": 8,
+   "served_v": 3
+  },
+  {
+   "name": "Graveler",
+   "v": 3,
+   "page": "v15-25",
+   "n_holds": 11,
+   "served_v": 3
+  },
+  {
+   "name": "Rattata",
+   "v": 1,
+   "page": "v15-25",
+   "n_holds": 11,
+   "served_v": 2
+  },
+  {
+   "name": "Raticate",
+   "v": 2,
+   "page": "v15-25",
+   "n_holds": 16,
+   "served_v": 2
+  },
+  {
+   "name": "Staryu",
+   "v": 3,
+   "page": "v15-26",
+   "n_holds": 9,
+   "served_v": 3
+  },
+  {
+   "name": "Clefable",
+   "v": 4,
+   "page": "v15-26",
+   "n_holds": 15,
+   "served_v": 2
+  },
+  {
+   "name": "Clefairy",
+   "v": 3,
+   "page": "v15-26",
+   "n_holds": 10,
+   "served_v": 1
+  },
+  {
+   "name": "Magmar",
+   "v": 5,
+   "page": "v15-26",
+   "n_holds": 9,
+   "served_v": 3
+  },
+  {
+   "name": "Vaporeon",
+   "v": 4,
+   "page": "v15-27",
+   "n_holds": 15,
+   "served_v": 1
+  },
+  {
+   "name": "Eevee",
+   "v": 2,
+   "page": "v15-27",
+   "n_holds": 9,
+   "served_v": 2
+  },
+  {
+   "name": "Jolteon",
+   "v": 7,
+   "page": "v15-27",
+   "n_holds": 16,
+   "served_v": 3
+  },
+  {
+   "name": "Magikarp",
+   "v": 2,
+   "page": "v15-28",
+   "n_holds": 10,
+   "served_v": 3
+  },
+  {
+   "name": "Muk",
+   "v": 6,
+   "page": "v15-28",
+   "n_holds": 11,
+   "served_v": 2
+  },
+  {
+   "name": "Gyrados",
+   "v": 5,
+   "page": "v15-28",
+   "n_holds": 15,
+   "served_v": 2
+  },
+  {
+   "name": "Grimer",
+   "v": 4,
+   "page": "v15-28",
+   "n_holds": 5,
+   "served_v": 4
+  },
+  {
+   "name": "Arcanine",
+   "v": 5,
+   "page": "v15-29",
+   "n_holds": 18,
+   "served_v": 2
+  },
+  {
+   "name": "Growlithe",
+   "v": 3,
+   "page": "v15-29",
+   "n_holds": 9,
+   "served_v": 3
+  },
+  {
+   "name": "#000 Missingno.",
+   "v": 6,
+   "page": "v15-29",
+   "n_holds": 14,
+   "served_v": 3
+  },
+  {
+   "name": "Sandshrew",
+   "v": 4,
+   "page": "v15-30",
+   "n_holds": 7,
+   "served_v": 3
+  },
+  {
+   "name": "Rhyhorn",
+   "v": 3,
+   "page": "v15-30",
+   "n_holds": 8,
+   "served_v": 3
+  },
+  {
+   "name": "Rhydon",
+   "v": 6,
+   "page": "v15-30",
+   "n_holds": 13,
+   "served_v": 3
+  },
+  {
+   "name": "Mr. Mime",
+   "v": 5,
+   "page": "v15-30",
+   "n_holds": 11,
+   "served_v": 2
+  },
+  {
+   "name": "Sandslash",
+   "v": 6,
+   "page": "v15-30",
+   "n_holds": 13,
+   "served_v": 2
+  },
+  {
+   "name": "Omanyte",
+   "v": 2,
+   "page": "v15-31",
+   "n_holds": 9,
+   "served_v": 3
+  },
+  {
+   "name": "Omastar",
+   "v": 6,
+   "page": "v15-31",
+   "n_holds": 15,
+   "served_v": 3
+  },
+  {
+   "name": "Ivysaur",
+   "v": 4,
+   "page": "v15-31",
+   "n_holds": 10,
+   "served_v": 3
+  },
+  {
+   "name": "Venusaur",
+   "v": 4,
+   "page": "v15-31",
+   "n_holds": 15,
+   "served_v": 3
+  },
+  {
+   "name": "Bulbasaur",
+   "v": 3,
+   "page": "v15-31",
+   "n_holds": 5,
+   "served_v": 4
+  },
+  {
+   "name": "Hitmonchan",
+   "v": 4,
+   "page": "v15-32",
+   "n_holds": 8,
+   "served_v": 3
+  },
+  {
+   "name": "Cubone",
+   "v": 4,
+   "page": "v15-32",
+   "n_holds": 10,
+   "served_v": 2
+  },
+  {
+   "name": "Farfetch'd",
+   "v": 5,
+   "page": "v15-32",
+   "n_holds": 14,
+   "served_v": 3
+  },
+  {
+   "name": "Jigglypuff",
+   "v": 3,
+   "page": "v15-32",
+   "n_holds": 7,
+   "served_v": 4
+  },
+  {
+   "name": "Haunter",
+   "v": 3,
+   "page": "v15-33",
+   "n_holds": 8,
+   "served_v": 4
+  },
+  {
+   "name": "Gastly",
+   "v": 2,
+   "page": "v15-33",
+   "n_holds": 7,
+   "served_v": 4
+  },
+  {
+   "name": "Gengar",
+   "v": 7,
+   "page": "v15-33",
+   "n_holds": 14,
+   "served_v": 3
+  },
+  {
+   "name": "Pidgey",
+   "v": 2,
+   "page": "v15-34",
+   "n_holds": 8,
+   "served_v": 4
+  },
+  {
+   "name": "Pidgeotto",
+   "v": 4,
+   "page": "v15-34",
+   "n_holds": 13,
+   "served_v": 4
+  },
+  {
+   "name": "Pidgeot",
+   "v": 9,
+   "page": "v15-34",
+   "n_holds": 18,
+   "served_v": 4
+  },
+  {
+   "name": "Dratini",
+   "v": 3,
+   "page": "v15-35",
+   "n_holds": 11,
+   "served_v": 3
+  },
+  {
+   "name": "Dragonair",
+   "v": 7,
+   "page": "v15-35",
+   "n_holds": 12,
+   "served_v": 3
+  },
+  {
+   "name": "Dragonite",
+   "v": 11,
+   "page": "v15-35",
+   "n_holds": 18,
+   "served_v": 3
+  },
+  {
+   "name": "Tentacool",
+   "v": 2,
+   "page": "v15-36",
+   "n_holds": 9,
+   "served_v": 4
+  },
+  {
+   "name": "Drowzee",
+   "v": 2,
+   "page": "v15-36",
+   "n_holds": 3,
+   "served_v": 5
+  },
+  {
+   "name": "Tentacruel",
+   "v": 8,
+   "page": "v15-36",
+   "n_holds": 15,
+   "served_v": 4
+  },
+  {
+   "name": "Hypno",
+   "v": 6,
+   "page": "v15-36",
+   "n_holds": 9,
+   "served_v": 3
+  },
+  {
+   "name": "Primeape",
+   "v": 9,
+   "page": "v15-37",
+   "n_holds": 10,
+   "served_v": 4
+  },
+  {
+   "name": "Exeggcute",
+   "v": 3,
+   "page": "v15-37",
+   "n_holds": 6,
+   "served_v": 3
+  },
+  {
+   "name": "Rapidash",
+   "v": 6,
+   "page": "v15-38",
+   "n_holds": 11,
+   "served_v": 3
+  },
+  {
+   "name": "Ponyta",
+   "v": 1,
+   "page": "v15-38",
+   "n_holds": 7,
+   "served_v": 4
+  },
+  {
+   "name": "Ekans",
+   "v": 2,
+   "page": "v15-38",
+   "n_holds": 12,
+   "served_v": 3
+  },
+  {
+   "name": "Arbok",
+   "v": 6,
+   "page": "v15-38",
+   "n_holds": 16,
+   "served_v": 2
+  },
+  {
+   "name": "Machop",
+   "v": 3,
+   "page": "v15-39",
+   "n_holds": 6,
+   "served_v": 7
+  },
+  {
+   "name": "Machamp",
+   "v": 10,
+   "page": "v15-39",
+   "n_holds": 18,
+   "served_v": 2
+  },
+  {
+   "name": "Wood Balls",
+   "v": 5,
+   "page": "v15-41",
+   "n_holds": 8,
+   "served_v": 3
+  },
+  {
+   "name": "Weedle",
+   "v": 3,
+   "page": "v09-Weedle",
+   "n_holds": 8,
+   "served_v": 2
+  },
+  {
+   "name": "Kakuna",
+   "v": 3,
+   "page": "v09-Kakuna",
+   "n_holds": 12,
+   "served_v": 2
+  },
+  {
+   "name": "Beedrill",
+   "v": 6,
+   "page": "v09-Beedrill",
+   "n_holds": 18,
+   "served_v": 2
+  },
+  {
+   "name": "Krabby",
+   "v": 4,
+   "page": "v09-Krabby",
+   "n_holds": 7,
+   "served_v": 3
+  }
+ ]
+}
