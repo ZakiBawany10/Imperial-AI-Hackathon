@@ -10,6 +10,7 @@ CONF = 0.25
 TRAIN_SIDE = 1600  # training photos were shrunk to this long side (detector_data.MAX_SIDE)
 TILE = 1000        # with tiled=True: overlapping crops of the photo, so small holds are seen larger
 OVERLAP = 250
+TILE_MAX_BOX = 0.4 # a tile only contributes boxes up to this share of its side; it sees big holds and volumes in pieces
 
 
 @functools.lru_cache(maxsize=2)
@@ -45,6 +46,7 @@ def detect(img, weights, conf=CONF, tiled=False):
                 keep = torch.ones(len(b), dtype=torch.bool)
                 tw, th = min(x + TILE, w) - x, min(y + TILE, h) - y
                 if len(b):
+                    keep &= torch.maximum(b[:, 2] - b[:, 0], b[:, 3] - b[:, 1]) <= TILE_MAX_BOX * TILE
                     keep &= (b[:, 0] > 2) | (x == 0)
                     keep &= (b[:, 1] > 2) | (y == 0)
                     keep &= (b[:, 2] < tw - 2) | (x + tw >= w)

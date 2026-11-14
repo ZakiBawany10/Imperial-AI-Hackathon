@@ -7,5 +7,23 @@
     "found": 0.378,
     "precision": 0.866,
     "seconds_per_photo": 5.26
+  },
+  {
+    "detector": "models/holds.pt",
+    "split": "test",
+    "photos": 50,
+    "holds": 3433,
+    "found": 0.914,
+    "precision": 0.899,
+    "seconds_per_photo": 0.15
+  },
+  {
+    "detector": "models/holds.pt (tiled)",
+    "split": "test",
+    "photos": 50,
+    "holds": 3433,
+    "found": 0.949,
+    "precision": 0.858,
+    "seconds_per_photo": 0.21
   }
 ]

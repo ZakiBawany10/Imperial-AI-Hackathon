@@ -1,0 +1,16 @@
+{
+  "test_holds": 2737,
+  "top1": 0.872,
+  "top3": 0.983,
+  "confident_share": 0.923,
+  "confident_top1": 0.906,
+  "always_guess_most_common": 0.425,
+  "per_class_top1": {
+    "Crimp": 0.915,
+    "Jug": 0.838,
+    "Pinch": 0.798,
+    "Pocket": 0.966,
+    "Slope": 0.774,
+    "Volume": 0.978
+  }
+}

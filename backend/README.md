@@ -12,12 +12,17 @@ uv venv .venv --python 3.13 && uv pip install --python .venv/bin/python -r requi
 ./run.sh                                                                                      # http://<this-laptop>:8010
 ```
 
-Port 8010 by default; `PORT=9000 ./run.sh` to change it. The first start
-downloads the hold finder (about 900 MB) from Hugging Face.
+Port 8010 by default; `PORT=9000 ./run.sh` to change it.
+
+The trained weights (`models/holds.pt`, `models/hold_type.pt`) are not in git.
+With them, `/analyze` uses the trained detector and type classifier. Without
+them it falls back to the zero-shot finder (downloads about 900 MB from Hugging
+Face on first use) and guesses type from size, flagging every hold for review.
+See "Reproduce" to train them.
 
 | Call | Does | Time on an M5 laptop |
 |---|---|---|
-| `POST /analyze` (form field `file`) | Photo in, holds out | 4 to 10 s |
+| `POST /analyze` (form field `file`) | Photo in, holds out | 0.3 to 1.5 s with the trained models, 4 to 10 s without |
 | `POST /solve` (JSON) | Route in; moves, poses and grade out | under 0.1 s |
 | `GET /hold-types` | The hold database | instant |
 | `GET /health` | `{"ok": true}` | instant |
@@ -34,10 +39,11 @@ Request and response shapes are in [contract/](../contract/).
 | File | What it does |
 |---|---|
 | `server.py` | The API |
-| `analyze.py` | `/analyze`: runs the hold finder, samples each hold's colour, guesses its type from size |
+| `analyze.py` | `/analyze`: finds holds, samples each hold's colour, classifies its type |
 | `detect_holds.py` | Zero-shot hold finder (Grounding DINO on overlapping tiles) |
 | `detector_data.py`, `train_detector.py`, `detector.py` | Download a sample of ClimbInst, train a YOLO hold detector on it, run it |
 | `eval_detector.py` | Share of labelled holds a detector finds |
+| `type_data.py`, `train_type.py`, `hold_type.py` | Cut out labelled holds from gym photos, train and score the type classifier, run it |
 | `route.py` | `/solve`: pixels to solver units, solver, grade |
 | `beta_solver.py` | Dijkstra over (left hand, right hand) positions |
 | `pose.py` | Stick-figure pose for each position |
@@ -108,6 +114,31 @@ counted when a predicted box overlaps the labelled one with IoU of 0.5 or more
 | Detector | Holds found | Predictions that are real holds | Seconds per photo |
 |---|---|---|---|
 | Zero-shot (Grounding DINO, threshold 0.15) | 38% | 87% | 5.3 |
+| Trained YOLO11s, whole photo | 91% | 90% | 0.15 |
+| Trained YOLO11s, whole photo + tiles (served) | 95% | 86% | 0.21 |
+
+Trained for 40 epochs on 300 ClimbInst photos (18,796 holds). The test photos
+come from the same dataset, so this is not yet a number for our own gym photos.
+A climber on the wall produces false holds: take the photo with the wall empty.
+
+## Hold type results
+
+2,737 holds from gym photos the classifier never saw (`train_type.py`, `results_type.json`):
+
+| | |
+|---|---|
+| Top guess is right | 87% |
+| Right type is in the top three | 98% |
+| Always guessing the most common type | 43% |
+| Holds it is confident about (not sent for review) | 92% of holds, 91% of those right |
+
+By type: crimp 92%, jug 84%, pinch 80%, pocket 97%, sloper 77%, volume 98%.
+
+The source dataset stores 648 gym photos as 2,149 augmented copies, and a third
+of the photos have copies in more than one of its own train/validation/test
+splits. `type_data.py` re-splits by original photo, so the numbers above are on
+photos with no copy in training. The dataset has no foot class; `/analyze`
+guesses "foot" for very small holds and always flags those for review.
 
 ## Reproduce
 
@@ -120,16 +151,21 @@ git clone --depth 1 https://github.com/jrchang612/MoonBoardRNN.git data/MoonBoar
 .venv/bin/python train_grade.py data/kilter_hf/kilter_splits.sqlite data/MoonBoardRNN
 .venv/bin/python detector_data.py 300 60      # about 1 GB download
 .venv/bin/python eval_detector.py zero-shot
-.venv/bin/python train_detector.py 40 && .venv/bin/python eval_detector.py models/holds.pt
+.venv/bin/python train_detector.py 40 && .venv/bin/python eval_detector.py models/holds.pt test tiled
+mkdir -p data/holdtypes && curl -L -o data/holdtypes/holds.zip \
+  https://www.kaggle.com/api/v1/datasets/download/diegospaziani/indoor-climbing-gym-hold-classification-dataset
+.venv/bin/python type_data.py && .venv/bin/python train_type.py 12
 ```
 
 `data/` is not committed.
 
 ## Models, datasets and libraries used
 
-- Hold finder: [IDEA-Research/grounding-dino-base](https://huggingface.co/IDEA-Research/grounding-dino-base) (Apache-2.0), used zero-shot through Hugging Face Transformers and PyTorch.
+- Zero-shot fallback hold finder: [IDEA-Research/grounding-dino-base](https://huggingface.co/IDEA-Research/grounding-dino-base) (Apache-2.0), used zero-shot through Hugging Face Transformers and PyTorch.
 - Hold detector training data: [ClimbVision/ClimbInst](https://huggingface.co/datasets/ClimbVision/ClimbInst) (CC BY-NC-SA 4.0), a random 300 training and 60 validation photos, plus its 50 test photos.
 - Hold detector: [Ultralytics](https://github.com/ultralytics/ultralytics) YOLO11s (AGPL-3.0), pretrained on COCO, fine-tuned by us.
+- Hold type training data: [Indoor Climbing Gym Hold Classification Dataset](https://www.kaggle.com/datasets/diegospaziani/indoor-climbing-gym-hold-classification-dataset) (Diego Spaziani, CC BY-SA 4.0), its real gym photos only.
+- Hold type classifier: Ultralytics YOLO11n-cls (AGPL-3.0), pretrained on ImageNet, fine-tuned by us.
 - MoonBoard 2016 problems and expert hold scores: [MoonBoardRNN](https://github.com/jrchang612/MoonBoardRNN) (Duh and Chang, 2020).
 - Kilter board climbs: [Vilin97/KilterBoard](https://huggingface.co/datasets/Vilin97/KilterBoard) (MIT), built from BoardLib and the Kilter app.
 - LightGBM, scikit-learn, pandas, numpy, Pillow, FastAPI, Uvicorn.
