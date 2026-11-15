@@ -74,6 +74,8 @@ SMEAR_FRICTION = 0.6    # rubber on bare wall
 SMEAR_GONE_DEG = 10.0   # overhang at which a foot on bare wall is worth nothing
 MIN_LEVER = 0.25        # shortest hands-above-feet distance used in the lever, as a share of height
 BODY_OUT_M = 0.20       # how far the centre of mass sits from the wall, metres (hips kept close)
+LEAN_OUT = (1.0, 2.0, 3.0)  # with a foot on bare wall the climber may sit these multiples of body_out from the wall: further out
+                        # presses the feet on harder (more friction) but makes the hands pull outward more; the easiest is kept
 UNBALANCED = 1e-4       # body-weights of force left over before a position counts as "cannot balance"
 MAX_EFFORT = 5.0        # efforts are reported up to this and no higher
 
@@ -173,6 +175,17 @@ def solve(hands, feet, com_y, x_lo, x_hi=None, angle_deg=0.0, height=8.75, body_
     x_pref: where the centre of mass would rather be when effort is the same anywhere
     Returns a Result.
     """
+    if len(LEAN_OUT) > 1 and hands and any(f[3] == "wall" for f in feet):
+        best = None
+        for k in LEAN_OUT:
+            r = _solve(hands, feet, com_y, x_lo, x_hi, angle_deg, height, body_out * k, x_pref)
+            if best is None or r.effort < best.effort - 1e-9:
+                best = r
+        return best
+    return _solve(hands, feet, com_y, x_lo, x_hi, angle_deg, height, body_out, x_pref)
+
+
+def _solve(hands, feet, com_y, x_lo, x_hi, angle_deg, height, body_out, x_pref):
     c, s, smear_mu = _angle(angle_deg)
     nh, nf = len(hands), len(feet)
     res = Result()

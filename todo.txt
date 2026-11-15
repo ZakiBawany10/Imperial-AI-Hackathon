@@ -1,19 +1,47 @@
-- video data + transcripts 
-- split ibt o frames + the transcript extract the context 
-- train 
-- compare split split- error interval 
-- benchmarks 
+ASCEND TO-DO  (updated Sun 15 Nov, night before Zaki's gym test)
+Goal for tomorrow: Zaki climbs a real route at his gym and the app works live while he does it.
 
+DONE
+- Hosting: frontend on Vercel (https://ascend-rho-weld.vercel.app), backend on Krishna's laptop
+  through a Cloudflare tunnel. One command: cd backend && ./go_live.sh
+- 3D wall mesh on in the app, with "3D wall on/off" and "Reset view"
+- Physics: climber stands up under low start holds (no more squatting), start feet on the floor,
+  body leans out to smear when there is no foothold. Standing starts now 89-100% on most demo routes
+- Putting things together, 3D mesh, ElevenLabs coach (Zaki), hold types, routes, grade model v1
 
-- presentation 
+TONIGHT (Krishna + Claude), in order
+1. Route colour picker: at the start, pop up every colour route found on the wall as a list of
+   chips; tap the colour you want (Zaki: tapping holds is clunky). Then start hold, top hold.
+   Chosen colour bright, everything else dimmed; tap a hold to add/remove (grouping is right
+   about half the time, shadows merge blue/purple/red/black).
+2. Live camera: phone on a tripod takes the wall photo from the same spot, a pose model in the
+   browser (MediaPipe) tracks hands and feet on the live video, works out which hold each is on,
+   and tells Zaki's coach "move done" so it calls the next move out loud.
+3. Accessibility: voice mode + automatic colour finding = climbing for colourblind climbers.
+   Put it in the pitch / Devpost (Zaki's docs) and a line in the app.
+4. Continuous improvement ("gets better with every climb"): save every confirmed hold type, route
+   correction and recorded climb; retrieve similar past climbs/holds (RAG) to inform the coach and
+   the type guesses; retrain the hold models from corrections. At least a working save + retrieve
+   and a slide showing the loop.
+5. Social page (mock if no time): auto-record / livestream your climb, share with friends,
+   compare beta and attempts. Builds on the live camera.
 
+TOMORROW AT THE GYM
+- Run ./go_live.sh on the laptop (phone hotspot is fine). Keep it plugged in.
+- Pick a start hold at chest height (sit starts below ~60 cm still come out impossible).
+- Take ~10 photos of Zaki's walls and confirm ~100 hold types in the app -> retrain the hold type
+  model on them (~10 min) = "adapts to your gym". Measure route grouping on his walls.
+- Get the ElevenLabs agent id from Zaki -> VITE_ELEVENLABS_AGENT_ID=agent_... ./go_live.sh
+- Film Zaki's climb for the demo and for the live-camera test.
 
-- putting things together 
-- elevenlabs connect 
-- adaptation 
-- 3d mesh thingy 
-- pwa 
-- sign in 
-- video watching thingy 
-- grading 
-12q11
+OPEN / ASK THE TEAM
+- Grading (Zaki): where is it? The grade model is no better than guessing on real gym walls.
+  Adaption: only the dataset (climb text -> grade) exists; nothing uploaded or trained yet.
+  Adaption is for text models, so it does not help hold-type recognition from photos.
+- Tell Adam: Krishna changed frontend/src/screens/Play.tsx (3D wall buttons) and frontend/.gitignore.
+- Delete the spare "dist" project in the Vercel dashboard.
+
+LATER (pitch only unless time)
+- Physics: sit starts, routes with no low footholds of their own colour
+- Presentation, PWA, sign in
+- Video data + transcripts -> frames, extract context, train, compare, benchmarks
