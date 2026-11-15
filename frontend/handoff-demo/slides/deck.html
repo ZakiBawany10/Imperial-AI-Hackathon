@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ascend: Slides</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600&family=Josefin+Sans:wght@600;700&display=swap">
+<style>
+  /* Ascend deck, built to backend/demo/ascend-demo-video-SKILL.md: 1920x1080, the app's tokens and
+     fonts only, safe area 96 px sides / 64 px top and bottom. Arrow keys or space to move, F for
+     full screen. The demo video is shown on its own between the intro and these. deck.html?slide=N shows one slide unscaled (used to render the PNGs). */
+  :root {
+    --paper: #ffffff;
+    --ink: #243e36;
+    --muted: #5a6e66;
+    --hairline: #d2e2cb;
+    --accent-ink: #3f7a55;
+    --accent: #7ca982;
+    --route-blue: #2f6fde;
+    --display: "Barlow Condensed", "Arial Narrow", sans-serif;
+    --body: "Barlow", "Helvetica Neue", Arial, sans-serif;
+    --nums: "Barlow Semi Condensed", "Arial Narrow", sans-serif;
+    --mark: "Josefin Sans", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: #10201b; overflow: hidden; }
+  .stage { position: absolute; left: 50%; top: 50%; width: 1920px; height: 1080px; transform-origin: 0 0; }
+  .slide { position: absolute; inset: 0; padding: 64px 96px; display: none; font-family: var(--body); color: var(--ink); background: var(--paper); }
+  .slide.on { display: block; }
+  .dark { background: var(--ink); color: var(--paper); }
+  h1, h2 { font-family: var(--display); font-weight: 700; margin: 0; line-height: 0.98; letter-spacing: -0.005em; text-wrap: balance; }
+  p { margin: 0; }
+  .num { font-family: var(--nums); font-weight: 600; font-variant-numeric: tabular-nums; }
+
+  /* the app's wordmark: Josefin Sans with the d drawn as a rock */
+  .wordmark { font-family: var(--mark); font-weight: 700; letter-spacing: 0.02em; white-space: nowrap; line-height: 1; }
+  .wordmark svg { display: inline-block; height: 0.82em; width: 0.624em; vertical-align: -0.02em; overflow: visible; }
+
+  /* 1. Intro */
+  .intro { display: none; }
+  .intro.on { display: grid; grid-template-columns: 1fr 1010px; gap: 64px; align-items: center; }
+  .intro .wordmark { font-size: 132px; }
+  .intro h1 { font-size: 104px; margin-top: 48px; max-width: 13ch; }
+  .team { margin-top: 72px; display: grid; gap: 22px; }
+  .team div { display: grid; grid-template-columns: 210px 1fr; align-items: baseline; border-top: 2px solid var(--hairline); padding-top: 18px; }
+  .team b { font-family: var(--display); font-weight: 700; font-size: 56px; line-height: 1; }
+  .team span { font-size: 36px; font-weight: 500; color: var(--muted); }
+  .phones { display: flex; gap: 40px; justify-content: flex-end; align-items: center; }
+  .phone { width: 485px; border: 10px solid var(--ink); border-radius: 46px; overflow: hidden; background: var(--paper); }
+  .phone img { display: block; width: 100%; }
+  .phone + .phone { margin-top: 96px; }
+
+  /* 2. How it works */
+  .how.on { display: grid; grid-template-rows: auto 1fr auto; }
+  .how h2 { font-size: 124px; }
+  .steps { display: grid; grid-template-columns: repeat(5, 1fr); align-items: stretch; align-self: center; gap: 0; margin-top: 24px; }
+  .step { position: relative; border: 2px solid var(--ink); border-radius: 6px; padding: 40px 30px 36px; min-height: 300px; margin-right: 56px; }
+  .step:last-child { margin-right: 0; }
+  .step:not(:last-child)::after { content: ""; position: absolute; right: -50px; top: 50%; width: 40px; height: 2px; background: var(--ink); }
+  .step:not(:last-child)::before { content: ""; position: absolute; right: -52px; top: calc(50% - 7px); border: 8px solid transparent; border-left: 12px solid var(--ink); border-right: 0; }
+  .step .n { font-size: 32px; color: var(--accent-ink); }
+  .step h3 { font-family: var(--display); font-weight: 700; font-size: 72px; line-height: 1; margin: 14px 0 18px; }
+  .step p { font-size: 36px; font-weight: 500; line-height: 1.25; color: var(--muted); }
+  .how .foot { font-size: 30px; color: var(--muted); border-top: 2px solid var(--hairline); padding-top: 26px; }
+
+
+  /* 3. Voice coach */
+  .voice.on { display: grid; grid-template-columns: 1fr 430px; gap: 120px; align-items: center; }
+  .eyebrow { font-family: var(--nums); font-weight: 600; font-size: 30px; letter-spacing: 0.14em; color: var(--accent-ink); text-transform: uppercase; }
+  .voice h2 { font-size: 112px; margin-top: 22px; max-width: 13ch; }
+  .voice .body { margin-top: 36px; font-size: 40px; font-weight: 500; line-height: 1.3; max-width: 34ch; }
+  .quote { margin-top: 40px; border-left: 6px solid var(--accent); padding: 6px 0 6px 32px; font-family: var(--display); font-weight: 600; font-size: 52px; line-height: 1.15; max-width: 26ch; }
+  .tools { margin-top: 40px; display: flex; gap: 14px; flex-wrap: wrap; }
+  .tools span { font-family: var(--nums); font-weight: 600; font-size: 28px; border: 2px solid var(--hairline); border-radius: 4px; padding: 8px 14px; color: var(--muted); }
+  .voice .phone { width: 430px; margin: 0; border-width: 0; border-radius: 0; background: none; }
+
+  /* 5. Design before and after */
+  .design.on { display: grid; grid-template-rows: auto auto 1fr; }
+  .design h2 { font-size: 104px; }
+  .design .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; margin-top: 28px; }
+  .design .cols b { font-family: var(--nums); font-weight: 600; font-size: 30px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+  .design .cols b + b { color: var(--accent-ink); }
+  .design .grid { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 24px 56px; margin-top: 18px; min-height: 0; }
+  .design .grid div { min-height: 0; border: 2px solid var(--hairline); border-radius: 8px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #fbfcfa; }
+  .design .grid img { max-width: 100%; max-height: 100%; display: block; }
+
+  /* 4. The loop */
+  .loop.on { display: grid; grid-template-columns: 1fr 820px; gap: 64px; align-items: center; }
+  .loop h2 { font-size: 124px; max-width: 10ch; }
+  .loop .lines { margin-top: 56px; display: grid; gap: 22px; font-size: 42px; font-weight: 500; line-height: 1.25; max-width: 24ch; }
+  .loop .lines p + p { color: var(--muted); }
+  .loop svg text { font-family: var(--display); font-weight: 700; }
+
+  /* 5. End card */
+  .end.on { display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
+  .end .wordmark { font-size: 200px; }
+  .end .link { margin-top: 56px; font-size: 52px; color: var(--accent); }
+  .end .team-line { margin-top: 28px; font-size: 40px; font-weight: 500; opacity: .9; }
+
+  .hint { position: fixed; right: 16px; bottom: 12px; font: 600 13px/1 var(--nums); letter-spacing: .12em; color: #8fb3a0; text-transform: uppercase; }
+  body.render .hint { display: none; }
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+
+  <!-- 1. Intro: on screen while we introduce ourselves -->
+  <section class="slide intro" data-name="intro">
+    <div>
+      <div class="wordmark" role="img" aria-label="Ascend">Ascen<svg viewBox="0 -80 62.4 82" aria-hidden="true"><rect x="41.2" y="-78.9" width="14" height="78.9" rx="1" fill="currentColor"/><path d="M5 -2 L3.6 -20 L10.5 -37.5 L24 -46.5 L38.5 -44.5 L47 -35 L47 -6 L37 0.6 L14 1.2 Z M17.5 -27 L23 -34.5 L31.5 -33 L35 -24 L31 -13.5 L21.5 -12.5 Z" fill="currentColor" fill-rule="evenodd"/><path d="M10.5 -37.5 L17.5 -27" stroke="#7ca982" stroke-width="2.4" stroke-linecap="round" fill="none"/></svg></div>
+      <h1>Point your phone at a wall. Get the climb.</h1>
+      <div class="team">
+        <div><b>Krishna</b><span>hold finder, physics, 3D</span></div>
+        <div><b>Adam</b><span>the app</span></div>
+        <div><b>Zaki</b><span>voice coach</span></div>
+      </div>
+    </div>
+    <div class="phones">
+      <div class="phone"><img src="screens/app-route.png" alt="Ascend's route screen: the blue climb outlined on the wall photo, holds numbered"></div>
+      <div class="phone"><img src="screens/app-beta.png" alt="Ascend's beta screen: a 3D climber on the wall, grade 5b / V1"></div>
+    </div>
+  </section>
+
+  <!-- 2. How it works (S4) -->
+  <section class="slide how" data-name="how-it-works">
+    <h2>How it works</h2>
+    <div class="steps">
+      <div class="step"><span class="n num">01</span><h3>Photo</h3><p>your phone</p></div>
+      <div class="step"><span class="n num">02</span><h3>Holds</h3><p><span class="num">95%</span> found · <span class="num">87%</span> right type</p></div>
+      <div class="step"><span class="n num">03</span><h3>Route</h3><p>colour grouping + your taps</p></div>
+      <div class="step"><span class="n num">04</span><h3>Physics</h3><p>balance and force on every limb</p></div>
+      <div class="step"><span class="n num">05</span><h3>Coach</h3><p>live camera + voice</p></div>
+    </div>
+    <p class="foot">Physics checked against <span class="num">22</span> recorded climbs by real climbers: picks the same hand holds <span class="num">85%</span> of the time.</p>
+  </section>
+
+  <!-- 3. Voice coach: what ElevenLabs does -->
+  <section class="slide voice" data-name="voice-coach">
+    <div>
+      <p class="eyebrow">Voice coach · ElevenLabs</p>
+      <h2>It talks you up the wall, one move at a time.</h2>
+      <p class="body">An ElevenLabs voice agent reads the solved climb through three tools in your browser, so it only says what the physics worked out.</p>
+      <p class="quote">"Right hand, big move, up high to your right, the next jug up."</p>
+      <div class="tools"><span>get_route</span><span>get_next_move</span><span>set_climber_height</span></div>
+    </div>
+    <div class="phone"><img src="screens/live-speaking.png" alt="Ascend's live screen: the next move in large text and the voice coach speaking"></div>
+  </section>
+
+  <!-- 4. The loop (S5) -->
+  <section class="slide loop" data-name="the-loop">
+    <div>
+      <h2>It gets better with every climb</h2>
+      <div class="lines">
+        <p>Every climb you do retrains the physics.</p>
+        <p>Voice coach + colour finding: you don't need to tell colours apart.</p>
+      </div>
+    </div>
+    <svg viewBox="0 0 820 820" width="820" height="820" aria-label="climb, followed by the camera, saved, the app gets better, and round again">
+      <defs><marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" fill="#243e36"/></marker></defs>
+      <!-- arcs between the four steps, clockwise -->
+      <path d="M 528.4 167.3 A 270 270 0 0 1 656.7 300.2" fill="none" stroke="#243e36" stroke-width="3" marker-end="url(#ah)"/>
+      <path d="M 656.7 519.8 A 270 270 0 0 1 528.4 652.7" fill="none" stroke="#243e36" stroke-width="3" marker-end="url(#ah)"/>
+      <path d="M 291.6 652.7 A 270 270 0 0 1 163.3 519.8" fill="none" stroke="#243e36" stroke-width="3" marker-end="url(#ah)"/>
+      <path d="M 163.3 300.2 A 270 270 0 0 1 291.6 167.3" fill="none" stroke="#243e36" stroke-width="3" marker-end="url(#ah)"/>
+      <!-- the four steps, each in its own box on the circle -->
+      <g font-size="48" text-anchor="middle">
+        <rect x="320" y="100" width="180" height="80" rx="6" fill="#243e36"/><text x="410" y="157" fill="#ffffff">climb</text>
+        <rect x="560" y="350" width="240" height="120" rx="6" fill="#ffffff" stroke="#243e36" stroke-width="3"/><text x="680" y="403" fill="#243e36">followed by</text><text x="680" y="451" fill="#243e36">the camera</text>
+        <rect x="320" y="640" width="180" height="80" rx="6" fill="#ffffff" stroke="#243e36" stroke-width="3"/><text x="410" y="697" fill="#243e36">saved</text>
+        <rect x="20" y="350" width="240" height="120" rx="6" fill="#ffffff" stroke="#3f7a55" stroke-width="3"/><text x="140" y="403" fill="#3f7a55">the app</text><text x="140" y="451" fill="#3f7a55">gets better</text>
+      </g>
+    </svg>
+  </section>
+
+  <!-- 5. Design: before and after -->
+  <section class="slide design" data-name="design">
+    <h2>Design: before and after</h2>
+    <div class="cols"><b>Before · BetaCrux</b><b>After · Ascend</b></div>
+    <div class="grid">
+      <div><img src="screens/figma-before-upload.png" alt="BetaCrux upload screens: cream paper, orange button, pinned holds"></div>
+      <div><img src="screens/figma-after-upload.png" alt="Ascend upload screens: white paper, dark green wall art, route progress in the top bar"></div>
+      <div><img src="screens/figma-before-review.png" alt="BetaCrux review screens: holds outlined, tool bar, hold type sheet"></div>
+      <div><img src="screens/figma-after-beta.png" alt="Ascend beta and live screens: grade and timeline, live camera with the voice coach idle, listening and speaking"></div>
+    </div>
+  </section>
+
+  <!-- 6. End card (S6) -->
+  <section class="slide dark end" data-name="end">
+    <div class="wordmark" role="img" aria-label="Ascend">Ascen<svg viewBox="0 -80 62.4 82" aria-hidden="true"><rect x="41.2" y="-78.9" width="14" height="78.9" rx="1" fill="currentColor"/><path d="M5 -2 L3.6 -20 L10.5 -37.5 L24 -46.5 L38.5 -44.5 L47 -35 L47 -6 L37 0.6 L14 1.2 Z M17.5 -27 L23 -34.5 L31.5 -33 L35 -24 L31 -13.5 L21.5 -12.5 Z" fill="currentColor" fill-rule="evenodd"/><path d="M10.5 -37.5 L17.5 -27" stroke="#7ca982" stroke-width="2.4" stroke-linecap="round" fill="none"/></svg></div>
+    <p class="link num">ascend-climb.vercel.app</p>
+    <p class="team-line">Krishna · Adam · Zaki: Imperial AI Hackathon</p>
+  </section>
+</div>
+<div class="hint">← → to move · F full screen</div>
+
+<script>
+  const slides = [...document.querySelectorAll(".slide")];
+  const stage = document.getElementById("stage");
+  const q = new URLSearchParams(location.search);
+  const render = q.has("slide");
+  let i = render ? Math.max(0, Math.min(slides.length - 1, +q.get("slide") - 1)) : 0;
+  if (render) document.body.classList.add("render");
+  function fit() {
+    const s = render ? 1 : Math.min(innerWidth / 1920, innerHeight / 1080);
+    stage.style.transform = render ? "none" : `scale(${s}) translate(-50%, -50%)`;
+    if (render) { stage.style.left = "0"; stage.style.top = "0"; }
+  }
+  function show(n) {
+    i = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach((s, k) => s.classList.toggle("on", k === i));
+  }
+  addEventListener("keydown", (e) => {
+    if (["ArrowRight", " ", "PageDown"].includes(e.key)) { e.preventDefault(); show(i + 1); }
+    if (["ArrowLeft", "PageUp"].includes(e.key)) show(i - 1);
+    if (e.key === "f" || e.key === "F") document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen();
+  });
+  addEventListener("resize", fit);
+  fit(); show(i);
+</script>
+</body>
+</html>

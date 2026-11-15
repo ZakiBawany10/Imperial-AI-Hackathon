@@ -76,6 +76,8 @@ const SWATCH: Record<string, string> = {
 };
 
 const pad2 = (n: number) => String(n).padStart(2, "0");
+/** Most hold-type questions asked per route; the rest keep the backend's best guess. */
+const MAX_CHECKS = 2;
 
 export function ReviewScreen({
   photo,
@@ -133,10 +135,27 @@ export function ReviewScreen({
   }, [s.holds, s.route, s.ids]);
   const routeIds = new Set(routeHolds.map((h) => h.id));
   const num = (id: string) => pad2(routeHolds.findIndex((h) => h.id === id) + 1);
-  // Real data: only holds on the chosen route are asked about (PLAN.md step 3).
-  const unsure = data
-    ? routeHolds.filter((h) => data.unsure.includes(h.id)).map((h) => h.id)
-    : UNSURE_ORDER.filter((id) => s.holds.some((h) => h.id === id));
+  // Real data: only holds on the chosen route are asked about (PLAN.md step 3), and at most
+  // MAX_CHECKS of them: the lowest-confidence ones. Most flagged guesses are right, so the
+  // rest keep the backend's best guess (buildSolve sends it as is); any hold can still be
+  // corrected from its menu.
+  const unsure = useMemo(() => {
+    if (!data) return UNSURE_ORDER.filter((id) => s.holds.some((h) => h.id === id));
+    const conf = (id: string) => {
+      const a = data.api[id];
+      if (!a || a.type === "unknown") return -1; // nothing guessed: ask first
+      const [p1 = 0, p2 = 0] = a.suggestions.map((g) => g.p);
+      return p1 + 0.001 * (p1 - p2); // lowest top guess first; ties: closest runner-up
+    };
+    const flagged = routeHolds.filter((h) => data.unsure.includes(h.id));
+    const pick = new Set(
+      [...flagged]
+        .sort((a, b) => conf(a.id) - conf(b.id))
+        .slice(0, MAX_CHECKS)
+        .map((h) => h.id),
+    );
+    return flagged.filter((h) => pick.has(h.id)).map((h) => h.id); // route order, bottom-up
+  }, [data, routeHolds, s.holds]);
   const isOpenQ = (id: string) =>
     (data ? s.route !== null : true) && unsure.includes(id) && !s.confirmed[id];
   const routeLeft = routeHolds.filter((h) => isOpenQ(h.id)).length;
