@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Ascend: extra slides</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600&family=Josefin+Sans:wght@600;700&display=swap">
+<style>
+  /* Extra slides for the Ascend deck. Same tokens, fonts and safe area as
+     frontend/handoff-demo/slides/deck.html. extra.html?slide=N shows slide N at 1920x1080
+     (render.sh uses that to make the PNGs). */
+  :root {
+    --paper: #ffffff; --ink: #243e36; --muted: #5a6e66; --hairline: #d2e2cb;
+    --accent-ink: #3f7a55; --accent: #7ca982; --route-blue: #2f6fde;
+    --display: "Barlow Condensed", "Arial Narrow", sans-serif;
+    --body: "Barlow", "Helvetica Neue", Arial, sans-serif;
+    --nums: "Barlow Semi Condensed", "Arial Narrow", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: #10201b; }
+  .slide { position: relative; width: 1920px; height: 1080px; padding: 64px 96px; display: none; font-family: var(--body); color: var(--ink); background: var(--paper); overflow: hidden; }
+  .slide.on { display: block; }
+  h2 { font-family: var(--display); font-weight: 700; margin: 0; line-height: 0.98; font-size: 112px; text-wrap: balance; }
+  p { margin: 0; }
+  .num { font-family: var(--nums); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .eyebrow { font-family: var(--nums); font-weight: 600; font-size: 30px; letter-spacing: 0.14em; color: var(--accent-ink); text-transform: uppercase; }
+  .muted { color: var(--muted); }
+  .box { border: 2px solid var(--ink); border-radius: 6px; }
+  .soft { border: 2px solid var(--hairline); border-radius: 8px; }
+  .chip { font-family: var(--nums); font-weight: 600; font-size: 26px; border: 2px solid var(--hairline); border-radius: 4px; padding: 6px 12px; color: var(--muted); display: inline-block; }
+  .phone { width: 430px; border: 10px solid var(--ink); border-radius: 46px; overflow: hidden; background: var(--paper); }
+  .phone img { display: block; width: 100%; }
+  .phone.bare { border-width: 0; border-radius: 0; background: none; }
+  .mid { align-self: center; padding-bottom: 40px; }
+  .foot { position: absolute; left: 96px; right: 96px; bottom: 64px; font-size: 28px; color: var(--muted); border-top: 2px solid var(--hairline); padding-top: 22px; }
+
+  /* problem */
+  .problem.on { display: grid; grid-template-rows: auto 1fr; }
+  .problem .cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 40px; align-self: center; margin-bottom: 80px; }
+  .problem .card { padding: 40px 32px; min-height: 440px; }
+  .problem .card .n { font-size: 32px; color: var(--accent-ink); }
+  .problem .card h3 { font-family: var(--display); font-weight: 700; font-size: 60px; line-height: 1; margin: 14px 0 22px; }
+  .problem .card p { font-size: 32px; font-weight: 500; line-height: 1.3; color: var(--muted); }
+
+  /* grade for your body */
+  .body.on { display: grid; grid-template-columns: 1fr 430px; gap: 120px; align-items: center; }
+  .body h2 { margin-top: 22px; max-width: 14ch; }
+  .body .lead { margin-top: 32px; font-size: 38px; font-weight: 500; line-height: 1.3; max-width: 36ch; }
+  .formula { margin-top: 40px; display: flex; align-items: center; gap: 28px; font-family: var(--nums); font-weight: 600; font-size: 64px; }
+  .frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.1; }
+  .frac span:first-child { border-bottom: 4px solid var(--ink); padding: 0 10px 4px; }
+  .frac span:last-child { padding-top: 4px; }
+  .formula small { font-family: var(--body); font-weight: 500; font-size: 30px; color: var(--muted); max-width: 22ch; line-height: 1.3; }
+  .pair { margin-top: 48px; display: grid; grid-template-columns: 1fr 1fr; gap: 32px; max-width: 1060px; }
+  .pair div { padding: 26px 30px; }
+  .pair b { font-family: var(--nums); font-weight: 600; font-size: 44px; display: block; }
+  .pair span { font-size: 28px; color: var(--muted); }
+  .pair div + div { border-color: var(--accent-ink); }
+
+  /* under the hood */
+  .hood.on { display: grid; grid-template-rows: auto 1fr; }
+  .hood h2 { font-size: 104px; }
+  .flow { margin-top: 0; display: grid; grid-template-columns: repeat(5, 1fr); gap: 52px; }
+  .flow .box { padding: 22px 22px; position: relative; min-height: 170px; }
+  .flow .box:not(:last-child)::after { content: ""; position: absolute; right: -46px; top: 50%; width: 36px; height: 2px; background: var(--ink); }
+  .flow .box:not(:last-child)::before { content: ""; position: absolute; right: -48px; top: calc(50% - 7px); border: 8px solid transparent; border-left: 12px solid var(--ink); border-right: 0; }
+  .flow b { font-family: var(--nums); font-weight: 600; font-size: 28px; color: var(--accent-ink); display: block; }
+  .flow p { margin-top: 8px; font-family: var(--display); font-weight: 700; font-size: 40px; line-height: 1.05; }
+  .stack { margin-top: 56px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 36px; align-content: start; }
+  .stack h4 { margin: 0 0 16px; font-family: var(--nums); font-weight: 600; font-size: 28px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); border-top: 2px solid var(--hairline); padding-top: 18px; }
+  .stack ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 12px; }
+  .stack li { font-size: 32px; font-weight: 500; line-height: 1.2; }
+  .stack li span { color: var(--muted); font-weight: 400; }
+
+  /* physics */
+  .phys.on { display: grid; grid-template-columns: 1fr 1fr; gap: 96px; align-content: center; }
+  .phys h2 { font-size: 104px; margin-top: 22px; }
+  .phys .col { display: flex; flex-direction: column; }
+  .eq { margin-top: 40px; padding: 30px 34px; font-family: var(--nums); font-weight: 600; font-size: 48px; line-height: 1.3; }
+  .eq i { font-family: var(--body); font-style: italic; font-weight: 500; }
+  .phys .note { margin-top: 26px; font-size: 32px; font-weight: 500; line-height: 1.3; }
+  .phys .note + .note { color: var(--muted); }
+  .holds { margin-top: 36px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+  .holds div { padding: 22px; text-align: center; }
+  .holds svg { width: 150px; height: 150px; display: block; margin: 0 auto 10px; }
+  .holds b { font-family: var(--display); font-weight: 700; font-size: 44px; display: block; }
+  .holds span { font-size: 26px; color: var(--muted); }
+  .stat { margin-top: 36px; display: flex; gap: 48px; }
+  .stat div b { font-family: var(--nums); font-weight: 600; font-size: 80px; line-height: 1; display: block; color: var(--accent-ink); }
+  .stat div span { font-size: 26px; color: var(--muted); }
+
+  /* accessibility */
+  .access.on { display: grid; grid-template-columns: 1fr 430px; gap: 110px; align-items: center; }
+  .access h2 { margin-top: 22px; max-width: 18ch; font-size: 100px; }
+  .rows { margin-top: 44px; display: grid; gap: 26px; }
+  .rows div { display: grid; grid-template-columns: 330px 1fr; gap: 28px; border-top: 2px solid var(--hairline); padding-top: 20px; }
+  .rows b { font-family: var(--display); font-weight: 700; font-size: 46px; line-height: 1.02; }
+  .rows p { font-size: 30px; font-weight: 500; line-height: 1.3; color: var(--muted); }
+  .rows div:last-child b { color: var(--accent-ink); }
+
+  /* record and share */
+  .share.on { display: grid; grid-template-rows: auto 1fr; }
+  .share h2 { font-size: 112px; }
+  .share .lead { margin-top: 26px; font-size: 38px; font-weight: 500; line-height: 1.3; max-width: 56ch; }
+  .track { margin-top: 0; padding: 34px 40px 40px; }
+  .track .lane { position: relative; height: 70px; border-bottom: 2px solid var(--hairline); }
+  .track .lane:last-of-type { border-bottom: 0; }
+  .track .lane label { position: absolute; left: 0; top: 18px; font-family: var(--nums); font-weight: 600; font-size: 26px; letter-spacing: .1em; color: var(--muted); }
+  .track .dot { position: absolute; top: 16px; height: 38px; padding: 0 12px; border-radius: 4px; background: var(--ink); color: #fff; font-family: var(--nums); font-weight: 600; font-size: 24px; line-height: 38px; }
+  .track .dot.f { background: var(--paper); color: var(--ink); border: 2px solid var(--ink); line-height: 34px; }
+  .track .axis { display: flex; justify-content: space-between; margin-left: 200px; margin-top: 12px; font-family: var(--nums); font-weight: 600; font-size: 24px; color: var(--muted); }
+  .gets { margin-top: 44px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px; }
+  .gets div { border-top: 2px solid var(--hairline); padding-top: 18px; font-size: 32px; font-weight: 500; line-height: 1.3; }
+  .gets b { font-family: var(--display); font-weight: 700; font-size: 44px; display: block; margin-bottom: 6px; }
+
+  /* results */
+  .results.on { display: grid; grid-template-rows: auto auto 1fr; }
+  .results h2 { font-size: 112px; }
+  .big { margin-top: 44px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 40px; }
+  .big div { border-top: 2px solid var(--ink); padding-top: 18px; }
+  .big b { font-family: var(--nums); font-weight: 600; font-size: 104px; line-height: 1; display: block; }
+  .big span { font-size: 28px; color: var(--muted); line-height: 1.3; display: block; margin-top: 8px; }
+  table { margin-top: 48px; border-collapse: collapse; width: 100%; font-size: 30px; align-self: start; }
+  th { text-align: left; font-family: var(--nums); font-weight: 600; font-size: 24px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); padding: 0 0 12px; border-bottom: 2px solid var(--ink); }
+  td { padding: 13px 0; border-bottom: 2px solid var(--hairline); font-weight: 500; }
+  td.n, th.n { text-align: right; padding-right: 8px; }
+  td.n { font-family: var(--nums); font-weight: 600; font-size: 34px; }
+  td.a { color: var(--accent-ink); }
+  td.b { color: var(--muted); }
+
+  /* challenges */
+  .hard.on { display: grid; grid-template-rows: auto 1fr; }
+  .hard h2 { font-size: 104px; }
+  .grid6 { display: grid; grid-template-columns: repeat(3, 1fr); grid-auto-rows: 1fr; gap: 36px 40px; align-self: center; }
+  .grid6 div { padding: 34px 34px 38px; }
+  .grid6 b { font-family: var(--display); font-weight: 700; font-size: 54px; line-height: 1; display: block; }
+  .grid6 p { margin-top: 16px; font-size: 31px; line-height: 1.3; color: var(--muted); }
+  .grid6 p em { font-style: normal; color: var(--accent-ink); font-weight: 600; }
+
+  /* learned */
+  .learn.on { display: grid; grid-template-columns: 640px 1fr; gap: 96px; align-items: center; }
+  .learn h2 { font-size: 124px; }
+  .lessons { display: grid; gap: 28px; }
+  .lessons > div { display: grid; grid-template-columns: 70px 1fr; border-top: 2px solid var(--hairline); padding-top: 20px; }
+  .lessons .n { font-size: 32px; color: var(--accent-ink); }
+  .lessons b { font-family: var(--display); font-weight: 700; font-size: 50px; line-height: 1.02; display: block; }
+  .lessons p { margin-top: 6px; font-size: 28px; color: var(--muted); line-height: 1.3; }
+
+  /* next */
+  .next.on { display: grid; grid-template-rows: auto 1fr; }
+  .next h2 { font-size: 124px; }
+  .nextgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 64px 40px; align-self: center; padding-bottom: 40px; }
+  .nextgrid div { border-top: 2px solid var(--hairline); padding-top: 20px; }
+  .nextgrid .n { font-size: 30px; color: var(--accent-ink); }
+  .nextgrid b { font-family: var(--display); font-weight: 700; font-size: 58px; line-height: 1.02; display: block; margin-top: 8px; }
+  .nextgrid p { margin-top: 12px; font-size: 32px; color: var(--muted); line-height: 1.3; }
+  .nextgrid div:first-child b { color: var(--accent-ink); }
+</style>
+</head>
+<body>
+
+<!-- 1. The problem -->
+<section class="slide problem">
+  <div>
+    <p class="eyebrow">Why we built it</p>
+    <h2 style="margin-top:22px">Every new wall is a guess</h2>
+  </div>
+  <div class="cards">
+    <div class="card box"><span class="n num">01</span><h3>New gym, new grades</h3><p>V4 at home means nothing in a gym that grades by tape colour. The regulars know the beta. You don't.</p></div>
+    <div class="card box"><span class="n num">02</span><h3>One setter's opinion</h3><p>Set for an average-height climber. Tens of thousands of graded board climbs never reach a gym wall.</p></div>
+    <div class="card box"><span class="n num">03</span><h3>Routes are colours</h3><p>Colourblind? Red and green look the same. Low vision? Dark holds on a dark wall, chalk, shadow.</p></div>
+    <div class="card box"><span class="n num">04</span><h3>"We both climb 6b"</h3><p>At <span class="num">1.60</span> m and <span class="num">1.90</span> m, half the moves are a stretch for one of you and easy for the other.</p></div>
+  </div>
+</section>
+
+<!-- 2. A grade for your body -->
+<section class="slide body">
+  <div>
+    <p class="eyebrow">A grade for your body</p>
+    <h2>Same wall, your height, your strength</h2>
+    <p class="lead">Height changes how far apart every hold is. Strength changes how hard each one is to hold. Both go into the solver before the grade.</p>
+    <div class="formula"><span>s =</span><span class="frac"><span>1.75 m</span><span>your height</span></span><small>Every distance on the wall is scaled by s, so a shorter climber gets longer spans.</small></div>
+    <div class="pair">
+      <div class="soft"><b>1.60 m</b><span>reach-heavy: a 6c for you</span></div>
+      <div class="soft"><b>1.90 m</b><span>same route: a 6b for your friend</span></div>
+    </div>
+  </div>
+  <div class="phone"><img src="screens/4-climber.png" alt="Ascend's You screen: height slider at 1.75 m and grip strength choice"></div>
+</section>
+
+<!-- 3. Under the hood -->
+<section class="slide hood">
+  <h2>Under the hood</h2>
+  <div class="mid">
+  <div class="flow">
+    <div class="box"><b>Phone</b><p>One photo</p></div>
+    <div class="box"><b>/analyze</b><p>Holds + colour routes</p></div>
+    <div class="box"><b>You</b><p>Route, height, strength</p></div>
+    <div class="box"><b>/solve</b><p>Moves, physics, grade</p></div>
+    <div class="box"><b>App</b><p>3D, voice coach, live camera</p></div>
+  </div>
+  <div class="stack">
+    <div><h4>Seeing the wall</h4><ul>
+      <li>YOLO11s <span>finds holds (fine-tuned on ClimbInst)</span></li>
+      <li>YOLO11n <span>labels hold type</span></li>
+      <li>YOLO11s-seg <span>hold outlines for 3D</span></li>
+      <li>Depth Anything V2 <span>/depth → 3D wall</span></li></ul></div>
+    <div><h4>Physics and grade</h4><ul>
+      <li>Non-negative least squares <span>balance, ~50 µs per pose</span></li>
+      <li>LightGBM <span>grade, trained on Kilter + MoonBoard</span></li>
+      <li>Python + FastAPI <span>no state between calls</span></li></ul></div>
+    <div><h4>The app</h4><ul>
+      <li>React 19, Vite, TypeScript, Tailwind <span>installable PWA</span></li>
+      <li>MediaPipe Pose <span>hands and feet, on your phone</span></li>
+      <li>Figma Make <span>first prototype</span></li></ul></div>
+    <div><h4>Voice and hosting</h4><ul>
+      <li>ElevenLabs Conversational AI <span>the coach</span></li>
+      <li>Browser speech <span>fallback</span></li>
+      <li>Laptop GPU + Cloudflare Tunnel <span>backend</span></li>
+      <li>Vercel <span>frontend</span></li></ul></div>
+  </div>
+  </div>
+</section>
+
+<!-- 4. Physics -->
+<section class="slide phys">
+  <div class="col">
+    <p class="eyebrow">The solver</p>
+    <h2>Safest, not shortest</h2>
+    <div class="eq box">cost of move <i>i</i> = −log(1 − <i>p</i><sub>fall, <i>i</i></sub>)</div>
+    <p class="note">Add the costs up and the cheapest path is exactly the sequence with the highest chance of reaching the top.</p>
+    <p class="note">Feet are planned for each hand position: onto route holds, or smearing on bare wall.</p>
+    <div class="stat">
+      <div><b>0–4%</b><span>chance of topping out, early version<br>(climber squatting under low holds)</span></div>
+      <div><b>89–100%</b><span>after letting the climber<br>stand up off the floor</span></div>
+    </div>
+  </div>
+  <div class="col">
+    <p class="eyebrow">The physics</p>
+    <div class="eq box" style="margin-top:22px">Σ <b>F</b><sub>j</sub> + m<b>g</b> = 0 &nbsp;&nbsp;&nbsp; Σ <b>r</b><sub>j</sub> × <b>F</b><sub>j</sub> = 0</div>
+    <p class="note">Every pose must balance. Each hand or foot can only push or pull the way its hold allows:</p>
+    <div class="holds">
+      <div class="soft"><svg viewBox="0 0 150 150"><circle cx="75" cy="75" r="16" fill="#243e36"/><g stroke="#3f7a55" stroke-width="6" stroke-linecap="round"><path d="M75 55V18M75 95v37M55 75H18M95 75h37M61 61 36 36M89 61l25-25M61 89l-25 25M89 89l25 25"/></g></svg><b>Jug</b><span>almost any way</span></div>
+      <div class="soft"><svg viewBox="0 0 150 150"><circle cx="75" cy="50" r="16" fill="#243e36"/><g stroke="#3f7a55" stroke-width="6" stroke-linecap="round"><path d="M75 70v62M66 70 44 126M84 70l22 56"/></g></svg><b>Crimp</b><span>mostly down</span></div>
+      <div class="soft"><svg viewBox="0 0 150 150"><circle cx="75" cy="50" r="16" fill="#243e36"/><g stroke="#3f7a55" stroke-width="6" stroke-linecap="round"><path d="M75 70v62"/></g></svg><b>Sloper</b><span>straight down</span></div>
+    </div>
+    <p class="note">Grip limit = hold quality × your strength. Effort ≥ 1 can't be held. One small solve, about <span class="num">50 µs</span> a pose.</p>
+  </div>
+</section>
+
+<!-- 5. Accessibility -->
+<section class="slide access">
+  <div>
+    <p class="eyebrow">Accessibility</p>
+    <h2>For climbers who can't see the route</h2>
+    <div class="rows">
+      <div><b>Colourblind</b><p>Every route is named by a colour read from the photo, not from your eyes. Pick it by name and its holds light up.</p></div>
+      <div><b>Hard-to-see holds</b><p>Dark on dark, shadow, chalk, tiny footholds: the detector finds them anyway, and the 3D wall shows what sticks out.</p></div>
+      <div><b>Low vision and blind: live video</b><p>MediaPipe tracks your hands and feet. The coach says what moves next, and moves on by itself when you land it. No screen, no touching the phone. A sight guide without a second person.</p></div>
+    </div>
+  </div>
+  <div class="phone bare"><img src="screens/live-speaking.png" alt="Ascend live mode: next move in large text, voice coach speaking"></div>
+</section>
+
+<!-- 6. Record and share -->
+<section class="slide share">
+  <div>
+    <p class="eyebrow">Record and share</p>
+    <h2 style="margin-top:22px">Your climb, saved move by move</h2>
+  </div>
+  <div class="mid">
+  <div class="track soft">
+    <div class="lane"><label>LEFT HAND</label><span class="dot" style="left:250px">START</span><span class="dot" style="left:760px">B3</span><span class="dot" style="left:1290px">B6</span></div>
+    <div class="lane"><label>RIGHT HAND</label><span class="dot" style="left:250px">START</span><span class="dot" style="left:520px">B2</span><span class="dot" style="left:1030px">B4</span><span class="dot" style="left:1540px">TOP</span></div>
+    <div class="lane"><label>LEFT FOOT</label><span class="dot f" style="left:250px">FLOOR</span><span class="dot f" style="left:640px">F1</span><span class="dot f" style="left:1150px">VOLUME</span></div>
+    <div class="lane"><label>RIGHT FOOT</label><span class="dot f" style="left:250px">FLOOR</span><span class="dot f" style="left:890px">SMEAR</span><span class="dot f" style="left:1410px">F4</span></div>
+    <div class="axis"><span>0 s</span><span>every landing on a hold, timestamped, with the video</span><span>top</span></div>
+  </div>
+  <div class="gets">
+    <div><b>See your beta</b>next to the planned sequence, and where you did it differently</div>
+    <div><b>Compare grades</b>your personal grade next to your friends' on the same route</div>
+    <div><b>Climbs like this</b>shared climbs show up on similar routes, and become training data</div>
+  </div>
+  </div>
+</section>
+
+<!-- 7. Results -->
+<section class="slide results">
+  <h2>Results</h2>
+  <div class="big">
+    <div><b>95%</b><span>of holds found<br>(38% zero-shot)</span></div>
+    <div><b>87%</b><span>hold type right first guess<br>98% in the top 3</span></div>
+    <div><b>0.94</b><span>grade error on MoonBoard<br>(1.67 guessing the median)</span></div>
+    <div><b>99.9%</b><span>of video frames, the<br>live tracker finds you</span></div>
+  </div>
+  <table>
+    <tr><th>What we measured</th><th class="n">Ascend</th><th class="n">Baseline</th></tr>
+    <tr><td>Holds found: 50 test photos, 3,433 holds</td><td class="n a">95%</td><td class="n b">38%</td></tr>
+    <tr><td>Holds found: real gyms, 19 photos</td><td class="n a">87%</td><td class="n b">—</td></tr>
+    <tr><td>Physics vs real climbers: sequence match</td><td class="n a">0.58</td><td class="n b">0.46 untuned</td></tr>
+    <tr><td>Route comes out as one clean group</td><td class="n a">43%</td><td class="n b">19%</td></tr>
+    <tr><td>Grade error in Font steps: MoonBoard / Kilter</td><td class="n a">0.94 / 1.30</td><td class="n b">1.67 / 3.74</td></tr>
+  </table>
+  <p class="foot">All on held-out data. Grade error is mean absolute error in Font grade steps, on the training boards, not on gym walls.</p>
+</section>
+
+<!-- 8. Challenges -->
+<section class="slide hard">
+  <h2>What we ran into</h2>
+  <div class="grid6">
+    <div class="soft"><b>Small holds</b><p>Zero-shot found 38%. Fine-tuning plus cutting the photo into tiles: <em>95%</em>. Under 20 px is still the weak spot.</p></div>
+    <div class="soft"><b>Colour is hard</b><p>Shadows blur blue, purple, red and black; one wall had four greens. So: colour chips you can merge, split or tap to fix.</p></div>
+    <div class="soft"><b>Too many questions</b><p>The type model is usually right but rarely sure. Up to eight questions a route, now capped at the <em>two</em> least certain holds.</p></div>
+    <div class="soft"><b>The squatting climber</b><p>First moves were near impossible. Standing up off the floor took topping out from <em>0–4%</em> to <em>89–100%</em>.</p></div>
+    <div class="soft"><b>A data leak</b><p>Augmented copies of a photo were in both train and test. We re-split by original photo: every number is on unseen data.</p></div>
+    <div class="soft"><b>Grading gym walls</b><p>Great on the boards, no better than guessing on a real gym wall. So we lead with effort per move and chance of topping out.</p></div>
+  </div>
+</section>
+
+<!-- 9. What we learned -->
+<section class="slide learn">
+  <h2>What we learned</h2>
+  <div class="lessons">
+    <div><span class="n num">01</span><div><b>Design around the model's weak spots</b><p>Colour chips and two questions beat any model tweak.</p></div></div>
+    <div><span class="n num">02</span><div><b>Physics generalises where data doesn't</b><p>A tuned balance model beat a grade model trained on 75,000 board climbs.</p></div></div>
+    <div><span class="n num">03</span><div><b>Put the caveat next to every number</b><p>Overlaps, augmented copies and board-only results all flattered us.</p></div></div>
+    <div><span class="n num">04</span><div><b>Ship the whole loop early</b><p>A real gym showed us problems no benchmark did.</p></div></div>
+    <div><span class="n num">05</span><div><b>Accessibility helps everyone</b><p>Hands-free, spoken moves are the best part for anyone on the wall.</p></div></div>
+  </div>
+</section>
+
+<!-- 10. What's next -->
+<section class="slide next">
+  <h2>What's next</h2>
+  <div class="nextgrid">
+    <div><span class="n num">01</span><b>Test with colourblind and visually impaired climbers</b><p>and build around what they tell us.</p></div>
+    <div><span class="n num">02</span><b>Richer spoken directions</b><p>"Up and right, about half a metre," relative to your hand.</p></div>
+    <div><span class="n num">03</span><b>Grades for real gym walls</b><p>trained on climbs recorded through the app.</p></div>
+    <div><span class="n num">04</span><b>Learn your gym</b><p>retrain hold types on the holds you confirm.</p></div>
+    <div><span class="n num">05</span><b>Dynos and sit starts</b><p>momentum moves, and proper sit starts.</p></div>
+    <div><span class="n num">06</span><b>Friends and leaderboards</b><p>per gym, ranked by personal grade, so height and strength don't decide who's top.</p></div>
+  </div>
+</section>
+
+<script>
+  const slides = [...document.querySelectorAll(".slide")];
+  const q = new URLSearchParams(location.search);
+  const n = Math.max(1, Math.min(slides.length, +(q.get("slide") || 1)));
+  slides[n - 1].classList.add("on");
+</script>
+</body>
+</html>
