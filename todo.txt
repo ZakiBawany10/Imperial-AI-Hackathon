@@ -52,6 +52,7 @@ OPEN / ASK THE TEAM
   Adaption is for text models, so it does not help hold-type recognition from photos.
 - Tell Adam: Krishna changed frontend/src/screens/Play.tsx (3D wall buttons) and frontend/.gitignore.
 - Delete the spare "dist" project in the Vercel dashboard.
+- create a small section for benchmarks?
 
 LATER (pitch only unless time)
 - Physics: sit starts, routes with no low footholds of their own colour
