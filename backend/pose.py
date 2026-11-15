@@ -37,7 +37,8 @@ WALL_FOOT_OUT = 0.12                   # a foot on the bare wall sits this far t
 WALL_FOOT_DOWN = 0.8                   # ... and this share of a full leg below it
 FLOOR_FOOT_OUT = 0.05                  # a foot on the floor sits this far to its own side of the neck
 COM_DOWN = 0.8                         # the centre of mass is this share of the way from neck to hip
-NECK_OVER_HANDS = 0.05                 # the neck goes at most this far above the higher hand (unless the floor forces it)
+NECK_OVER_HANDS = 0.25                 # the neck goes at most this far above the higher hand: hands at chest height when standing (was 0.05, which squatted the climber under low holds)
+STAND = 0.85                           # when the hands are low the body stands up, hip this share of a leg over its highest foot (or the floor), instead of squatting
 
 
 def _dist(a, b):
@@ -239,6 +240,10 @@ def neck_height(x, hands, feet, height, floor=None, hang=HANG):
         half = math.sqrt(max(leg * leg - (x - fx) ** 2, 0.0))
         low = max(low, fy + torso - half, fy + torso + FOOT_BELOW_HIP * height)
         high = min(high, fy + torso + half)
+        if STAND:
+            want = max(want, fy + torso + STAND * math.sqrt(max(leg * leg - (x - fx) ** 2, 0.0)))
+    if STAND and floor is not None and not feet:
+        want = max(want, floor + torso + STAND * leg)
     low = max(low, floor_min)
     if low > high:                                        # only by rounding, at the very end of the range
         return 0.5 * (low + high)
@@ -251,7 +256,8 @@ def wall_foot(neck, side, height, floor=None):
     which then carries weight like the ground it is."""
     x = neck[0] + side * WALL_FOOT_OUT * height
     y = neck[1] - TORSO * height - WALL_FOOT_DOWN * LEG * height
-    if floor is not None and y <= floor:
+    # Standing in the start position: the foot is on the floor whenever the leg reaches it.
+    if floor is not None and (y <= floor or (STAND and neck[1] - TORSO * height - floor <= LEG * height)):
         # Standing on the ground: the foot goes under the body, not out to the side.
         return (neck[0] + side * FLOOR_FOOT_OUT * height, floor), True
     return (x, y), False

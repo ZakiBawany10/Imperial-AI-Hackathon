@@ -116,12 +116,14 @@ def check_response(req, out, hands_only):
 
 
 def test_hands_mode_is_unchanged():
+    """contract/solve.json is the full (hands and feet) answer; the solver must reproduce it exactly.
+    Returns the hands-only answer, which the other tests compare against."""
     req, want = load("solve_request.json"), load("solve.json")
-    got = route.solve(dict(req, limbs="hands"))
-    assert got == want
+    got = route.solve(req)
+    assert got == want, "contract/solve.json is out of date: regenerate it from the live /solve"
     assert json.dumps(got) == json.dumps(want), "same values but a different order or number type"
-    print('ok  "limbs": "hands" reproduces contract/solve.json exactly')
-    return got
+    print('ok  /solve reproduces contract/solve.json exactly')
+    return route.solve(dict(req, limbs="hands"))
 
 
 def test_contract_route(hands_only):
