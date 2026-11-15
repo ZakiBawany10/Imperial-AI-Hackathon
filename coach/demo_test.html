@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BetaCrux coach: demo rehearsal</title>
+<style>
+  body { font: 15px/1.45 system-ui, sans-serif; max-width: 980px; margin: 20px auto; padding: 0 16px; color: #1b1b1b; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  .hint { color: #666; font-size: 13px; margin: 0 0 14px; }
+  fieldset { border: 1px solid #ddd; border-radius: 6px; margin: 0 0 12px; padding: 10px 12px; }
+  label { display: inline-block; margin: 4px 14px 4px 0; }
+  input[type=text] { width: 260px; }
+  textarea { width: 100%; height: 44px; font: 13px ui-monospace, Menlo, monospace; }
+  button { font-size: 15px; padding: 7px 14px; margin: 4px 8px 4px 0; }
+  .grid { display: grid; grid-template-columns: 3fr 2fr; gap: 14px; }
+  video { width: 100%; background: #111; border-radius: 6px; }
+  #progress { font-weight: 600; margin: 6px 0; }
+  .warn { color: #b00020; font-weight: 600; }
+  #log { border: 1px solid #ddd; border-radius: 6px; padding: 8px; height: 300px; overflow-y: auto; font: 12.5px/1.4 ui-monospace, Menlo, monospace; background: #fafafa; }
+  #log div { padding: 2px 0; border-bottom: 1px solid #eee; white-space: pre-wrap; }
+  .betacrux-coach { border: 1px solid #ddd; border-radius: 6px; padding: 10px; margin-bottom: 10px; }
+  .betacrux-coach__status { font-weight: 600; margin: 6px 0; }
+  .betacrux-coach__caption { font-size: 18px; margin: 4px 0 0; min-height: 2.6em; }
+</style>
+</head>
+<body>
+<h1>BetaCrux coach: demo rehearsal (step 4)</h1>
+<p class="hint">
+  Serve the repo root bound to localhost: <code>python3 -m http.server 8000 --bind 127.0.0.1</code>, then open
+  <code>http://localhost:8000/coach/demo_test.html</code>. Optional: <code>?agent=...</code>,
+  <code>?backend=http://127.0.0.1:8001</code> for the live route with foot moves, <code>?mode=speech</code>.
+</p>
+
+<fieldset>
+  <label>Video <input id="file" type="file" accept="video/*"></label>
+  <label>Agent id <input id="agent" type="text" placeholder="agent_... (or ?agent=)"></label>
+  <br>
+  <label>Mode
+    <select id="mode">
+      <option value="voice">voice (ElevenLabs, falls back to speech)</option>
+      <option value="speech">speech (browser voice, no ElevenLabs)</option>
+      <option value="text">text (captions only)</option>
+    </select>
+  </label>
+  <label>Backend (optional) <input id="backend" type="text" placeholder="http://127.0.0.1:8001"></label>
+  <button id="load">Load route + set up coach</button>
+  <br>
+  <label style="display:block">Move timestamps, seconds (from docs/demo_timestamps.json; edit freely)
+    <textarea id="times"></textarea>
+  </label>
+  <button id="mark">Mark move done at current time</button>
+  <button id="clearTimes">Clear timestamps</button>
+  <button id="copy">Copy JSON for docs/demo_timestamps.json</button>
+</fieldset>
+
+<div class="grid">
+  <div>
+    <video id="video" controls playsinline></video>
+    <div id="progress">No video loaded.</div>
+  </div>
+  <div>
+    <div id="coach"></div>
+    <div id="log"></div>
+  </div>
+</div>
+
+<script type="module">
+import { Conversation } from "https://esm.sh/@elevenlabs/client@1.32.1"; // same version as frontend/package.json
+import { mountCoach } from "./mountCoach.js";
+import { createVideoProgress, progressAt } from "./videoProgress.js";
+import { planCalls } from "./coachTools.js";
+
+const $ = (id) => document.getElementById(id);
+const video = $("video");
+const params = new URLSearchParams(location.search);
+let state = null;
+let mounted = null;
+let progress = null;    // createVideoProgress: listens to the video's events
+let getProgress = null; // what the coach reads: timestamps from the box, so edits apply at once
+let videoName = "";
+
+function log(text) {
+  const row = document.createElement("div");
+  row.textContent = `${new Date().toLocaleTimeString()}  ${text}`;
+  $("log").appendChild(row);
+  $("log").scrollTop = $("log").scrollHeight;
+}
+
+async function fetchJson(url) {
+  const r = await fetch(url, { cache: "no-store" });
+  if (!r.ok) throw new Error(`${url}: ${r.status}`);
+  return r.json();
+}
+
+function times() {
+  return $("times").value.split(/[\s,]+/).map(Number).filter(Number.isFinite);
+}
+
+function showTimes(list) {
+  $("times").value = list.map((t) => +t.toFixed(2)).join(", ");
+}
+
+function updateProgress() {
+  if (!progress || !state) return;
+  const n = state.solve.moves.length;
+  const t = times().length;
+  const warn = t !== n ? ` <span class="warn">${t} timestamps for ${n} moves</span>` : "";
+  $("progress").innerHTML = `t = ${video.currentTime.toFixed(1)} s · moves done: ${getProgress()} of ${n}${warn}`;
+}
+
+async function loadRoute() {
+  const backend = $("backend").value.trim().replace(/\/$/, "");
+  const request = await fetchJson("../contract/solve_request.json");
+  let solve;
+  let holdTypes;
+  if (backend) {
+    const r = await fetch(`${backend}/solve`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(request) });
+    if (!r.ok) throw new Error(`POST ${backend}/solve: ${r.status}`);
+    solve = await r.json();
+    try { holdTypes = await fetchJson(`${backend}/hold-types`); } catch { holdTypes = undefined; }
+    log(`Route: live /solve from ${backend}.`);
+  } else {
+    solve = await fetchJson("../contract/solve.json");
+    try { holdTypes = await fetchJson("../contract/hold_types.json"); } catch { holdTypes = undefined; }
+    log("Route: contract/solve.json (committed example).");
+  }
+  const calls = planCalls(solve, "merge");
+  log(`${solve.moves.length} moves (${solve.moves.map((m) => `${m.limb}->${m.hold}`).join(", ")}), ${calls.length} coach calls.`);
+  log(`Each timestamp = when that move in solve.moves is completed in the clip.`);
+  return { request, solve, holdTypes };
+}
+
+$("load").onclick = async () => {
+  try {
+    if (mounted) { await mounted.destroy(); mounted = null; }
+    if (progress) progress.destroy();
+    state = await loadRoute();
+    progress = createVideoProgress(video, times());
+    getProgress = () => progressAt(times(), video.currentTime);
+    getProgress.subscribe = progress.subscribe; // nudge on every seek, pause and timeupdate
+    const agentId = $("agent").value.trim();
+    if (agentId) localStorage.setItem("betacrux_agent_id", agentId);
+    mounted = mountCoach($("coach"), {
+      agentId,
+      mode: $("mode").value,
+      Conversation,
+      getState: () => state,
+      getProgress,
+      onStepChange: (i) => log(`step: solve.moves[${i}]`),
+      onStatus: ({ status, mode, message }) => log(`status: ${mode} ${status}${message ? ` (${message})` : ""}`),
+      onCaption: (text) => log(`coach: ${text}`),
+      onHeightChange: async (h) => {
+        const backend = $("backend").value.trim().replace(/\/$/, "");
+        state = { ...state, request: { ...state.request, climber_height_m: h } };
+        if (!backend) { log(`height ${h} m (no backend: re-labelled only)`); return; }
+        const r = await fetch(`${backend}/solve`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(state.request) });
+        if (!r.ok) throw new Error(`/solve ${r.status}`);
+        state = { ...state, solve: await r.json() };
+        log(`re-solved for ${h} m: ${state.solve.moves.length} moves`);
+      },
+    });
+    log(`Coach ready (${$("mode").value}). Press Start coach, then play the video.`);
+    updateProgress();
+  } catch (e) {
+    log(`Could not set up: ${e.message}`);
+  }
+};
+
+$("file").onchange = () => {
+  const f = $("file").files[0];
+  if (!f) return;
+  videoName = f.name;
+  video.src = URL.createObjectURL(f); // stays on this computer; nothing is uploaded
+  log(`Video: ${f.name}`);
+};
+
+$("mark").onclick = () => {
+  const list = [...times(), video.currentTime].sort((a, b) => a - b);
+  showTimes(list);
+  log(`Marked a move at ${video.currentTime.toFixed(2)} s (${list.length} so far).`);
+  updateProgress();
+};
+$("clearTimes").onclick = () => { showTimes([]); updateProgress(); };
+$("copy").onclick = async () => {
+  const json = JSON.stringify({ video: videoName || "<file name>", moves_at_sec: times().map((t) => +t.toFixed(2)) }, null, 2);
+  try { await navigator.clipboard.writeText(json); log("Copied. Paste it into docs/demo_timestamps.json."); }
+  catch { log(json); }
+};
+$("times").oninput = updateProgress;
+for (const e of ["timeupdate", "seeked"]) video.addEventListener(e, updateProgress);
+
+// Initial values: agent id from ?agent=, the last one typed, or the local gitignored agent_ids.json.
+if (params.get("backend")) $("backend").value = params.get("backend");
+if (params.get("mode")) $("mode").value = params.get("mode");
+$("agent").value = params.get("agent") || localStorage.getItem("betacrux_agent_id") || "";
+if (!$("agent").value) {
+  try { const ids = await fetchJson("./agent_ids.json"); if (ids.agent_id) { $("agent").value = ids.agent_id; log("Agent id loaded from coach/agent_ids.json."); } }
+  catch { /* type it in */ }
+}
+try {
+  const demo = await fetchJson("../docs/demo_timestamps.json");
+  showTimes(demo.moves_at_sec || []);
+  log(`Timestamps: ${(demo.moves_at_sec || []).length} from docs/demo_timestamps.json${demo.video ? ` (video: ${demo.video})` : ""}.`);
+} catch (e) {
+  log(`docs/demo_timestamps.json not loaded: ${e.message}`);
+}
+if (location.protocol === "file:") log("Opened from file://. Serve it over http://localhost (see top).");
+</script>
+</body>
+</html>

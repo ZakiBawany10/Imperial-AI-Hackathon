@@ -26,32 +26,53 @@ Zaki: the wall-feet question and the request for `contract/` files are resolved 
 > - Small one: I read `span_m` as the gap between the two hands (or feet) after the move, not how far the limb travelled, because it's 0 for a match. Right? The coach measures travel from the keyframes, so either way is fine.
 > - The slide numbers in `Documents/PLAN.md` are the pre-reach-penalty ones (0.98 and 1.39). I've listed the current ones from your results files in `docs/numbers.md`. Could you check it and update the plan's rigour table, since that file is shared?
 
-## For Adam: wiring the voice coach
+## For Adam: wiring the voice coach (about 10 minutes)
 
-> Hi Adam, the voice coach is ready to wire in from `coach/` whenever you get to A6. Details are in `coach/README.md`; the short version:
+> Hi Adam, the coach now comes as drop-in helpers in `coach/`, with fallback and demo mode built in. Everything below uses your existing `@coach` alias and `getState`/`onHeightChange` from `App.tsx`.
 >
-> ```js
-> import { Conversation } from "@elevenlabs/client";
-> import { createCoachTools } from "../coach/coachTools.js"; // adjust the path; no dependencies
+> **1. Types (one line).** In `frontend/tsconfig.json`, add `"@coach/*": ["../coach/*"]` to `paths`. `coach/` now ships `.d.ts` files for `coachTools.js`, `mountCoach.js` and `videoProgress.js`, so you can delete `src/coach.d.ts`.
 >
-> const coach = createCoachTools({
->   getState: () => ({ request: solveRequest, solve: solveResponse, holdTypes }), // current /solve body + response
->   onHeightChange: async (heightM) => { await resolveWithHeight(heightM); },     // re-call /solve, update state
->   onStepChange: (moveIndex) => setActiveMove(moveIndex),                          // highlight solve.moves[moveIndex]
->   getProgress: null,                                                               // see the request below
+> **2. Agent id.** It goes in your gitignored `frontend/.env.local` as `VITE_ELEVENLABS_AGENT_ID=...` (the name you already use). Never put it in code: the repo is public. I'll DM you the id.
+>
+> **3a. Keep your own UI (recommended):** inside `useCoach` in `src/lib/coach.ts`, replace `createCoachTools` + `Conversation.startSession` with `createCoach`. It drives your existing status and error state:
+>
+> ```ts
+> import { createCoach } from "@coach/mountCoach.js";
+>
+> const coach = createCoach({
+>   agentId: import.meta.env.VITE_ELEVENLABS_AGENT_ID,
+>   getState: () => opts.current.getState(),              // same as now: { request, solve, holdTypes }
+>   onHeightChange: (h) => opts.current.onHeightChange(h), // same as now: re-POST /solve
+>   onStepChange: (i) => opts.current.onStep(i),
+>   onStatus: ({ status, message }) => { setStatus(status === "idle" || status === "error" ? "off" : status); setError(message); },
+>   onCaption: (text) => setCaption(text),                 // optional: the current move sentence
 > });
->
-> await Conversation.startSession({ agentId: AGENT_ID, connectionType: "webrtc", clientTools: coach.clientTools });
+> // coach.start() / coach.stop() on your mic button
 > ```
 >
-> - **Agent ID:** the agent is live; I'll send you the ID directly. Please keep it out of the repo (the repo and the agent are both public); a gitignored `.env.local` in `frontend/` is fine. `coach/talk_test.html` shows the whole loop working in a browser, with a log of every tool call.
-> - **Foot moves:** `/solve` now returns them, and the coach folds them into hand calls by default. `onStepChange` still gives an index into `solve.moves`, foot moves included.
-> - You can build and test everything except the voice now: the tool functions are plain async functions, so you can call `coach.clientTools.get_next_move({ climber_finished_last_move: true })` from a button and check what it returns.
-> - **Request: a demo-mode `getProgress`.** For demo step 4 (filmed climb with the coach calling moves), please add a demo mode where `getProgress` returns how many moves are done based on the video's current time and a list of timestamps, something like:
+> **3b. Or the ready-made widget** (Start/Stop button, status line, caption) in any `<div>`:
 >
->   ```js
->   const DEMO_MOVE_TIMES = [/* seconds into the clip when each move in solve.moves completes; Zaki will send these */];
->   const getProgress = () => DEMO_MOVE_TIMES.filter((t) => video.currentTime >= t).length;
->   ```
+> ```tsx
+> const ref = useRef<HTMLDivElement>(null);
+> useEffect(() => {
+>   const c = mountCoach(ref.current!, { agentId: import.meta.env.VITE_ELEVENLABS_AGENT_ID, getState, onHeightChange });
+>   return () => { void c.destroy(); };
+> }, []);
+> ```
 >
->   I'll note the timestamps from the filmed climb and send them over. That way step 4 works even if live pose tracking isn't ready. The coach only reads `getProgress` when it calls `get_next_move`, so it's cheap.
+> **4. Filmed-climb screen (demo step 4).** Pass a `getProgress` built from the video, and the coach calls each move by itself as the clip reaches it. It also restarts from the right move if you scrub back:
+>
+> ```ts
+> import { createVideoProgress } from "@coach/videoProgress.js";
+> import demo from "../../../docs/demo_timestamps.json"; // from frontend/src/<folder>/; { video, moves_at_sec }, I'll fill it in
+> const getProgress = createVideoProgress(videoRef.current!, demo.moves_at_sec);
+> // createCoach({ ...same options, getProgress }) or mountCoach(el, { ...same options, getProgress })
+> ```
+>
+> For that JSON import, add `'../docs'` to `server.fs.allow` in `vite.config.ts`, or I can send you the numbers to paste in.
+>
+> **Things to know:**
+> - If voice can't connect (no id, mic blocked, network), or drops mid-climb, it switches by itself to the browser reading the same sentences aloud, and says so in the status. The demo never goes silent. You can also force `mode: "speech"` or `mode: "text"`.
+> - `onStepChange` still gives the index into `solve.moves`, foot moves included.
+> - It uses your installed `@elevenlabs/client` (1.32.1); no new packages.
+> - To try it outside the app: `coach/demo_test.html` (see `coach/README.md`).

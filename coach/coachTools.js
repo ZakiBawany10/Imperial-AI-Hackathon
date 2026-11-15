@@ -565,6 +565,15 @@ export function planCalls(solve, footMoves = "merge") {
   return calls;
 }
 
+/**
+ * Which call to coach once `done` entries of solve.moves are completed: the
+ * first call that isn't fully done, or calls.length when the route is finished.
+ */
+export function callForProgress(calls, done) {
+  const c = calls.findIndex((cl) => cl.moves[cl.moves.length - 1] >= done);
+  return c === -1 ? calls.length : c;
+}
+
 /** Lead-in for foot moves folded into a hand call: one foot's own phrase, or "Feet up" / "Sort your feet out". */
 function feetLeadIn(feet) {
   if (feet.length === 1) return feet[0].short || feet[0].say.replace(/[.!]$/, "");
@@ -678,12 +687,6 @@ export function createCoachTools(options) {
   function setStep(next) {
     step = next;
     called = false;
-  }
-
-  /** Call index for a count of completed moves: the first call not fully done. */
-  function callForProgress(calls, done) {
-    const c = calls.findIndex((cl) => cl.moves[cl.moves.length - 1] >= done);
-    return c === -1 ? calls.length : c;
   }
 
   const clientTools = {

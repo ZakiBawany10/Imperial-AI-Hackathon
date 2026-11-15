@@ -16,6 +16,11 @@ tools that run in the browser, so the backend stays stateless.
 | `agent_ids.json` | Written by the setup script after each successful call: agent id and tool ids. Gitignored, see below |
 | `try_coach.mjs` | Text-only rehearsal of what the coach would say. No network |
 | `talk_test.html` | Browser page to talk to the live agent, with a log of every tool call |
+| `mountCoach.js` | Drop-in coach for the app: `mountCoach` (widget) and `createCoach` (headless), with voice → speech fallback and the progress nudge |
+| `videoProgress.js` | `createVideoProgress(video, timestamps)`: progress from a filmed climb, for demo mode |
+| `demo_test.html` | Rehearse demo step 4: local video + `docs/demo_timestamps.json` + the coach |
+| `*.d.ts` | Types for the frontend (TypeScript) |
+| `mountCoach.test.js` | Tests for the nudge, video progress and fallback |
 | `coachTools.test.js`, `test_fixture.js` | Tests, and test data in the contract's shape |
 
 ## Running it
@@ -101,6 +106,51 @@ To rehearse the live route in the terminal instead:
 The tests, `try_coach.mjs` and `talk_test.html` use `contract/solve_request.json`,
 `contract/solve.json` and `contract/hold_types.json` when they exist, and the
 test fixture otherwise.
+
+## Drop-in helpers (`mountCoach.js`, `videoProgress.js`)
+
+The paste-ready guide for Adam is in `docs/messages_for_team.md`.
+
+- `mountCoach(element, options)` renders a Start/Stop button, a status line and
+  a caption. It returns `{ start, stop, destroy, setState, next }`.
+  `createCoach(options)` is the same without a DOM, for an app's own UI.
+- **Modes:** `"voice"` (default; the ElevenLabs agent), `"speech"` (the browser
+  reads the same sentences aloud at a slightly slower rate, with a "Next move"
+  button) and `"text"` (captions only).
+- **Fallback:** if voice can't connect (no agent id, mic blocked, network), or
+  errors or disconnects mid-session, it switches to `"speech"` from the move it
+  was on, and the status line says why. With no browser speech, it switches to
+  `"text"`.
+- **The nudge:** when `getProgress()` goes up enough to finish a call, the
+  coach calls the next move by itself.
+  - In voice it sends the agent a user message ("Done. What's my next move?").
+    A user message makes the agent respond; a contextual update would be silent
+    (ElevenLabs client-to-server events docs). The agent then calls
+    `get_next_move`, which reads `getProgress`, so it can't skip or repeat. If
+    the agent is mid-sentence, the nudge waits for it to finish (at most 6 s).
+  - In speech or text mode it reads the next sentence.
+  - Progress inside a merged call (the foot done, the hand not yet) doesn't
+    trigger anything. Going back restarts from that move.
+  - A forward seek jumps straight to the current move.
+- `createVideoProgress(video, moves_at_sec)` turns a clip into `getProgress`:
+  `moves_at_sec[k]` is when `solve.moves[k]` is completed. It follows play,
+  pause, seek and replay, and has `subscribe` so the coach reacts immediately
+  rather than waiting for the poll.
+
+### Rehearsing the demo (`demo_test.html`)
+
+```bash
+python3 -m http.server 8000 --bind 127.0.0.1   # from the repo root
+# open http://localhost:8000/coach/demo_test.html   (add ?backend=http://127.0.0.1:8001 for the live route with feet)
+```
+
+1. Pick the video file. It stays local: nothing is uploaded.
+2. Press "Load route + set up coach".
+3. To make the timestamps, play the clip and press "Mark move done at current
+   time" as each move in `solve.moves` finishes. The page warns if the count
+   doesn't match the number of moves. Then "Copy JSON" into
+   `docs/demo_timestamps.json`.
+4. Press "Start coach", rewind the video, and play.
 
 ## For the frontend (Adam)
 

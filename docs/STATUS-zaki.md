@@ -1,7 +1,44 @@
 # Status: Zaki's lane
 
-Saturday 14 November, evening. Fifth block: the coach talks like a coach.
-Earlier blocks follow below.
+Sunday 15 November, early hours. Sixth block: drop-in coach for Adam, and
+demo mode. Earlier blocks follow below.
+
+## Sixth block: drop-in coach helpers and demo mode
+
+- **`coach/mountCoach.js`:**
+  - `mountCoach(el, options)` is a ready widget: Start/Stop, status line,
+    caption. `createCoach(options)` is the same without UI, for Adam's
+    existing mic button.
+  - Modes: voice, speech (browser voice, slightly slower, "Next move" button)
+    and text.
+  - **Fallback:** if voice can't connect or drops mid-session, it switches to
+    speech from the current move and says why in the status line.
+- **The nudge:** with `getProgress`, the coach calls the next move by itself.
+  In voice it sends the agent a user message (checked in the ElevenLabs docs:
+  a user message gets a reply, a contextual update doesn't), waiting if the
+  agent is mid-sentence. In speech it reads the next sentence. There are no
+  skips and no repeats, and rewinding restarts from that move.
+- **`coach/videoProgress.js`:** `createVideoProgress(video, moves_at_sec)` for
+  the filmed climb. It handles pause, seek and replay.
+- **`docs/demo_timestamps.json`:** an empty template for you to fill in.
+- **`coach/demo_test.html`:** rehearse demo step 4 with a local video. It can
+  also *make* the timestamps: play the clip and press "Mark move done" at each
+  move, then "Copy JSON".
+- **Types:** `.d.ts` files for all three coach modules. Checked with
+  TypeScript 5.7 (Adam's version) against a test file that uses them the way
+  his app would.
+- **Tests:** 36 pass (24 old, 12 new): video progress, the nudge, merged calls,
+  and the fallback switch.
+- **Smoke test:** in headless Chrome, the widget runs on the contract route,
+  nudges as a fake video plays, and restarts on rewind. The demo page loads.
+- **Adam's message** in `docs/messages_for_team.md` is now a paste-ready
+  guide. It uses his existing names (`@coach` alias, `VITE_ELEVENLABS_AGENT_ID`
+  in `frontend/.env.local`) and needs one `tsconfig` paths line from him.
+  **Still to do: DM him the agent id.**
+- **Not tested:** real voice through `mountCoach` (needs you and a mic), and a
+  real video (no clip yet).
+- **Still blocked:** the weight-distribution feature, waiting on Krishna's
+  re-committed `contract/solve.json`.
 
 ## Fifth block: coach wording reworked
 
