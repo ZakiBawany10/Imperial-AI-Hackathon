@@ -66,7 +66,7 @@ export function UploadScreen({
             Photograph the wall.
           </h1>
           <p data-name="upload/body" className="mt-3 text-[16px] leading-[1.45] text-muted">
-            We find every hold, solve the route for your height, and tell you the grade.
+            See how you'd climb it, and what it grades.
           </p>
         </div>
 
@@ -209,10 +209,10 @@ export function UploadScreen({
 function PinnedSheet({ children, name }: { children: ReactNode; name: string }) {
   return (
     <div data-name={name} className="relative" style={{ transform: "rotate(-0.8deg)" }}>
-      <HoldPin kind="jug" colour={C.yellow} size={56} rotate={-14} className="-top-5 -left-4" />
-      <HoldPin kind="pinch" colour={C.blue} size={52} rotate={18} className="-top-5 -right-3" />
-      <HoldPin kind="sloper" colour={C.accent} size={54} rotate={8} className="-bottom-5 -left-3" />
-      <HoldPin kind="crimp" colour={C.green} size={50} rotate={-10} className="-right-3 -bottom-4" />
+      <HoldPin kind="jug" colour={C.accent} size={56} rotate={-14} className="-top-5 -left-4" />
+      <HoldPin kind="pinch" colour={C.surface} size={52} rotate={18} className="-top-5 -right-3" />
+      <HoldPin kind="sloper" colour={C.ink} size={54} rotate={8} className="-bottom-5 -left-3" />
+      <HoldPin kind="crimp" colour={C.accent} size={50} rotate={-10} className="-right-3 -bottom-4" />
       <div className="relative h-[340px] overflow-hidden rounded-[4px] border border-dashed border-ink bg-surface">
         {children}
       </div>

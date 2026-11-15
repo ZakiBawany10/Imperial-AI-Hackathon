@@ -2,8 +2,8 @@
 // 1000 x 1000 coordinate space laid over the photo (xMidYMid slice).
 
 export const C = {
-  paper: "#F1F7ED",
-  surface: "#F8FBF5",
+  paper: "#FFFFFF",
+  surface: "#FFFFFF",
   ink: "#243E36",
   muted: "#5A6E66",
   hairline: "#D2E2CB",

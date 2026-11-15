@@ -2,9 +2,9 @@
 @import "tailwindcss";
 
 @theme {
-  /* palette: #F1F7ED paper, #243E36 ink, #7CA982 sage accent */
-  --color-paper: #f1f7ed;
-  --color-surface: #f8fbf5;
+  /* palette: white paper, #243E36 ink, #7CA982 sage accent */
+  --color-paper: #ffffff;
+  --color-surface: #ffffff;
   --color-ink: #243e36;
   --color-muted: #5a6e66;
   --color-hairline: #d2e2cb;

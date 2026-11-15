@@ -15,31 +15,117 @@ export function Screen({ name, children }: { name: string; children: ReactNode }
   );
 }
 
-const STEPS = ["Upload", "Review", "Route", "Play"];
+const STEPS = ["Photo", "Route", "You", "Beta"];
+
+/** Progress as a tiny route: one hold per step, joined by the beta line.
+ *  Done holds are ink with a tick, the current one is sage with a grip ring,
+ *  the rest are outlines. */
+function StepRoute({ step }: { step: number }) {
+  const xs = [14, 76, 138, 200];
+  const y = 10;
+  // small hold silhouettes, one per step (jug, sloper, crimp, pinch)
+  const shapes = [
+    "M-7 1C-7.5-4-3-7.5 1-7.5S7.5-4 7 1C6.6 5 3.5 7 0 7S-6.6 5-7 1Z",
+    "M-8 5C-7.5-1.5-3.5-6 0-6S7.5-1.5 8 5C8 6.5 6.5 7 5 7L-5 7C-6.5 7-8 6.5-8 5Z",
+    "M-8-1.5C-8-3.5-6-4-3.5-4L5-4.5C7.5-4.5 8.5-3 8.5-1L8.5 2.5C8.5 4.5 6.5 5 4 5L-4 5.3C-6.5 5.3-8 4-8 2Z",
+    "M-2-8C2.5-8.5 5-5 4.5 0C4 5 3 8 0 8S-4.5 5-4.3 0C-4-5-5-7.5-2-8Z",
+  ];
+  return (
+    <svg
+      data-name="topbar/step-route"
+      viewBox="0 0 214 34"
+      className="h-[34px] w-[214px] overflow-visible"
+      role="img"
+      aria-label={`Step ${step} of 4: ${STEPS[step - 1]}`}
+    >
+      {xs.slice(0, -1).map((x, i) => {
+        const done = i + 1 < step;
+        return (
+          <line
+            key={i}
+            x1={x + 10}
+            y1={y}
+            x2={xs[i + 1] - 10}
+            y2={y}
+            stroke={done ? C.ink : C.accent}
+            strokeOpacity={done ? 1 : i + 1 === step ? 1 : 0.45}
+            strokeWidth={done ? 2 : 1.6}
+            strokeDasharray={done ? undefined : "3 4"}
+            strokeLinecap="round"
+          />
+        );
+      })}
+      {xs.map((x, i) => {
+        const n = i + 1;
+        const done = n < step;
+        const now = n === step;
+        return (
+          <g key={n} data-name={`step-route/${STEPS[i].toLowerCase()}`}>
+            {now && (
+              <>
+                <circle cx={x} cy={y} r={11} fill="none" stroke={C.accent} strokeWidth={1.5} />
+                <circle
+                  cx={x}
+                  cy={y}
+                  r={11}
+                  fill="none"
+                  stroke={C.accent}
+                  strokeWidth={1.5}
+                  className="anim-ring"
+                  style={{ transformOrigin: `${x}px ${y}px` }}
+                />
+              </>
+            )}
+            <path
+              d={shapes[i]}
+              transform={`translate(${x} ${y})`}
+              fill={done ? C.ink : now ? C.accent : C.surface}
+              stroke={C.ink}
+              strokeOpacity={done || now ? 1 : 0.45}
+              strokeWidth={1.3}
+              strokeLinejoin="round"
+            />
+            {done && (
+              <path
+                d={`M${x - 3} ${y + 0.5}l2 2 4-4.5`}
+                fill="none"
+                stroke={C.surface}
+                strokeWidth={1.6}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            )}
+            <text
+              x={x}
+              y={31}
+              textAnchor="middle"
+              fill={C.ink}
+              fillOpacity={now ? 1 : done ? 0.75 : 0.5}
+              fontFamily="Barlow Semi Condensed"
+              fontSize={10.5}
+              fontWeight={600}
+              letterSpacing={1.2}
+            >
+              {STEPS[i].toUpperCase()}
+            </text>
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
 export function TopBar({ step, right }: { step: number; right?: ReactNode }) {
   return (
-    <header data-name="topbar" className="shrink-0 bg-paper px-6 pt-2 pb-4">
-      <div className="flex h-10 items-center justify-between gap-4">
+    <header data-name="topbar" className="shrink-0 bg-paper px-6 pt-2 pb-3">
+      <div className="flex h-11 items-center justify-between gap-4">
         <span
           data-name="topbar/wordmark"
           className="font-display text-[20px] font-bold tracking-[0.005em]"
         >
           BetaCrux
         </span>
-        {right ?? (
-          <span data-name="topbar/step-label" className={`${MONO} text-muted`}>
-            Step {step} / 4<span className="ml-3 text-ink">{STEPS[step - 1]}</span>
-          </span>
-        )}
-      </div>
-      <div
-        data-name="topbar/progress"
-        className="mt-2 grid grid-cols-4 items-center gap-2"
-        aria-label={`Step ${step} of 4`}
-      >
-        {[1, 2, 3, 4].map((i) => (
-          <span key={i} className={i <= step ? "h-[2px] bg-ink" : "h-px bg-hairline"} />
-        ))}
+        {right ?? <StepRoute step={step} />}
       </div>
     </header>
   );

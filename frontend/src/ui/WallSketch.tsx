@@ -88,8 +88,8 @@ function Hold({
     <g transform={`translate(${x} ${y}) rotate(${r}) scale(${s / 64}) translate(-32 -32)`}>
       <path
         d={BODY[kind]}
-        fill={route ? C.yellow : C.surface}
-        fillOpacity={route ? 0.5 : 1}
+        fill={route ? C.accent : C.surface}
+        fillOpacity={route ? 0.6 : 1}
         stroke={C.ink}
         strokeOpacity={route ? 0.85 : 0.45}
         strokeWidth={1.3}
@@ -111,7 +111,24 @@ function Hold({
 }
 
 /** Gym tape: a strip with torn ends and a label. */
-function Tape({ x, y, r, text, colour, w = 26 }: { x: number; y: number; r: number; text: string; colour: string; w?: number }) {
+function Tape({
+  x,
+  y,
+  r,
+  text,
+  colour,
+  ink = C.surface,
+  w = 26,
+}: {
+  x: number;
+  y: number;
+  r: number;
+  text: string;
+  colour: string;
+  /** label colour */
+  ink?: string;
+  w?: number;
+}) {
   const h = 13;
   const torn = (sx: number, dir: 1 | -1) =>
     [0, 1, 2, 3, 4].map((i) => `${sx + (i % 2 ? 2.2 * dir : 0)},${-h / 2 + (i * h) / 4}`).join(" ");
@@ -125,7 +142,7 @@ function Tape({ x, y, r, text, colour, w = 26 }: { x: number; y: number; r: numb
       <text
         y={3.6}
         textAnchor="middle"
-        fill={C.surface}
+        fill={ink}
         fontFamily={FONT_TAG}
         fontSize={10}
         fontWeight={600}
@@ -249,19 +266,19 @@ export function WallSketch() {
         </g>
       </g>
       <g data-name="sketch/mat">
-        <rect x={-64} y={404} width={528} height={60} fill={C.hairline} fillOpacity={0.55} />
+        <rect x={-64} y={404} width={528} height={60} fill={C.accent} fillOpacity={0.16} />
         <path d="M-60 404 L460 404" stroke={C.ink} strokeOpacity={0.35} />
         <path d="M134 404 L130 440 M268 404 L272 440" stroke={C.ink} strokeOpacity={0.18} strokeDasharray="3 4" />
       </g>
 
       {/* ---- chalk: smudges on the holds people grab, one handprint ---- */}
-      <g filter={`url(#${soft})`} fill={C.hairline}>
+      <g filter={`url(#${soft})`} fill={C.accent} opacity={0.35}>
         <ellipse cx={H1[0] + 6} cy={H1[1] - 10} rx={16} ry={9} opacity={0.8} />
         <ellipse cx={H2[0] - 4} cy={H2[1] - 12} rx={15} ry={8} opacity={0.75} />
         <ellipse cx={TOP[0]} cy={TOP[1] - 12} rx={18} ry={9} opacity={0.75} />
       </g>
 
-      <g filter={`url(#${soft}-hand)`} fill={C.hairline}>
+      <g filter={`url(#${soft}-hand)`} fill={C.accent} opacity={0.4}>
         <g transform="translate(330 268) rotate(-18)" opacity={0.95}>
           <ellipse cx={0} cy={0} rx={10} ry={12} />
           {[-9, -3, 3, 9].map((dx, i) => (
@@ -274,9 +291,9 @@ export function WallSketch() {
       {/* ---- volume, top right ---- */}
       <g data-name="sketch/volume" filter={`url(#${wobble})`} stroke={C.ink} strokeOpacity={0.6} strokeLinejoin="round">
         <polygon points="290,22 324,86 394,98" fill={C.surface} />
-        <polygon points="394,98 324,86 300,150" fill={C.hairline} fillOpacity={0.7} />
+        <polygon points="394,98 324,86 300,150" fill={C.accent} fillOpacity={0.32} />
         <polygon points="394,98 324,86 300,150" fill={`url(#${hatch})`} stroke="none" />
-        <polygon points="300,150 324,86 290,22" fill={C.hairline} fillOpacity={0.35} />
+        <polygon points="300,150 324,86 290,22" fill={C.accent} fillOpacity={0.14} />
         <circle cx={326} cy={92} r={2.4} fill={C.surface} />
       </g>
 
@@ -291,8 +308,8 @@ export function WallSketch() {
       </g>
 
       {/* ---- setter tape ---- */}
-      <Tape x={96} y={276} r={-10} text="S" colour={C.green} w={20} />
-      <Tape x={208} y={284} r={8} text="S" colour={C.green} w={20} />
+      <Tape x={96} y={276} r={-10} text="S" colour={C.accent} ink={C.ink} w={20} />
+      <Tape x={208} y={284} r={8} text="S" colour={C.accent} ink={C.ink} w={20} />
       <Tape x={276} y={36} r={-6} text="TOP" colour={C.ink} w={36} />
 
       {/* ---- beta line, inked in on load ---- */}
@@ -350,7 +367,8 @@ export function WallSketch() {
       </g>
       <text
         transform="translate(42 150) rotate(-90)"
-        fill={C.muted}
+        fill={C.ink}
+        fillOpacity={0.65}
         textAnchor="middle"
         fontFamily={FONT_TAG}
         fontSize={11}
