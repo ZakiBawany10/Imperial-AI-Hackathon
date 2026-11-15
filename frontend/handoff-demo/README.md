@@ -15,7 +15,7 @@ root if you like (your call, it is your rules file too).
 | 44–46 s | Title card "Then it climbs it with you." | (made in Concat) |
 | 46–59.5 s | **Ghost climber:** the solved beta drawn as a glowing figure over the real climb of the blue route, timed to the real climber's moves. | `videos/clips/03-ghost-climb.mp4` |
 | | The 3D Play screen on its own (14.5 s) | `videos/clips/04-3d-beta.mp4` |
-| | The ghost alone on a transparent background (VP9 WebM with alpha), to lay over the footage in another editor | `videos/clips/03b-ghost-overlay.webm` |
+| | The ghost alone on a transparent background (VP9 WebM with alpha), to lay over the footage in another editor. The full-quality ProRes 4444 version (`03b-ghost-overlay.mov`, 110 MB) is over GitHub's 100 MB file limit, so it isn't in git: ask Adam for it (on his Mac in `~/Movies/Ascend demo/clips/`), or re-make it with `pipeline/render.py`. | `videos/clips/03b-ghost-overlay.webm` |
 
 All phone clips are 884×1920 screens centred on a 1080×1920 frame with ink `#243E36` side bands.
 
@@ -28,6 +28,7 @@ handoff-demo/
   sources/             the gym footage the video was made from
     wall-photo-IMG_9528.jpeg   the wall photo (4284×5712, EXIF upright)
     climb-IMG_9529.mp4         the climb of the blue route (1080×1920, 29.97 fps, 16.6 s)
+    screen-recording-raw.MP4   Adam's full iPhone screen recording from the gym (884×1920, 120 fps, 30 s), uncut
   pipeline/            the scripts that made it (see "Re-make it")
     record.mjs                 drives the app in headless Chrome and records it at iPhone size
     align.py                   lines the photo up with every video frame (homographies)
@@ -43,8 +44,7 @@ handoff-demo/
     marks_rel.json             when each step happens in the raw app recording (seconds)
 ```
 
-The raw screen recording isn't included: its last seconds show Adam's lock screen with notifications.
-Only the trimmed clip `01-real-start.mp4` is here.
+In the raw screen recording, the camera runs from 0 to 3 s and the photo uploads at about 4 s. The app then sits on "Finding holds" until about 26 s. The demo uses 0–5.6 s.
 
 ## How it was made
 
