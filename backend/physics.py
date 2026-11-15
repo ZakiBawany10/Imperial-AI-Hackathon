@@ -110,7 +110,9 @@ def _hand_table(kind):
 
 
 _HAND_TABLES = {k: _hand_table(k) for k in HAND}
-_FOOT_GX, _FOOT_GY = (v.tolist() for v in _directions(FOOT_CONE_DEG, 3))
+@functools.lru_cache(maxsize=8)
+def _foot_dirs(cone_deg):
+    return tuple(tuple(v.tolist()) for v in _directions(cone_deg, 3))
 
 
 def grip_strength(quality):
@@ -264,9 +266,9 @@ def solve(hands, feet, com_y, x_lo, x_hi=None, angle_deg=0.0, height=8.75, body_
         if j is not None:
             dx, dy = (x - x_lo) * w_lm, (y - com_y) * w_lm
             for g in range(3):
-                A[j + g] = _W * _FOOT_GX[g]
-                A[col + j + g] = _W * _FOOT_GY[g]
-                A[r2 + j + g] = dx * _FOOT_GY[g] - dy * _FOOT_GX[g]
+                A[j + g] = _W * _foot_dirs(FOOT_CONE_DEG)[0][g]
+                A[col + j + g] = _W * _foot_dirs(FOOT_CONE_DEG)[1][g]
+                A[r2 + j + g] = dx * _foot_dirs(FOOT_CONE_DEG)[1][g] - dy * _foot_dirs(FOOT_CONE_DEG)[0][g]
                 A[row + j + g] = _EPS_FOOT
             if kind == "wall":                          # friction used + friction unused = friction available
                 nxt = row + col
@@ -314,8 +316,8 @@ def solve(hands, feet, com_y, x_lo, x_hi=None, angle_deg=0.0, height=8.75, body_
             continue
         fx = fy = 0.0
         for g in range(3):
-            fx += v[j + g] * _FOOT_GX[g]
-            fy += v[j + g] * _FOOT_GY[g]
+            fx += v[j + g] * _foot_dirs(FOOT_CONE_DEG)[0][g]
+            fy += v[j + g] * _foot_dirs(FOOT_CONE_DEG)[1][g]
         forces[limb] = (fx, fy, press)
         sum_x += fx
         sum_y += fy

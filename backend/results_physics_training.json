@@ -1,0 +1,424 @@
+{
+ "climbs": 22,
+ "experts": 10,
+ "configs_tried": 1,
+ "results": {
+  "random": {
+   "geometric search (old)": {
+    "score": 0.46,
+    "hand_holds": 0.697,
+    "foot_holds": 0.425,
+    "order": 0.351,
+    "same_hand": 0.368,
+    "experts_score": 0.474,
+    "moves_vs_people": 0.36
+   },
+   "safest route, current settings": {
+    "score": 0.578,
+    "hand_holds": 0.849,
+    "foot_holds": 0.396,
+    "order": 0.508,
+    "same_hand": 0.56,
+    "experts_score": 0.605,
+    "moves_vs_people": 0.52
+   },
+   "safest route, tuned on the other folds": {
+    "score": 0.578,
+    "hand_holds": 0.849,
+    "foot_holds": 0.396,
+    "order": 0.508,
+    "same_hand": 0.56,
+    "experts_score": 0.605,
+    "moves_vs_people": 0.52
+   },
+   "settings picked per fold": [
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "test": {
+   "geometric search (old)": {
+    "score": 0.46,
+    "hand_holds": 0.697,
+    "foot_holds": 0.425,
+    "order": 0.351,
+    "same_hand": 0.368,
+    "experts_score": 0.474,
+    "moves_vs_people": 0.36
+   },
+   "safest route, current settings": {
+    "score": 0.578,
+    "hand_holds": 0.849,
+    "foot_holds": 0.396,
+    "order": 0.508,
+    "same_hand": 0.56,
+    "experts_score": 0.605,
+    "moves_vs_people": 0.52
+   },
+   "safest route, tuned on the other folds": {
+    "score": 0.578,
+    "hand_holds": 0.849,
+    "foot_holds": 0.396,
+    "order": 0.508,
+    "same_hand": 0.56,
+    "experts_score": 0.605,
+    "moves_vs_people": 0.52
+   },
+   "settings picked per fold": [
+    0,
+    0
+   ]
+  }
+ },
+ "best_on_all": {
+  "FALL_AT": 1.0623,
+  "FALL_SPREAD": 0.08,
+  "REACH_RISK": 0.881,
+  "REACH_FROM": 0.3209,
+  "MOVE_COST": 0.01,
+  "SWITCH": 0.0562,
+  "DOWN_STEP": 1.0208,
+  "NEXT_HOLDS": 5,
+  "GRIP_MAX": 1.163,
+  "GRIP_WORST": 0.5774,
+  "BODY_OUT_M": 0.1291,
+  "FOOT_CONE_DEG": 52.8177,
+  "HANG": 0.6012
+ },
+ "best_on_all_summary": {
+  "score": 0.578,
+  "hand_holds": 0.849,
+  "foot_holds": 0.396,
+  "order": 0.508,
+  "same_hand": 0.56,
+  "experts_score": 0.605,
+  "moves_vs_people": 0.52
+ },
+ "shipped": false,
+ "per_climb_current": [
+  {
+   "id": "p1-green",
+   "hand_holds": 1.0,
+   "foot_holds": 0.417,
+   "order": 0.4,
+   "same_hand": 0.455,
+   "moves": 12,
+   "human_moves": 30,
+   "solved": 1,
+   "score": 0.568
+  },
+  {
+   "id": "p1-orange",
+   "hand_holds": 0.75,
+   "foot_holds": 0.348,
+   "order": 0.476,
+   "same_hand": 0.556,
+   "moves": 10,
+   "human_moves": 21,
+   "solved": 1,
+   "score": 0.532
+  },
+  {
+   "id": "p10-green",
+   "hand_holds": 1.0,
+   "foot_holds": 0.435,
+   "order": 0.545,
+   "same_hand": 0.545,
+   "moves": 12,
+   "human_moves": 22,
+   "solved": 1,
+   "score": 0.631
+  },
+  {
+   "id": "p10-orange",
+   "hand_holds": 0.75,
+   "foot_holds": 0.37,
+   "order": 0.5,
+   "same_hand": 0.667,
+   "moves": 10,
+   "human_moves": 20,
+   "solved": 1,
+   "score": 0.572
+  },
+  {
+   "id": "p2a-green",
+   "hand_holds": 1.0,
+   "foot_holds": 0.381,
+   "order": 0.632,
+   "same_hand": 0.545,
+   "moves": 12,
+   "human_moves": 19,
+   "solved": 1,
+   "score": 0.639
+  },
+  {
+   "id": "p2a-orange",
+   "hand_holds": 0.72,
+   "foot_holds": 0.348,
+   "order": 0.476,
+   "same_hand": 0.667,
+   "moves": 10,
+   "human_moves": 21,
+   "solved": 1,
+   "score": 0.553
+  },
+  {
+   "id": "p2b-green",
+   "hand_holds": 1.0,
+   "foot_holds": 0.381,
+   "order": 0.6,
+   "same_hand": 0.545,
+   "moves": 12,
+   "human_moves": 20,
+   "solved": 1,
+   "score": 0.632
+  },
+  {
+   "id": "p2b-orange",
+   "hand_holds": 0.75,
+   "foot_holds": 0.32,
+   "order": 0.526,
+   "same_hand": 0.667,
+   "moves": 10,
+   "human_moves": 19,
+   "solved": 1,
+   "score": 0.566
+  },
+  {
+   "id": "p3-green",
+   "hand_holds": 0.957,
+   "foot_holds": 0.471,
+   "order": 0.571,
+   "same_hand": 0.636,
+   "moves": 12,
+   "human_moves": 21,
+   "solved": 1,
+   "score": 0.659
+  },
+  {
+   "id": "p3-orange",
+   "hand_holds": 0.75,
+   "foot_holds": 0.364,
+   "order": 0.556,
+   "same_hand": 0.444,
+   "moves": 10,
+   "human_moves": 18,
+   "solved": 1,
+   "score": 0.528
+  },
+  {
+   "id": "p4-green",
+   "hand_holds": 0.917,
+   "foot_holds": 0.5,
+   "order": 0.48,
+   "same_hand": 0.545,
+   "moves": 12,
+   "human_moves": 25,
+   "solved": 1,
+   "score": 0.611
+  },
+  {
+   "id": "p4-orange",
+   "hand_holds": 0.667,
+   "foot_holds": 0.421,
+   "order": 0.4,
+   "same_hand": 0.667,
+   "moves": 10,
+   "human_moves": 25,
+   "solved": 1,
+   "score": 0.539
+  },
+  {
+   "id": "p5-green",
+   "hand_holds": 0.7,
+   "foot_holds": 0.462,
+   "order": 0.318,
+   "same_hand": 0.429,
+   "moves": 8,
+   "human_moves": 22,
+   "solved": 1,
+   "score": 0.477
+  },
+  {
+   "id": "p5-orange",
+   "hand_holds": 0.667,
+   "foot_holds": 0.4,
+   "order": 0.435,
+   "same_hand": 0.778,
+   "moves": 10,
+   "human_moves": 23,
+   "solved": 1,
+   "score": 0.57
+  },
+  {
+   "id": "p6-green",
+   "hand_holds": 0.957,
+   "foot_holds": 0.455,
+   "order": 0.522,
+   "same_hand": 0.455,
+   "moves": 12,
+   "human_moves": 23,
+   "solved": 1,
+   "score": 0.597
+  },
+  {
+   "id": "p6-orange",
+   "hand_holds": 0.818,
+   "foot_holds": 0.385,
+   "order": 0.6,
+   "same_hand": 0.667,
+   "moves": 10,
+   "human_moves": 15,
+   "solved": 1,
+   "score": 0.617
+  },
+  {
+   "id": "p7-green",
+   "hand_holds": 1.0,
+   "foot_holds": 0.364,
+   "order": 0.545,
+   "same_hand": 0.545,
+   "moves": 12,
+   "human_moves": 22,
+   "solved": 1,
+   "score": 0.614
+  },
+  {
+   "id": "p7-orange",
+   "hand_holds": 0.75,
+   "foot_holds": 0.32,
+   "order": 0.45,
+   "same_hand": 0.444,
+   "moves": 10,
+   "human_moves": 20,
+   "solved": 1,
+   "score": 0.491
+  },
+  {
+   "id": "p8-green",
+   "hand_holds": 0.952,
+   "foot_holds": 0.381,
+   "order": 0.478,
+   "same_hand": 0.5,
+   "moves": 11,
+   "human_moves": 23,
+   "solved": 1,
+   "score": 0.578
+  },
+  {
+   "id": "p8-orange",
+   "hand_holds": 0.778,
+   "foot_holds": 0.273,
+   "order": 0.533,
+   "same_hand": 0.429,
+   "moves": 8,
+   "human_moves": 15,
+   "solved": 1,
+   "score": 0.503
+  },
+  {
+   "id": "p9-green",
+   "hand_holds": 1.0,
+   "foot_holds": 0.583,
+   "order": 0.545,
+   "same_hand": 0.636,
+   "moves": 12,
+   "human_moves": 22,
+   "solved": 1,
+   "score": 0.691
+  },
+  {
+   "id": "p9-orange",
+   "hand_holds": 0.8,
+   "foot_holds": 0.345,
+   "order": 0.579,
+   "same_hand": 0.5,
+   "moves": 11,
+   "human_moves": 19,
+   "solved": 1,
+   "score": 0.556
+  }
+ ],
+ "history": {
+  "round 1 (80 settings tried, starting from hand-set guesses)": {
+   "random": {
+    "geometric search (old)": {
+     "score": 0.452,
+     "hand_holds": 0.697,
+     "foot_holds": 0.393,
+     "order": 0.351,
+     "same_hand": 0.368,
+     "experts_score": 0.468,
+     "moves_vs_people": 0.36
+    },
+    "safest route, current settings": {
+     "score": 0.443,
+     "hand_holds": 0.586,
+     "foot_holds": 0.356,
+     "order": 0.31,
+     "same_hand": 0.52,
+     "experts_score": 0.454,
+     "moves_vs_people": 0.33
+    },
+    "safest route, tuned on the other folds": {
+     "score": 0.57,
+     "hand_holds": 0.849,
+     "foot_holds": 0.362,
+     "order": 0.508,
+     "same_hand": 0.56,
+     "experts_score": 0.597,
+     "moves_vs_people": 0.52
+    }
+   },
+   "test": {
+    "geometric search (old)": {
+     "score": 0.452,
+     "hand_holds": 0.697,
+     "foot_holds": 0.393,
+     "order": 0.351,
+     "same_hand": 0.368,
+     "experts_score": 0.468,
+     "moves_vs_people": 0.36
+    },
+    "safest route, current settings": {
+     "score": 0.443,
+     "hand_holds": 0.586,
+     "foot_holds": 0.356,
+     "order": 0.31,
+     "same_hand": 0.52,
+     "experts_score": 0.454,
+     "moves_vs_people": 0.33
+    },
+    "safest route, tuned on the other folds": {
+     "score": 0.57,
+     "hand_holds": 0.849,
+     "foot_holds": 0.362,
+     "order": 0.508,
+     "same_hand": 0.56,
+     "experts_score": 0.597,
+     "moves_vs_people": 0.52
+    }
+   }
+  },
+  "round 2 (40 more, after adding foot-step cost and floor feet under the body)": "tuned on the other folds: random split score 0.576 (experts 0.601), held-out route 0.577 (experts 0.603); foot-hold match 0.36 -> 0.40",
+  "shipped settings": {
+   "FALL_AT": 1.0623,
+   "FALL_SPREAD": 0.08,
+   "REACH_RISK": 0.881,
+   "REACH_FROM": 0.3209,
+   "MOVE_COST": 0.01,
+   "SWITCH": 0.0562,
+   "DOWN_STEP": 1.0208,
+   "NEXT_HOLDS": 4.9826,
+   "GRIP_MAX": 1.163,
+   "GRIP_WORST": 0.5774,
+   "BODY_OUT_M": 0.1291,
+   "FOOT_CONE_DEG": 52.8177,
+   "HANG": 0.6012
+  }
+ },
+ "note": "Score = mean of hand-hold match, foot-hold match, order match and same-hand match against 22 recorded climbs (1.0 = exactly what the person did). The 'current settings' rows above are the shipped, learned settings."
+}

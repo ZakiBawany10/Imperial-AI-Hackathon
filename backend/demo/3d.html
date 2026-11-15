@@ -14,6 +14,8 @@
   header b { color:#ff2bd6; letter-spacing:.18em; text-transform:uppercase; font-size:12px; }
   header button, header select { font:inherit; font-size:12px; color:#d9f6ff; background:#06101c; border:1px solid rgba(39,230,255,.4);
     padding:4px 9px; cursor:pointer; }
+  header label { font-size:12px; display:flex; align-items:center; gap:6px; }
+  header input[type=range] { width:110px; accent-color:#27e6ff; }
   header button.on { background:#27e6ff; color:#04060b; font-weight:700; }
   #status { color:rgba(217,246,255,.7); font-size:12px; margin-left:auto; }
   #status.err { color:#ff6b81; }
@@ -35,6 +37,13 @@
     <option value="/demo/walls/seattle-bp-05.jpg">Wall 2</option>
   </select>
   <button id="pick" title="Choose which climb to work out, and where it starts and ends">Pick a climb</button>
+  <label title="The climber's height: 1.40 m to 2.10 m">Height <input id="height" type="range" min="1.4" max="2.1" step="0.05" value="1.75"> <span id="heightv">1.75 m</span></label>
+  <select id="strength" title="How strong the climber's grip is">
+    <option value="0.7">Beginner</option>
+    <option value="1.0" selected>Regular climber</option>
+    <option value="1.25">Strong</option>
+    <option value="1.5">Very strong</option>
+  </select>
   <span id="status">Loading…</span>
 </header>
 <div id="stage"><div id="guide"></div></div>
@@ -50,7 +59,9 @@ const WALL_M = Number(query.get("wall_m")) || 5;
 let viewer = null, analyze = null, photoUrl = null, picking = null;
 
 const solveReq = (holds, start, finish) => ({ image: analyze.image, holds, start, finish,
-  climber_height_m: 1.75, wall_height_m: WALL_M, wall_angle_deg: 0 });
+  climber_height_m: +document.getElementById("height").value, strength: +document.getElementById("strength").value,
+  wall_height_m: WALL_M, wall_angle_deg: 0 });
+let current = null;      // the request now shown, so height and strength changes can solve it again
 async function solve(req) {
   const res = await fetch("/solve", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(req) });
   const body = await res.json();
@@ -88,6 +99,7 @@ async function load() {
   viewer = mountViewer(stage, { imageUrl: photoUrl, reliefUrl, analyze, solveRequest: first?.req || null, solve: first?.out || null,
                                 autoplay: true, sway: false, bloom: true, hud: true, mesh: false });
   viewer.on("hold", onHold);
+  current = first?.req || null;
   window.viewer = viewer;
   say(first ? `${analyze.holds.length} holds found · showing the ${first.name} climb · click any hold to see it up close`
             : `${analyze.holds.length} holds found · use "Pick a climb" to choose one`);
@@ -111,34 +123,37 @@ function startPicking() {
   if (!analyze) return;
   picking = { step: 1, holds: [], start: [], finish: [] };
   document.getElementById("pick").classList.add("on");
-  showGuide(`<span class="step">1 of 3</span>Click a hold of the climb you want. Holds of the same colour come with it.`, [["Cancel", cancel, true]]);
+  showGuide(`<span class="step">1 of 2</span>Click the hold where the hands start. Its colour picks the climb.`, [["Cancel", cancel, true]]);
 }
 async function cancel() { endPicking(); await load().catch(fail); }
 function onHold(h) {
   if (!picking) return;
   if (picking.step === 1) {
-    picking.holds = [...groupOf(h)].sort((a, b) => b.y - a.y);
-    picking.step = 2;
-    preview();
-    showGuide(`<span class="step">2 of 3</span>Click where the hands start: one or two holds, low enough to reach from the ground.`,
-              [["Next", () => { if (picking.start.length) toStep3(); }], ["Cancel", cancel, true]]);
-  } else if (picking.step === 2) {
-    if (!picking.holds.some((x) => x.id === h.id)) picking.holds.push(h);       // a hold outside the group can still be used
     if (!reachableFromFloor(h)) { say("That hold is too high to start from the ground. Pick a lower one.", true); return; }
-    picking.start = picking.start.includes(h.id) ? picking.start.filter((i) => i !== h.id) : [...picking.start, h.id].slice(-2);
+    picking.holds = [...groupOf(h)].sort((a, b) => b.y - a.y);
+    if (!picking.holds.some((x) => x.id === h.id)) picking.holds.unshift(h);
+    picking.start = [h.id];
+    picking.step = 2;
+    const top = picking.holds.filter((x) => x.id !== h.id).sort((a, b) => a.y - b.y)[0];
+    if (top) picking.finish = [top.id];
     preview();
-    if (picking.start.length === 2) toStep3();
-  } else if (picking.step === 3) {
+    say("");
+    showGuide(`<span class="step">2 of 2</span>Click the top hold, or use the highest hold of this colour. (Click a second low hold to start with one hand on each.)`,
+              [["Use the highest", climbIt], ["Cancel", cancel, true]]);
+  } else if (picking.step === 2) {
     if (picking.start.includes(h.id)) return;
     if (!picking.holds.some((x) => x.id === h.id)) picking.holds.push(h);
+    const startHold = picking.holds.find((x) => x.id === picking.start[0]);
+    // A second hold close to the start and low enough: a two-hand start. Otherwise it is the top.
+    if (picking.start.length === 1 && reachableFromFloor(h) && Math.abs(h.y - startHold.y) < analyze.image.h * 0.12) {
+      picking.start.push(h.id);
+      preview();
+      return;
+    }
     picking.finish = [h.id];
     preview();
-    showGuide(`<span class="step">Ready</span>Work out how to climb it?`, [["Climb it", climbIt], ["Cancel", cancel, true]]);
+    climbIt();
   }
-}
-function toStep3() {
-  picking.step = 3;
-  showGuide(`<span class="step">3 of 3</span>Click the top hold, where both hands finish.`, [["Cancel", cancel, true]]);
 }
 async function climbIt() {
   const req = solveReq(picking.holds, picking.start, picking.finish);
@@ -146,12 +161,31 @@ async function climbIt() {
   say("Working out the moves…");
   try {
     const out = await solve(req);
+    current = req;
     viewer.setSolve(req, out).play();
     say(`${out.moves.length} moves · click any hold to see it up close`);
   } catch (e) { say(`Could not climb it: ${e.message}`, true); }
 }
 
 const fail = (e) => { console.error(e); say(`Could not load: ${e.message}`, true); };
+// Changing the climber works the same climb out again.
+async function resolve() {
+  document.getElementById("heightv").textContent = `${(+document.getElementById("height").value).toFixed(2)} m`;
+  if (!current || picking) return;
+  const req = solveReq(current.holds, current.start, current.finish);
+  say("Working out the moves for this climber…");
+  try {
+    const out = await solve(req);
+    current = req;
+    viewer.setSolve(req, out).play();
+    const fc = out.physics?.finish_chance;
+    say(`${out.moves.length} moves` + (typeof fc === "number" ? ` · ${Math.round(fc * 100)}% chance of reaching the top` : ""));
+  } catch (e) { say(`This climber cannot do it: ${e.message}`, true); }
+}
+document.getElementById("height").oninput = () => { document.getElementById("heightv").textContent = `${(+document.getElementById("height").value).toFixed(2)} m`; };
+document.getElementById("height").onchange = resolve;
+document.getElementById("strength").onchange = resolve;
+window.__pickHold = (h) => onHold(h);   // for automated checks
 document.getElementById("pick").onclick = () => (picking ? cancel() : startPicking());
 document.getElementById("wallpick").onchange = () => { endPicking(); load().catch(fail); };
 load().catch(fail);

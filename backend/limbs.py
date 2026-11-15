@@ -239,7 +239,7 @@ class _Planner:
                 here = price(self.quick(k, f, self.mover[k]).effort)
                 pick, pick_cost = None, math.inf
                 for g, (cost, _) in layers[-1].items():
-                    c = cost + SWITCH * ((g[0] != f[0]) + (g[1] != f[1])) + self._down(g, f)
+                    c = cost + SWITCH * ((g[0] != f[0]) + (g[1] != f[1])) + self._down(g, f) + self._step_cost(k, g, f)
                     if c < pick_cost:
                         pick, pick_cost = g, c
                 layer[f] = (pick_cost + here, pick)
@@ -250,6 +250,19 @@ class _Planner:
             f = layer[f][1]
             chain.append(f)
         return chain[::-1]
+
+    def _step_cost(self, k, old, new):
+        """How hard the foot steps from `old` to `new` are: each step is made standing on the
+        other limbs, so a step that leaves the hands holding too much is avoided."""
+        if old == new or self.x_range(k, old) is None:
+            return 0.0
+        price = lambda e: max(0.0, e - 0.6) + OVER_1 * max(0.0, e - 1.0)
+        c, at = 0.0, old
+        for limb, after in self.foot_steps(k, old, new):
+            if self.x_range(k, at) is not None:
+                c += price(self.quick(k, at, limb).effort)
+            at = after
+        return c
 
     def _down(self, old, new):
         """Cost of feet moving down from hold to hold (moving onto or off the wall or floor is free)."""
@@ -439,7 +452,8 @@ def features(result):
 
 FALL_AT = 0.95           # effort at which a move is a coin flip
 FALL_SPREAD = 0.08       # how quickly that changes around FALL_AT
-REACH_RISK = 0.15        # extra chance of falling on a move at full arm span, falling off to 0 at 80% of it
+REACH_RISK = 0.15        # extra chance of falling on a move at full arm span ...
+REACH_FROM = 0.8         # ... starting from this share of full span (0 below it)
 MOVE_COST = 0.01         # tiny cost per move, so among equally safe sequences the shorter wins
 SEARCH_FEET = 3          # footholds tried per move during the search (the final plan tries TOP_FEET)
 NEXT_HOLDS = 5           # holds a hand considers going to next: the nearest ones the other hand can reach with
@@ -447,7 +461,7 @@ NEXT_HOLDS = 5           # holds a hand considers going to next: the nearest one
 
 def fall_chance(effort, reach_share=0.0):
     p = 1.0 / (1.0 + math.exp(-(min(effort, 5.0) - FALL_AT) / FALL_SPREAD))
-    p += REACH_RISK * max(0.0, (reach_share - 0.8) / 0.2) ** 2
+    p += REACH_RISK * max(0.0, (reach_share - REACH_FROM) / max(1.0 - REACH_FROM, 1e-3)) ** 2
     return min(p, 0.999)
 
 
@@ -525,3 +539,31 @@ def safest_hands(pts, start, finish, kinds=None, quality=None, angle_deg=0.0, he
         states.append(s)
         risks.append(r)
     return {"states": states[::-1], "risks": risks[::-1]}
+
+
+# ---- settings learned from real climbers ---------------------------------------------------
+# train_physics.py tunes the guessed numbers above (and some in physics.py and pose.py) against
+# 22 recorded climbs and writes them to models/physics_params.json when they beat the current
+# ones on both a random and a held-out-route split. They are applied here, at import.
+
+def _load_learned():
+    import json
+    import os
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "models", "physics_params.json")
+    if not os.path.exists(path):
+        return {}
+    where = {"GRIP_MAX": physics, "GRIP_WORST": physics, "BODY_OUT_M": physics, "FOOT_CONE_DEG": physics, "HANG": pose}
+    learned = json.load(open(path))
+    g = globals()
+    for k, v in learned.items():
+        if k == "NEXT_HOLDS":
+            v = int(round(v))
+        if k in where:
+            setattr(where[k], k, v)
+        else:
+            g[k] = v
+    return learned
+
+
+LEARNED = _load_learned()
+BODY_OUT = physics.BODY_OUT_M / 0.2

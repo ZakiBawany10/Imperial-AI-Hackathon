@@ -35,6 +35,7 @@ HANG = 0.7                             # the body hangs this share of a full arm
 SQUAT = 0.2                            # the hip stays at least this far above the floor
 WALL_FOOT_OUT = 0.12                   # a foot on the bare wall sits this far to its own side of the hip
 WALL_FOOT_DOWN = 0.8                   # ... and this share of a full leg below it
+FLOOR_FOOT_OUT = 0.05                  # a foot on the floor sits this far to its own side of the neck
 COM_DOWN = 0.8                         # the centre of mass is this share of the way from neck to hip
 NECK_OVER_HANDS = 0.05                 # the neck goes at most this far above the higher hand (unless the floor forces it)
 
@@ -251,7 +252,8 @@ def wall_foot(neck, side, height, floor=None):
     x = neck[0] + side * WALL_FOOT_OUT * height
     y = neck[1] - TORSO * height - WALL_FOOT_DOWN * LEG * height
     if floor is not None and y <= floor:
-        return (x, floor), True
+        # Standing on the ground: the foot goes under the body, not out to the side.
+        return (neck[0] + side * FLOOR_FOOT_OUT * height, floor), True
     return (x, y), False
 
 

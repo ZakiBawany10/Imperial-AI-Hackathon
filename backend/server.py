@@ -82,7 +82,8 @@ class SolveRequest(BaseModel):
     holds: list[Hold] = Field(min_length=1)
     start: list[int]
     finish: list[int]
-    climber_height_m: float = Field(1.75, gt=1.0, lt=2.5)
+    climber_height_m: float = Field(1.75, ge=1.4, le=2.1)      # strict: the body model is made for this range
+    strength: float = Field(1.0, ge=0.6, le=1.5)               # grip strength; 1.0 = a regular gym climber
     wall_height_m: float = Field(4.0, gt=0.5, lt=30)
     wall_angle_deg: float = Field(0, ge=-20, le=70)
     limbs: Literal["all", "hands"] = "all"   # "hands": the original hands-only answer

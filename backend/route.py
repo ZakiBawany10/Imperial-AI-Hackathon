@@ -70,7 +70,28 @@ def warm():
     _models()
 
 
+HEIGHT_RANGE_M = (1.40, 2.10)   # climbers outside this are refused: the body model is not made for them
+STRENGTH_RANGE = (0.6, 1.5)     # grip strength relative to a regular gym climber (1.0)
+
+
 def solve(req):
+    """req: the POST /solve body as a dict. Returns the response dict.
+    Optional "strength" (default 1.0) scales how much weight a hand can hold."""
+    h = float(req.get("climber_height_m", 1.75))
+    if not HEIGHT_RANGE_M[0] <= h <= HEIGHT_RANGE_M[1]:
+        raise RouteError(f"Climber height must be between {HEIGHT_RANGE_M[0]:.2f} m and {HEIGHT_RANGE_M[1]:.2f} m.")
+    k = float(req.get("strength", 1.0))
+    if not STRENGTH_RANGE[0] <= k <= STRENGTH_RANGE[1]:
+        raise RouteError(f"Strength must be between {STRENGTH_RANGE[0]} and {STRENGTH_RANGE[1]} (1.0 is a regular gym climber).")
+    grip = physics.GRIP_MAX, physics.GRIP_WORST
+    physics.GRIP_MAX, physics.GRIP_WORST = grip[0] * k, grip[1] * k
+    try:
+        return _solve(req)
+    finally:
+        physics.GRIP_MAX, physics.GRIP_WORST = grip
+
+
+def _solve(req):
     """req: the POST /solve body as a dict. Returns the response dict."""
     mode = req.get("limbs") or "all"
     if mode not in ("all", "hands"):
