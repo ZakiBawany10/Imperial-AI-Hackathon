@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { HOLDS, PHOTOS, unsplash, type Hold } from "../lib/wall";
 import { BottomSheet, Btn, MONO, Screen, StickyBar, TopBar, WallPhoto } from "../ui/kit";
 import { HoldGlyph } from "../ui/HoldPins";
-import { WallSketch } from "../ui/WallSketch";
+import { ScanRead, WallSketch } from "../ui/WallSketch";
 import { C } from "../lib/wall";
 
 export type Example = { id: string; label: string; photo: string; credit?: string };
@@ -114,7 +114,6 @@ export function UploadScreen({
                 onClick={() => setHowOpen(true)}
                 className={`${MONO} -ml-1 flex h-12 items-center gap-2 px-1 text-ink`}
               >
-                <span className="inline-block size-1.5 rounded-full bg-accent" aria-hidden />
                 <span className="underline decoration-hairline underline-offset-4">
                   How it works
                 </span>
@@ -334,7 +333,7 @@ function FindingSheet({
             </g>
           ))}
         </WallPhoto>
-        {!done && !error && <span aria-hidden className="anim-scan absolute inset-x-0 h-px bg-surface" />}
+        {!done && !error && <ScanRead />}
       </PinnedSheet>
       {error ? (
         <div data-name="finding/error" role="alert" className="mt-6">

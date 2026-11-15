@@ -324,10 +324,24 @@ export function WallSketch() {
           <path d="M-30 15.5 Q-12 18.5 5 15" fill="none" stroke="#1E1E1C" strokeWidth={1.6} strokeLinecap="round" />
         </g>
       </svg>
-      {/* a scan line sweeping the photo, as while holds are being found */}
+      <ScanRead />
+    </>
+  );
+}
+
+/** The wall being read: a line passes top to bottom; below it the photo waits
+ *  in shadow, above it the photo is lit. One pass, a pause, then again. Used
+ *  on the drop zone and while holds are being found. */
+export function ScanRead() {
+  return (
+    <>
       <span
         aria-hidden
-        className="anim-scan pointer-events-none absolute inset-x-0 h-px bg-accent opacity-60 shadow-[0_0_12px_2px_rgba(124,169,130,0.55)]"
+        className="anim-read pointer-events-none absolute inset-x-0 bottom-0 bg-[rgba(10,22,18,0.5)] backdrop-saturate-[0.4]"
+      />
+      <span
+        aria-hidden
+        className="anim-read pointer-events-none absolute inset-x-0 h-[1.5px] bg-[#9FD3A9] shadow-[0_0_8px_2px_rgba(124,169,130,0.6)]"
       />
     </>
   );
