@@ -24,16 +24,16 @@ F = lambda n, s: ImageFont.truetype(os.path.join(FONTS, n), s)
 TXT, TAG = F("Barlow-SemiBold.ttf", 40 if LAND else 44), F("BarlowSemiCondensed-SemiBold.ttf", 30)
 
 # the lines: (who, file, start s, end s, subtitle)
-LINES = {
-    "hello": ("COACH", "coach", 0.00, 3.55, "Hi, I'm your Ascend coach. Tell me when you're on the start holds."),
+LINES = {   # coach: ElevenLabs take of 15 Nov 11:34 (crux = blue foot chip); zaki: his phone recording
+    "hello": ("COACH", "coach", 0.00, 3.62, "Hi, I'm your Ascend coach. Tell me when you're on the start holds."),
     "grade?": ("ZAKI", "zaki", 0.00, 1.40, "What grade is this?"),
-    "grade": ("COACH", "coach", 3.85, 8.05, "It's about a V2. The crux is a high step onto the yellow volume."),
+    "grade": ("COACH", "coach", 3.85, 8.20, "It's about a V2. The crux is a high step onto the blue foot chip."),
     "on": ("ZAKI", "zaki", 1.60, 2.80, "I'm on the start holds."),
-    "first": ("COACH", "coach", 8.30, 12.85, "Great! First move, right hand up to the small blue crimp, head height."),
-    "crux": ("COACH", "coach", 12.95, 17.85, "This is the crux. Left foot high onto the yellow volume. Knee to your chest."),
+    "first": ("COACH", "coach", 8.40, 13.05, "Great. First move, right hand up to the small blue crimp, head height."),
+    "crux": ("COACH", "coach", 13.15, 18.15, "This is the crux. Left foot high onto the yellow volume. Knee to your chest."),
     "feet?": ("ZAKI", "zaki", 4.45, 6.85, "How much pressure in my feet and left hand?"),
-    "feet": ("COACH", "coach", 18.15, 22.30, "Mostly feet, about 70%. Left hand's light, just balance."),
-    "top": ("COACH", "coach", 22.50, 24.95, "That's the top. Brilliant climbing."),
+    "feet": ("COACH", "coach", 18.45, 22.70, "Mostly feet, about 70%. Left hand's light, just balance."),
+    "top": ("COACH", "coach", 22.90, 25.40, "That's the top. Brilliant climbing."),
 }
 
 
@@ -128,15 +128,6 @@ def dur(key):
 
 
 def main():
-    # ---- the app's 3D view (from 24.9 s in recut_app.py): hello, "what grade is this?", the grade
-    f3 = frames_of(os.path.join(E, f"app_{O}.mp4"))
-    t = 25.0
-    cues = [("hello", t), ("grade?", t + dur("hello") + 0.25), ("grade", t + dur("hello") + dur("grade?") + 0.5)]
-    end = cues[-1][1] + dur("grade") + 0.3
-    if end * FPS > len(f3):
-        f3 += [f3[-1]] * int(end * FPS - len(f3))
-    render(f3, cues, os.path.join(E, f"app_v_{O}.mp4"), left=True)
-
     # ---- the climb: built from climb_*.mp4 (0.6x: 1 source second = 50 frames), pausing for the talk
     src = frames_of(os.path.join(E, f"climb_{O}.mp4"))
     at = lambda s: min(len(src) - 1, int(round(s * 50)))
@@ -149,11 +140,15 @@ def main():
         out.extend([src[at(s)]] * int(round(secs * FPS)))
 
     now = lambda: len(out) / FPS
-    play(0.6, 0.85)
-    cues.append(("on", now()))                       # "I'm on the start holds."
-    play(0.85, 1.3)
-    hold(1.3, dur("on") + 0.2 - (now() - cues[-1][1]) + 0.2)
-    cues.append(("first", now()))                    # "Great! First move ..."
+    def say(key, gap=0.25):
+        """Cue a line now and hold the frame until it is said."""
+        cues.append((key, now()))
+        hold(1.3, dur(key) + gap)
+
+    play(0.0, 1.3)                                   # Zaki walks up to the wall
+    for key in ("hello", "grade?", "grade", "on"):   # the talk before he climbs
+        say(key)
+    cues.append(("first", now()))                    # "Great. First move ..."
     hold(1.3, 1.6)
     play(1.3, 4.0)                                   # moves 1-4
     cues.append(("crux", max(now(), cues[-1][1] + dur("first") + 0.25)))   # move 5: the crux call
@@ -175,7 +170,7 @@ def main():
         k = (fade - i) / fade
         out[-fade + i] = (out[-fade + i].astype(np.float32) * k + np.float32(INK[::-1]) * (1 - k)).astype(np.uint8)
     render(out, cues, os.path.join(E, f"climb_v_{O}.mp4"))
-    print(O, "3d", len(f3) / FPS, "s; climb", round(len(out) / FPS, 1), "s;", [(k, round(t, 1)) for k, t in cues])
+    print(O, "climb", round(len(out) / FPS, 1), "s;", [(k, round(t, 1)) for k, t in cues])
 
 
 if __name__ == "__main__":
