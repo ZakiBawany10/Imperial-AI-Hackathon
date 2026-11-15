@@ -408,7 +408,9 @@ export function LiveScreen({
     ? st === "off"
       ? coach.available
         ? "Tap to talk"
-        : "Not set up"
+        : "Tap to hear moves"
+      : coach.mode !== "voice"
+        ? "Reading moves"
       : st === "connecting"
         ? "Connecting"
         : st
@@ -548,9 +550,14 @@ export function LiveScreen({
           </p>
           <p className="mt-2 text-[14px] leading-[1.4] text-muted">{text}</p>
           {coach?.error && (
-            <p data-name="live/coach-error" role="alert" className="mt-2 text-[14px] leading-[1.4] text-accent">
+            <p data-name="live/coach-note" role="status" className="mt-2 text-[13px] leading-[1.4] text-muted">
               {coach.error}
             </p>
+          )}
+          {coach && coach.status !== "off" && coach.mode !== "voice" && (
+            <Btn variant="outline" size="md" name="live/coach-next" className="mt-3" onClick={coach.next}>
+              Next move
+            </Btn>
           )}
         </div>
         <button

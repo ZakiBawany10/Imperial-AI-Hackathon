@@ -34,6 +34,9 @@ react(),
         '@contract': path.resolve(__dirname, '../contract'),
         // Read-only: Zaki's voice coach tool handlers (coach/coachTools.js).
         '@coach': path.resolve(__dirname, '../coach'),
+        // coach/mountCoach.js imports this by name, but coach/ has no node_modules:
+        // point it at ours.
+        '@elevenlabs/client': path.resolve(__dirname, 'node_modules/@elevenlabs/client'),
       },
     },
     server: {
