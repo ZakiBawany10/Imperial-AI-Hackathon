@@ -68,6 +68,13 @@ function autoEnds(route: Hold[]) {
   };
 }
 
+// Clear swatches for the colour words (the photo's own colour is often dull or in shadow).
+const SWATCH: Record<string, string> = {
+  red: "#d63a2f", orange: "#f08a24", yellow: "#f2c230", green: "#2e9b48", teal: "#1f9e9a",
+  blue: "#2a62c9", purple: "#7b4bb7", pink: "#e85a9b", white: "#f6f6f2", grey: "#9a9d9a",
+  black: "#1f1f1f", brown: "#8a5a3c",
+};
+
 const pad2 = (n: number) => String(n).padStart(2, "0");
 
 export function ReviewScreen({
@@ -93,6 +100,29 @@ export function ReviewScreen({
   // "flow": walking through the open questions; "single": asked about one hold from its menu
   const [asking, setAsking] = useState<"flow" | "single">("flow");
   const [touched, setTouched] = useState(false);
+  // Zaki's colour picker: every climb the backend found, as chips. Several can be ticked,
+  // because one climb is sometimes split over two groups (shadows change the colour).
+  const [groups, setGroups] = useState<number[]>([]);
+  const choices = useMemo(() => {
+    const routes = data?.raw.routes ?? [];
+    return routes
+      .filter((r) => r.holds.length >= 3)
+      .map((r) => ({ id: r.id, hex: SWATCH[r.color_name] ?? r.color, name: r.color_name, count: r.holds.length }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 14);
+  }, [data]);
+  const pickGroups = (next: number[]) => {
+    setGroups(next);
+    setTouched(true);
+    if (!data || !next.length) {
+      setS({ ...s, route: null, ids: null, start: [], finish: [], confirmed: {} });
+      return;
+    }
+    const want = new Set(next);
+    const ids = s.holds.filter((h) => want.has(data.api[h.id]?.route ?? -1)).map((h) => h.id);
+    const first = s.holds.find((h) => h.id === ids[0]);
+    setS({ ...s, route: first?.colour ?? s.route, ids, confirmed: {}, start: [], finish: [] });
+  };
 
   const routeHolds = useMemo(() => {
     if (!s.route) return [];
@@ -113,7 +143,7 @@ export function ReviewScreen({
   const routeAsked = routeHolds.filter((h) => unsure.includes(h.id)).length;
   const ends = s.start.length > 0 && s.finish.length > 0;
   const ready = !!s.route && routeLeft === 0 && ends;
-  const step = !s.route ? 1 : !ends ? 2 : routeLeft > 0 ? 3 : 4;
+  const step = !s.route || !s.start.length ? 1 : !ends ? 2 : routeLeft > 0 ? 3 : 4;
 
   // Auto-zoom (real photos): fit the picked route.
   const focus = useMemo(() => {
@@ -167,6 +197,8 @@ export function ReviewScreen({
     if (tool === "add") return;
     if (!s.route) return pickRoute(hold);
     if (!routeIds.has(id)) return addToRoute(id);
+    // colour picked from the list: the first tap on one of its holds is the start
+    if (!s.start.length) return setS({ ...s, start: [id], finish: [] });
     // step 2: a tap on a route hold marks the top
     if (!s.finish.length && !s.start.includes(id)) return setS({ ...s, finish: [id] });
     setCurrent(id);
@@ -223,16 +255,21 @@ export function ReviewScreen({
   const clearRoute = () => {
     setS({ ...s, route: null, ids: null, start: [], finish: [], confirmed: {} });
     setTool(null);
+    setGroups([]);
   };
 
   const instruction =
     tool === "add"
       ? "Tap the wall where the missing hold is"
-      : step === 1
-        ? "Tap the start hold, the one you begin on. Its colour picks the climb."
+      : step === 1 && s.route
+        ? "Now tap the start hold, the one your hands begin on. Missing a hold? Tap it to add it."
+        : step === 1
+        ? choices.length
+          ? "Pick the colour of your climb (tick two if it's split), or tap its start hold."
+          : "Tap the start hold, the one you begin on. Its colour picks the climb."
         : step === 2
           ? !s.start.length
-            ? "Tap a route hold, then mark it as the start."
+            ? "Now tap the start hold, the one your hands begin on. Missing a hold? Tap it to add it."
             : "Now tap the top hold, or use the highest of this colour."
           : step === 3
             ? "Tap a hold with a ?, or press the button below. Tap any missed hold to add it."
@@ -243,7 +280,7 @@ export function ReviewScreen({
     : !ends
       ? s.start.length
         ? { label: "Use the highest as the top", enabled: true, go: useHighest }
-        : { label: "Mark a start hold", enabled: false, go: () => {} }
+        : { label: "Tap the start hold", enabled: false, go: () => {} }
       : routeLeft > 0
         ? {
             label: `Answer ${routeLeft} ${routeLeft === 1 ? "question" : "questions"}`,
@@ -276,7 +313,7 @@ export function ReviewScreen({
         onTapEmpty={tapEmpty}
         focus={focus}
         aspect={data?.aspect}
-        hint={!s.route && !touched ? "Tap the start hold" : null}
+        hint={!s.route && !touched ? (choices.length ? "Pick a colour below" : "Tap the start hold") : null}
       >
         <WallPhoto photo={photo} name="review/photo" aspect={data?.aspect}>
           <HoldsOverlay
@@ -322,6 +359,25 @@ export function ReviewScreen({
             );
           })}
         </ol>
+        {choices.length > 0 && !s.start.length && tool !== "add" && (
+          <div data-name="review/colours" className="mt-2.5 flex flex-wrap gap-1.5" role="group" aria-label="Climb colour">
+            {choices.map((c) => {
+              const on = groups.includes(c.id);
+              return (
+                <button
+                  key={c.id}
+                  aria-pressed={on}
+                  onClick={() => pickGroups(on ? groups.filter((g) => g !== c.id) : [...groups, c.id])}
+                  className={`flex h-9 items-center gap-1.5 rounded-full border pr-3 pl-1.5 text-[13px] font-semibold ${on ? "border-ink bg-ink text-surface" : "border-hairline bg-surface text-ink"}`}
+                >
+                  <span aria-hidden className="size-6 rounded-full border border-black/15" style={{ background: c.hex }} />
+                  <span className="capitalize">{c.name}</span>
+                  <span className={`font-mono text-[11px] ${on ? "text-surface/70" : "text-muted"}`}>{c.count}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
         <p data-name="review/instruction" className="mt-2.5 min-h-[40px] text-[15px] leading-[1.35] text-ink" aria-live="polite">
           {instruction}
         </p>
