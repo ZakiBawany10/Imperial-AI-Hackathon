@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { HOLDS, PHOTOS, unsplash, type Hold } from "../lib/wall";
 import { BottomSheet, Btn, MONO, Screen, StickyBar, TopBar, WallPhoto } from "../ui/kit";
-import { HoldGlyph, HoldPin } from "../ui/HoldPins";
+import { HoldGlyph } from "../ui/HoldPins";
 import { WallSketch } from "../ui/WallSketch";
 import { C } from "../lib/wall";
 
@@ -235,12 +235,8 @@ export function UploadScreen({
 
 function PinnedSheet({ children, name }: { children: ReactNode; name: string }) {
   return (
-    <div data-name={name} className="relative" style={{ transform: "rotate(-0.8deg)" }}>
-      <HoldPin kind="jug" colour={C.accent} size={56} rotate={-14} className="-top-5 -left-4" />
-      <HoldPin kind="pinch" colour={C.surface} size={52} rotate={18} className="-top-5 -right-3" />
-      <HoldPin kind="sloper" colour={C.ink} size={54} rotate={8} className="-bottom-5 -left-3" />
-      <HoldPin kind="crimp" colour={C.accent} size={50} rotate={-10} className="-right-3 -bottom-4" />
-      <div className="relative h-[340px] overflow-hidden rounded-[4px] border border-dashed border-ink bg-surface">
+    <div data-name={name} className="relative">
+      <div className="relative h-[340px] overflow-hidden rounded-[4px] bg-ink">
         {children}
       </div>
     </div>
@@ -253,17 +249,24 @@ function EmptySheet({ onTap }: { onTap: () => void }) {
       <WallSketch />
       <button
         onClick={onTap}
-        className="absolute inset-0 flex items-end justify-center pb-6 active:bg-ink/5"
+        className="group absolute inset-0 flex items-end justify-center pb-5 active:bg-surface/5"
         aria-label="Choose a photo of the wall"
       >
         <span
           data-name="upload/label"
-          className="rounded-[4px] border border-hairline bg-surface px-5 py-3 text-center"
+          className="flex items-center gap-3 rounded-[4px] bg-surface py-3 pr-5 pl-3.5 text-left shadow-[0_6px_20px_rgba(0,0,0,0.28)] transition-transform group-hover:-translate-y-0.5"
         >
-          <span className="block font-display text-[20px] font-bold tracking-[0.005em]">
-            Drop a photo here
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-[3px] bg-accent/25 text-ink" aria-hidden>
+            <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 15V4M7.5 8.5 12 4l4.5 4.5M4 15v3.5A1.5 1.5 0 0 0 5.5 20h13a1.5 1.5 0 0 0 1.5-1.5V15" />
+            </svg>
           </span>
-          <span className={`${MONO} mt-1 block text-muted`}>or tap to browse</span>
+          <span>
+            <span className="block font-display text-[18px] leading-tight font-bold tracking-[0.005em]">
+              Drop a photo here
+            </span>
+            <span className={`${MONO} mt-0.5 block text-muted`}>or tap to browse</span>
+          </span>
         </span>
       </button>
     </PinnedSheet>

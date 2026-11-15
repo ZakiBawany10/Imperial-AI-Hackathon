@@ -1,382 +1,287 @@
-// Upload dropzone art: a setter's ink sketch of a wall panel showing what
-// Ascend does to a photo. Taped start holds, a dashed beta line to the TOP,
-// and the app's own stick figure mid-move. Hand-plotted paths plus a small
-// displacement filter on the background ink give it a drawn-by-hand wobble;
-// text, tape and the climber stay crisp.
+// Upload dropzone art: a flat illustration of what Ascend does to a wall photo,
+// drawn in the same language as the screens that follow. A dark wall panel
+// (the ink photo frame of Review / You), detected holds boxed in sage, a red
+// climb outlined in white with numbered tags (Review), the height ruler (You)
+// and a grade card (Play). Crisp vector, no hand-drawn wobble.
 
-import { useId, type ReactNode } from "react";
+import { useId } from "react";
 import { C } from "../lib/wall";
 import { BODY, DETAIL, type PinKind } from "./HoldPins";
 
-const FONT_TAG = "Barlow Semi Condensed";
-const FONT_HAND = "Barlow Condensed";
-
+const FONT = "Barlow Semi Condensed";
 type Pt = [number, number];
 
-/* ---- the route, bottom to top ---- */
-const A: Pt = [124, 262]; // start, left
-const B: Pt = [180, 270]; // start, right
-const H1: Pt = [108, 150];
-const H2: Pt = [212, 124];
-const H3: Pt = [264, 84];
-const TOP: Pt = [236, 38];
+/* Wall tones, derived from ink. */
+const WALL = "#2A463D";
+const WALL_DEEP = "#1F362F";
+const PLANE_LIT = "#35574D";
+const PLANE_SHADE = "#1B2F29";
 
-/* ---- climber (feet on the starts, left hand on H1, right hand reaching for H2) ---- */
-// Leaning into the reach: hips under the left hand, head turned to the target.
-const NECK: Pt = [157, 176];
-const BODYPTS = {
-  head: [164, 158] as Pt,
-  hip: [144, 220] as Pt,
-  lh: [111, 149] as Pt,
-  lEl: [124, 186] as Pt,
-  rh: [200, 134] as Pt,
-  rEl: [188, 168] as Pt,
-  lKn: [108, 236] as Pt,
-  lf: [125, 259] as Pt,
-  rKn: [186, 244] as Pt,
-  rf: [178, 266] as Pt,
+/* Gym hold colours: muted so the route reads first. */
+const HC = {
+  red: "#C8553D",
+  blue: "#4672B0",
+  purple: "#7B5CA6",
+  yellow: "#D6AE42",
+  green: "#4F9A5C",
+  white: "#E8EDE6",
 };
 
-/* holds drawn on the panel: [kind, x, y, size, rotate, on the route] */
-const HOLDS: [PinKind, number, number, number, number, boolean][] = [
-  ["jug", ...A, 30, -8, true],
-  ["sloper", ...B, 32, 6, true],
-  ["crimp", ...H1, 30, -12, true],
-  ["pinch", ...H2, 28, 14, true],
-  ["jug", ...H3, 30, 18, true],
-  ["jug", ...TOP, 32, -4, true],
-  // off route
-  ["sloper", 70, 66, 30, 0, false],
-  ["crimp", 160, 56, 26, -8, false],
-  ["pinch", 302, 204, 26, -20, false],
-  ["jug", 356, 242, 30, 12, false],
-  ["crimp", 66, 232, 22, 6, false],
-  ["crimp", 342, 104, 22, 32, false], // on the volume
+/* ---- the climb, bottom to top ---- */
+const ROUTE: [PinKind, number, number, number, number][] = [
+  ["jug", 122, 230, 30, -6], // start
+  ["crimp", 94, 176, 24, -10],
+  ["pinch", 152, 134, 24, 12],
+  ["sloper", 126, 88, 28, -4],
+  ["jug", 178, 46, 28, 8], // top
+];
+const pt = (i: number): Pt => [ROUTE[i][1], ROUTE[i][2]];
+
+/* other holds on the wall: [kind, x, y, size, rotate, colour, boxed by the detector] */
+const OTHERS: [PinKind, number, number, number, number, string, boolean][] = [
+  ["sloper", 236, 206, 34, 4, HC.yellow, true],
+  ["jug", 60, 112, 26, -14, HC.blue, true],
+  ["crimp", 216, 100, 22, 18, HC.purple, true],
+  ["jug", 268, 146, 24, -8, HC.green, true],
+  ["pinch", 334, 66, 22, 24, HC.white, false],
+  ["crimp", 300, 250, 20, -12, HC.blue, false],
+  ["crimp", 376, 286, 18, 6, HC.purple, false],
+  ["jug", 362, 250, 24, 10, HC.yellow, false],
+  ["sloper", 240, 58, 20, -6, HC.purple, true],
+  ["pinch", 38, 190, 18, -20, HC.green, false],
 ];
 const CHIPS: Pt[] = [
-  [200, 220],
-  [262, 252],
-  [92, 108],
-  [318, 130],
-  [372, 168],
-  [40, 290],
+  [186, 180], [204, 262], [86, 222], [100, 136], [312, 230], [228, 154], [160, 96], [56, 150],
 ];
 
-function near(x: number, y: number, d: number) {
-  return (
-    HOLDS.some(([, hx, hy]) => Math.hypot(hx - x, hy - y) < d) ||
-    CHIPS.some(([cx, cy]) => Math.hypot(cx - x, cy - y) < d * 0.6)
+const near = (x: number, y: number, d: number) =>
+  [...ROUTE.map(([, hx, hy]) => [hx, hy]), ...OTHERS.map(([, hx, hy]) => [hx, hy]), ...CHIPS].some(
+    ([hx, hy]) => Math.hypot(hx - x, hy - y) < d,
   );
-}
 
-function Hold({
+function HoldArt({
   kind,
   x,
   y,
   s,
   r,
-  route,
+  fill,
+  shade,
 }: {
   kind: PinKind;
   x: number;
   y: number;
   s: number;
   r: number;
-  route: boolean;
+  fill: string;
+  shade: string;
 }) {
   return (
     <g transform={`translate(${x} ${y}) rotate(${r}) scale(${s / 64}) translate(-32 -32)`}>
-      <path
-        d={BODY[kind]}
-        fill={route ? C.accent : C.surface}
-        fillOpacity={route ? 0.6 : 1}
-        stroke={C.ink}
-        strokeOpacity={route ? 0.85 : 0.45}
-        strokeWidth={1.3}
-        strokeLinejoin="round"
-        vectorEffect="non-scaling-stroke"
-      />
-      <path
-        d={DETAIL[kind]}
-        fill="none"
-        stroke={C.ink}
-        strokeOpacity={route ? 0.45 : 0.28}
-        strokeWidth={1}
-        strokeLinecap="round"
-        vectorEffect="non-scaling-stroke"
-      />
-      <circle cx={33} cy={33} r={3.4} fill={C.surface} stroke={C.ink} strokeOpacity={0.6} strokeWidth={0.9} vectorEffect="non-scaling-stroke" />
+      <path d={BODY[kind]} fill={fill} />
+      <path d={BODY[kind]} fill={`url(#${shade})`} />
+      <path d={DETAIL[kind]} fill="none" stroke="#000" strokeOpacity={0.18} strokeWidth={2.5} strokeLinecap="round" />
     </g>
   );
 }
 
-/** Gym tape: a strip with torn ends and a label. */
-function Tape({
-  x,
-  y,
-  r,
-  text,
-  colour,
-  ink = C.surface,
-  w = 26,
-}: {
-  x: number;
-  y: number;
-  r: number;
-  text: string;
-  colour: string;
-  /** label colour */
-  ink?: string;
-  w?: number;
-}) {
-  const h = 13;
-  const torn = (sx: number, dir: 1 | -1) =>
-    [0, 1, 2, 3, 4].map((i) => `${sx + (i % 2 ? 2.2 * dir : 0)},${-h / 2 + (i * h) / 4}`).join(" ");
+/** Corner brackets around a detected hold. */
+function Box({ x, y, s, delay }: { x: number; y: number; s: number; delay: number }) {
+  const h = s / 2 + 5;
+  const a = 6;
+  const d = [
+    [-1, -1],
+    [1, -1],
+    [1, 1],
+    [-1, 1],
+  ]
+    .map(([sx, sy]) => `M${x + sx * h} ${y + sy * (h - a)} V${y + sy * h} H${x + sx * (h - a)}`)
+    .join(" ");
   return (
-    <g transform={`translate(${x} ${y}) rotate(${r})`}>
-      <polygon
-        points={`${torn(-w / 2, -1)} ${torn(w / 2, 1).split(" ").reverse().join(" ")}`}
-        fill={colour}
-        opacity={0.92}
-      />
-      <text
-        y={3.6}
-        textAnchor="middle"
-        fill={ink}
-        fontFamily={FONT_TAG}
-        fontSize={10}
-        fontWeight={600}
-        letterSpacing={1.3}
-      >
+    <path
+      d={d}
+      fill="none"
+      stroke={C.accent}
+      strokeWidth={1.6}
+      strokeLinecap="round"
+      className="anim-pop"
+      style={{ transformOrigin: `${x}px ${y}px`, animationDelay: `${delay}ms` }}
+    />
+  );
+}
+
+/** Review's hold tag: a small label box, mono numerals. */
+function Tag({ x, y, text, bg = C.surface, fg = C.ink }: { x: number; y: number; text: string; bg?: string; fg?: string }) {
+  const w = 8 + text.length * 6.4;
+  return (
+    <g transform={`translate(${x} ${y})`}>
+      <rect x={-w / 2} y={-7.5} width={w} height={15} rx={1.5} fill={bg} />
+      <text y={3.6} textAnchor="middle" fill={fg} fontFamily={FONT} fontSize={10} fontWeight={600} letterSpacing={1}>
         {text}
       </text>
     </g>
   );
 }
 
-function Badge({ x, y, n }: { x: number; y: number; n: number }) {
-  return (
-    <g>
-      <circle cx={x} cy={y} r={7.5} fill={C.ink} />
-      <text x={x} y={y + 3.4} textAnchor="middle" fill={C.surface} fontFamily={FONT_TAG} fontSize={10} fontWeight={600}>
-        {n}
-      </text>
-    </g>
-  );
-}
-
-const line = (a: Pt, b: Pt, k: string): ReactNode => <line key={k} x1={a[0]} y1={a[1]} x2={b[0]} y2={b[1]} />;
-
-function Climber() {
-  const p = BODYPTS;
-  const bonesStill = [
-    line(NECK, p.hip, "spine"),
-    line(p.head, NECK, "neck"),
-    line(NECK, p.lEl, "ual"),
-    line(p.lEl, p.lh, "fal"),
-    line(p.hip, p.lKn, "thl"),
-    line(p.lKn, p.lf, "shl"),
-    line(p.hip, p.rKn, "thr"),
-    line(p.rKn, p.rf, "shr"),
-  ];
-  const arm = [line(NECK, p.rEl, "uar"), line(p.rEl, p.rh, "far")];
-  const joints = (pts: Pt[]) =>
-    pts.map(([x, y], i) => <circle key={i} cx={x} cy={y} r={3.6} fill={C.accent} stroke={C.ink} strokeWidth={1.2} />);
-  return (
-    <g data-name="sketch/climber" strokeLinecap="round">
-      <g stroke={C.surface} strokeWidth={7}>{bonesStill}</g>
-      <g stroke={C.ink} strokeWidth={3}>{bonesStill}</g>
-      <g className="anim-reach" style={{ transformOrigin: `${NECK[0]}px ${NECK[1]}px` }}>
-        <g stroke={C.surface} strokeWidth={7}>{arm}</g>
-        <g stroke={C.ink} strokeWidth={3}>{arm}</g>
-        {joints([p.rEl])}
-        <circle cx={p.rh[0]} cy={p.rh[1]} r={5} fill={C.accent} stroke={C.surface} strokeWidth={2} />
-      </g>
-      <circle cx={p.head[0]} cy={p.head[1]} r={10} fill={C.surface} stroke={C.ink} strokeWidth={2.6} />
-      {joints([NECK, p.lEl, p.hip, p.lKn, p.rKn])}
-      {[p.lh, p.lf, p.rf].map(([x, y], i) => (
-        <circle key={i} cx={x} cy={y} r={5} fill={C.accent} stroke={C.surface} strokeWidth={2} />
-      ))}
-    </g>
-  );
-}
-
 export function WallSketch() {
   const id = useId().replace(/:/g, "");
-  const wobble = `wob-${id}`;
-  const soft = `soft-${id}`;
-  const hatch = `hatch-${id}`;
+  const shade = `shade-${id}`;
+  const drop = `drop-${id}`;
   const reveal = `reveal-${id}`;
+  const vign = `vign-${id}`;
 
-  const bolts: Pt[] = [];
-  // The panel runs past the viewBox so wider boxes ("meet" fit) still fill edge to edge.
-  for (let x = -54; x < 460; x += 34)
-    for (let y = 20; y < 400; y += 34) {
-      const onVolume = x > 285 && y < 152;
-      if (!onVolume && !near(x, y, 24)) bolts.push([x, y]);
-    }
+  const nuts: Pt[] = [];
+  for (let x = -40; x < 440; x += 26)
+    for (let y = 14; y < 300; y += 26) if (!near(x, y, 20) && !(x > 288 && y > 84 && y < 214 && x < 400)) nuts.push([x, y]);
 
-  const beta = `M${A} C 96 222, 90 182, ${H1} S 178 118, ${H2} S 262 110, ${H3} S 244 54, ${TOP}`;
+  const [p0, p1, p2, p3, p4] = [0, 1, 2, 3, 4].map(pt);
+  const beta = `M${p0} C 104 214, 88 196, ${p1} S 142 154, ${p2} S 120 108, ${p3} S 166 64, ${p4}`;
 
   return (
-    <svg
-      data-name="upload/wall-drawing"
-      viewBox="0 0 400 440"
-      preserveAspectRatio="xMidYMid meet"
-      className="absolute inset-0 h-full w-full overflow-visible"
-      aria-hidden
-    >
-      <defs>
-        <filter id={wobble} x="-5%" y="-5%" width="110%" height="110%">
-          <feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="2" seed="7" />
-          <feDisplacementMap in="SourceGraphic" scale="2.6" />
-        </filter>
-        <filter id={soft} x="-30%" y="-30%" width="160%" height="160%">
-          <feGaussianBlur stdDeviation="3" />
-        </filter>
-        <filter id={`${soft}-hand`} x="-30%" y="-30%" width="160%" height="160%">
-          <feGaussianBlur stdDeviation="1.1" />
-        </filter>
-        <pattern id={hatch} width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(40)">
-          <line x1="0" y1="0" x2="0" y2="5" stroke={C.ink} strokeOpacity="0.22" strokeWidth="1" />
-        </pattern>
-        <mask id={reveal}>
-          <path d={beta} pathLength={100} fill="none" stroke="#fff" strokeWidth={8} className="anim-draw" />
-        </mask>
-      </defs>
+    <>
+      <svg
+        data-name="upload/wall-drawing"
+        viewBox="0 0 400 340"
+        preserveAspectRatio="xMidYMid meet"
+        className="absolute inset-0 h-full w-full overflow-visible"
+        aria-hidden
+      >
+        <defs>
+          <linearGradient id={shade} x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stopColor="#fff" stopOpacity={0.28} />
+            <stop offset="0.45" stopColor="#fff" stopOpacity={0} />
+            <stop offset="1" stopColor="#000" stopOpacity={0.32} />
+          </linearGradient>
+          <filter id={drop} x="-30%" y="-30%" width="160%" height="170%">
+            <feDropShadow dx="0" dy="2.5" stdDeviation="1.8" floodColor="#000" floodOpacity="0.4" />
+          </filter>
+          <radialGradient id={vign} cx="0.4" cy="0.4" r="0.85">
+            <stop offset="0.55" stopColor={WALL_DEEP} stopOpacity={0} />
+            <stop offset="1" stopColor={WALL_DEEP} stopOpacity={0.9} />
+          </radialGradient>
+          <mask id={reveal}>
+            <path d={beta} pathLength={100} fill="none" stroke="#fff" strokeWidth={10} className="anim-draw" />
+          </mask>
+        </defs>
 
-      {/* ---- panel: seams, grain, kicker, mat, T-nuts ---- */}
-      <g filter={`url(#${wobble})`} fill="none" stroke={C.ink}>
-        <path d="M234 0 C 232 110, 236 230, 233 440" strokeOpacity={0.22} />
-        <path d="M-60 181 C 110 177, 280 183, 460 178" strokeOpacity={0.22} />
-        <path d="M-60 301 C 140 300, 260 306, 460 304" strokeOpacity={0.3} />
-        <path d="M-60 311 L 460 317" strokeOpacity={0.15} />
-        <g strokeOpacity={0.08}>
-          <path d="M52 24 C 90 30, 130 18, 220 26" />
-          <path d="M50 44 C 100 52, 150 36, 222 46" />
-          <path d="M60 92 C 110 98, 170 84, 224 94" />
-          <path d="M48 128 C 96 136, 160 120, 226 130" />
-          <path d="M246 214 C 300 220, 340 208, 398 216" />
-          <path d="M248 270 C 290 276, 350 262, 398 270" />
+        {/* ---- wall: panel, seams, T-nuts, a volume, the mat ---- */}
+        <rect x={-200} y={-200} width={800} height={740} fill={WALL} />
+        <g stroke="#fff" strokeOpacity={0.07}>
+          <line x1={200} y1={-200} x2={200} y2={300} />
+          <line x1={-200} y1={160} x2={600} y2={160} />
         </g>
-        <g strokeOpacity={0.28} strokeWidth={1}>
-          {bolts.map(([x, y]) => (
-            <circle key={`${x}-${y}`} cx={x} cy={y} r={2.2} />
+        <g fill="#fff" fillOpacity={0.09}>
+          {nuts.map(([x, y]) => (
+            <circle key={`${x}-${y}`} cx={x} cy={y} r={1.5} />
           ))}
         </g>
-      </g>
-      <g data-name="sketch/mat">
-        <rect x={-64} y={404} width={528} height={60} fill={C.accent} fillOpacity={0.16} />
-        <path d="M-60 404 L460 404" stroke={C.ink} strokeOpacity={0.35} />
-        <path d="M134 404 L130 440 M268 404 L272 440" stroke={C.ink} strokeOpacity={0.18} strokeDasharray="3 4" />
-      </g>
-
-      {/* ---- chalk: smudges on the holds people grab, one handprint ---- */}
-      <g filter={`url(#${soft})`} fill={C.accent} opacity={0.35}>
-        <ellipse cx={H1[0] + 6} cy={H1[1] - 10} rx={16} ry={9} opacity={0.8} />
-        <ellipse cx={H2[0] - 4} cy={H2[1] - 12} rx={15} ry={8} opacity={0.75} />
-        <ellipse cx={TOP[0]} cy={TOP[1] - 12} rx={18} ry={9} opacity={0.75} />
-      </g>
-
-      <g filter={`url(#${soft}-hand)`} fill={C.accent} opacity={0.4}>
-        <g transform="translate(330 268) rotate(-18)" opacity={0.95}>
-          <ellipse cx={0} cy={0} rx={10} ry={12} />
-          {[-9, -3, 3, 9].map((dx, i) => (
-            <ellipse key={dx} cx={dx} cy={-16 - (i === 1 || i === 2 ? 3 : 0)} rx={2.6} ry={6} />
-          ))}
-          <ellipse cx={-13} cy={-1} rx={2.6} ry={5.5} transform="rotate(-40 -13 -1)" />
+        <g data-name="sketch/volume" strokeLinejoin="round">
+          <polygon points="300,96 392,84 352,150" fill={PLANE_LIT} />
+          <polygon points="300,96 352,150 318,206" fill={PLANE_SHADE} />
+          <polygon points="392,84 420,196 352,150" fill={WALL_DEEP} />
+          <polygon points="352,150 420,196 318,206" fill={PLANE_SHADE} fillOpacity={0.7} />
+          <path d="M300 96 L352 150 L392 84 M352 150 L318 206 M352 150 L420 196" fill="none" stroke="#fff" strokeOpacity={0.14} />
         </g>
-      </g>
+        <rect x={-200} y={296} width={800} height={240} fill={WALL_DEEP} />
+        <line x1={-200} y1={296} x2={600} y2={296} stroke="#fff" strokeOpacity={0.12} />
+        <rect x={-200} y={-200} width={800} height={740} fill={`url(#${vign})`} />
 
-      {/* ---- volume, top right ---- */}
-      <g data-name="sketch/volume" filter={`url(#${wobble})`} stroke={C.ink} strokeOpacity={0.6} strokeLinejoin="round">
-        <polygon points="290,22 324,86 394,98" fill={C.surface} />
-        <polygon points="394,98 324,86 300,150" fill={C.accent} fillOpacity={0.32} />
-        <polygon points="394,98 324,86 300,150" fill={`url(#${hatch})`} stroke="none" />
-        <polygon points="300,150 324,86 290,22" fill={C.accent} fillOpacity={0.14} />
-        <circle cx={326} cy={92} r={2.4} fill={C.surface} />
-      </g>
+        {/* ---- holds ---- */}
+        <g filter={`url(#${drop})`}>
+          {OTHERS.map(([kind, x, y, s, r, colour], i) => (
+            <HoldArt key={i} kind={kind} x={x} y={y} s={s} r={r} fill={colour} shade={shade} />
+          ))}
+          {CHIPS.map(([x, y], i) => (
+            <circle key={i} cx={x} cy={y} r={3.2} fill={[HC.blue, HC.yellow, HC.purple, HC.green][i % 4]} />
+          ))}
+        </g>
+        {/* the climb: white outline with a dark edge, as on Review */}
+        <g>
+          {ROUTE.map(([kind, x, y, s, r], i) => (
+            <g key={i} transform={`translate(${x} ${y}) rotate(${r}) scale(${s / 64}) translate(-32 -32)`}>
+              <path d={BODY[kind]} fill="none" stroke={C.ink} strokeWidth={9} strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+              <path d={BODY[kind]} fill="none" stroke={C.surface} strokeWidth={6} strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+            </g>
+          ))}
+        </g>
+        <g filter={`url(#${drop})`}>
+          {ROUTE.map(([kind, x, y, s, r], i) => (
+            <HoldArt key={i} kind={kind} x={x} y={y} s={s} r={r} fill={HC.red} shade={shade} />
+          ))}
+        </g>
 
-      {/* ---- holds ---- */}
-      <g filter={`url(#${wobble})`}>
-        {HOLDS.map(([kind, x, y, s, r, route], i) => (
-          <Hold key={i} kind={kind} x={x} y={y} s={s} r={r} route={route} />
+        {/* ---- what the app found ---- */}
+        {OTHERS.filter((o) => o[6]).map(([, x, y, s], i) => (
+          <Box key={i} x={x} y={y} s={s} delay={200 + i * 140} />
         ))}
-        {CHIPS.map(([x, y], i) => (
-          <circle key={i} cx={x} cy={y} r={3.6} fill={C.surface} stroke={C.ink} strokeOpacity={0.45} />
-        ))}
-      </g>
 
-      {/* ---- setter tape ---- */}
-      <Tape x={96} y={276} r={-10} text="S" colour={C.accent} ink={C.ink} w={20} />
-      <Tape x={208} y={284} r={8} text="S" colour={C.accent} ink={C.ink} w={20} />
-      <Tape x={276} y={36} r={-6} text="TOP" colour={C.ink} w={36} />
+        {/* beta line, drawn in on load */}
+        <g mask={`url(#${reveal})`}>
+          <path d={beta} fill="none" stroke={C.surface} strokeWidth={1.6} strokeDasharray="4 5" strokeLinecap="round" strokeOpacity={0.9} />
+        </g>
 
-      {/* ---- beta line, inked in on load ---- */}
-      <g mask={`url(#${reveal})`}>
-        <path d={beta} fill="none" stroke={C.surface} strokeWidth={5} strokeOpacity={0.8} strokeLinecap="round" />
-        <path
-          d={beta}
+        {/* start ring (green) and finish ring */}
+        <circle cx={p0[0]} cy={p0[1]} r={22} fill="none" stroke={C.accent} strokeWidth={2} />
+        <circle
+          cx={p0[0]}
+          cy={p0[1]}
+          r={22}
           fill="none"
           stroke={C.accent}
-          strokeWidth={2.2}
-          strokeDasharray="5 6"
-          strokeLinecap="round"
+          strokeWidth={2}
+          className="anim-ring"
+          style={{ transformOrigin: `${p0[0]}px ${p0[1]}px` }}
         />
-      </g>
-      <Badge x={H1[0] - 24} y={H1[1] - 6} n={1} />
-      <Badge x={H2[0] + 20} y={H2[1] + 16} n={2} />
-      <Badge x={H3[0] + 22} y={H3[1] + 8} n={3} />
+        <circle cx={p4[0]} cy={p4[1]} r={20} fill="none" stroke={C.surface} strokeWidth={1.5} strokeDasharray="3 3" />
 
-      {/* grip ring on the hold the climber is going for */}
-      <circle cx={H2[0]} cy={H2[1]} r={17} fill="none" stroke={C.accent} strokeWidth={2} />
-      <circle
-        cx={H2[0]}
-        cy={H2[1]}
-        r={17}
-        fill="none"
-        stroke={C.accent}
-        strokeWidth={2}
-        className="anim-ring"
-        style={{ transformOrigin: `${H2[0]}px ${H2[1]}px` }}
+        <Tag x={p0[0] - 48} y={p0[1] + 2} text="START" bg={C.accent} />
+        <Tag x={p1[0] - 30} y={p1[1] - 2} text="02" />
+        <Tag x={p2[0] + 30} y={p2[1] + 2} text="03" />
+        <Tag x={p3[0] - 32} y={p3[1] + 2} text="04" />
+        <Tag x={p4[0] + 36} y={p4[1] + 2} text="TOP" />
+
+        {/* ---- HUD: height ruler (You), climb chip, grade card (Play) ---- */}
+        <g data-name="sketch/scale" stroke={C.surface} strokeOpacity={0.7}>
+          <line x1={22} y1={24} x2={22} y2={296} />
+          {Array.from({ length: 9 }, (_, i) => {
+            const y = 296 - (i * 272) / 8;
+            const w = i % 2 === 0 ? 6 : 3;
+            return <line key={i} x1={22 - w} y1={y} x2={22 + w} y2={y} />;
+          })}
+        </g>
+        <g transform="translate(22 126) rotate(-90)">
+          <rect x={-20} y={-8} width={40} height={16} rx={1.5} fill={C.surface} />
+          <text y={3.8} textAnchor="middle" fill={C.ink} fontFamily={FONT} fontSize={10} fontWeight={600} letterSpacing={1.2}>
+            4.3 M
+          </text>
+        </g>
+
+        <g data-name="sketch/chip" transform="translate(318 22)">
+          <rect x={-58} y={-10} width={116} height={20} rx={2} fill={C.surface} />
+          <circle cx={-46} cy={0} r={3.5} fill={HC.red} />
+          <text x={4} y={3.8} textAnchor="middle" fill={C.ink} fontFamily={FONT} fontSize={10.5} fontWeight={600} letterSpacing={1.3}>
+            5 HOLDS · RED
+          </text>
+        </g>
+
+        <g data-name="sketch/grade" transform="translate(338 164)">
+          <rect x={-38} y={-30} width={76} height={60} rx={2} fill={C.surface} />
+          <text x={-28} y={-14} fill={C.muted} fontFamily={FONT} fontSize={8.5} fontWeight={600} letterSpacing={1.4}>
+            GRADE
+          </text>
+          <text x={-29} y={18} fill={C.ink} fontFamily={FONT} fontSize={30} fontWeight={700}>
+            V3
+          </text>
+          <text x={9} y={17} fill={C.muted} fontFamily={FONT} fontSize={10} fontWeight={600} letterSpacing={1}>
+            6A+
+          </text>
+        </g>
+      </svg>
+      {/* a scan line sweeping the photo, as while holds are being found */}
+      <span
+        aria-hidden
+        className="anim-scan pointer-events-none absolute inset-x-0 h-px bg-accent opacity-60 shadow-[0_0_12px_2px_rgba(124,169,130,0.55)]"
       />
-
-      <Climber />
-
-      {/* ---- pencil margin notes ---- */}
-      <g data-name="sketch/grade-note" transform="translate(352 186) rotate(-8)">
-        <text textAnchor="middle" y={8} fill={C.ink} fillOpacity={0.75} fontFamily={FONT_HAND} fontSize={24} fontWeight={700}>
-          V?
-        </text>
-        <path
-          d="M-20 -2 C -20 -16, 18 -18, 21 -2 C 23 14, -14 18, -21 6 C -23 0, -18 -10, -8 -14"
-          fill="none"
-          stroke={C.ink}
-          strokeOpacity={0.5}
-          strokeWidth={1.3}
-          strokeLinecap="round"
-        />
-      </g>
-      <g data-name="sketch/scale" stroke={C.ink} strokeOpacity={0.5} filter={`url(#${wobble})`}>
-        <line x1={24} y1={30} x2={24} y2={400} />
-        {Array.from({ length: 9 }, (_, i) => {
-          const y = 400 - (i * 370) / 8;
-          const w = i % 2 === 0 ? 7 : 4;
-          return <line key={i} x1={24 - w} y1={y} x2={24 + w} y2={y} />;
-        })}
-      </g>
-      <text
-        transform="translate(42 150) rotate(-90)"
-        fill={C.ink}
-        fillOpacity={0.65}
-        textAnchor="middle"
-        fontFamily={FONT_TAG}
-        fontSize={11}
-        fontWeight={500}
-        letterSpacing={1.3}
-      >
-        4.0 M
-      </text>
-    </svg>
+    </>
   );
 }
