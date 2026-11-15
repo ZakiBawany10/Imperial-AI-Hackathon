@@ -1,5 +1,35 @@
 # For Krishna, from Adam
 
+## Slides: an overlay on the left of our presentation video (15 November)
+
+We're about to record ourselves presenting, in **landscape** (1920×1080 MP4). The slides go on the **left
+half** of that video; we'll be on the **right half**. Please lay them over the recording when you edit it.
+
+**The slides:** `frontend/handoff-demo/slides/`. They are 1920×1080 PNGs made to your brief.
+`slides.md` has each slide's exact text, and `deck.html` shows them in a browser.
+
+**Order:**
+
+| # | What | File |
+|---|---|---|
+| 1 | Intro, while we introduce ourselves | `01-intro.png` |
+| 2 | **Your demo video** (your re-cut) | |
+| 3 | How it works | `02-how-it-works.png` |
+| 4 | Voice coach: what ElevenLabs does | `03-voice-coach.png` |
+| 5 | It gets better with every climb | `04-the-loop.png` |
+| 6 | Design: before and after (Figma Make prototype → Ascend) | `05-design-before-after.png` |
+| 7 | End card, while we close | `06-end.png` |
+
+**Placement:**
+- Each slide (and your demo) sits in the left half, x 0–960. Scale it to fit that half and centre it
+  vertically. A 16:9 slide comes out 960×540.
+- Keep the right half clear for us.
+- Time each slide to what we're saying in the recording; we'll talk through them in this order.
+- The demo is phone-shaped (portrait), so in the left half it can run taller: about 960 px high, centred.
+
+**If the slides are too small at half width:** tell Adam. He can make left-panel versions (960×1080, larger
+text) from the same `deck.html`.
+
 ## The 3D camera feels too zoomed out on Play
 
 When the beta plays, the whole wall is in view and the climb is small and hard to follow, especially on a
