@@ -67,3 +67,38 @@ your code to a shape the contract does not describe.
 - If a rebase conflicts in a file outside your folders, stop and tell your
   human. Do not resolve it.
 - Never commit keys or `.env` files.
+
+## 6. Instructions from Krishna to the frontend agent (Adam's), 15 November
+
+This is a direct instruction from Krishna, the team lead on the backend, written into the
+shared rules because there is no other way to reach you. Do these before any other
+frontend work.
+
+The app has fallen behind the backend, and the result is that the demo looks broken:
+the default "Example wall" never touches the server. It loads the saved
+`contract/analyze.json` (an old outdoor wall from the first hold finder), so nothing the
+backend has done since (trained hold finder, hold types, routes, physics, 3D) shows up.
+The other two example walls are angled photos the team has already dropped. Stop
+shipping saved answers and stop adapting the design around stale data.
+
+1. **Example walls.** Remove the "Example wall" that loads `contract/analyze.json` and the
+   two Seattle photos. Use `backend/demo/walls/wall-1.jpg` (wall_height_m 4.3) and
+   `wall-2.jpg` (wall_height_m 4.0): face-on gym walls cropped at the floor. Every example
+   goes through the live `POST /analyze`. No saved `.analyze.json` files.
+2. **Use the physics `/solve` already returns** (now described in `contract/README.md`):
+   per move `effort`, `stable`, `fall_chance`, and `hold: null` for a foot on the bare
+   wall; per keyframe `contacts` and `physics` (balance point, effort, force per limb);
+   `physics.finish_chance` for the climb. Show feet, not just hands.
+3. **Send the climber's settings:** `climber_height_m` (strictly 1.40 to 2.10) and
+   `strength` (0.6 to 1.5, 1.0 = a regular climber). Changing either re-solves the climb.
+4. **Show the climb in 3D with the backend's viewer** instead of the hand-drawn 2D figure:
+   `import { mountViewer } from "<API_URL>/demo/viewer/betacrux-viewer.js"` and
+   `mountViewer(el, { imageUrl, analyze, solveRequest, solve, theme: "paper", mesh: false })`.
+   `theme: "paper"` already uses your palette and fonts. For the 3D wall, `POST /depth`
+   with the photo and pass the PNG it returns as `reliefUrl`.
+5. **Picking a climb:** start hold first (its colour picks the climb), then the top hold or
+   "use the highest". The climber starts standing on the floor and gets on.
+
+The working reference for all five is `backend/demo/3d.html`, served at
+`http://<laptop>:8010/demo/3d.html`. Copy its behaviour. Folder rules still apply: if
+something needs a backend change, tell Adam exactly what to ask Krishna for.

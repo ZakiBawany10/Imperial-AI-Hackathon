@@ -50,4 +50,24 @@ These are readings of the contract, not changes to it.
   `wall_angle_deg` 0. Extra fields on a hold (`score`, `suggestions`, …) are
   accepted and ignored, so the frontend can send holds back unchanged.
 
+## Added by the physics engine (15 November)
+
+All optional, all live on `/solve` now; older readers can ignore them.
+
+- **Request:** `strength` (0.6 to 1.5, default 1.0 = a regular gym climber). `climber_height_m`
+  is now strictly 1.40 to 2.10 m; outside that `/solve` answers 422.
+- **Moves:** `limb` can be `LF` or `RF` (a foot move). `hold` is `null` for a foot on the bare
+  wall. Each move also has `effort` (share of grip strength the hardest-working hand needs;
+  1.0 or more cannot be held), `stable` (true/false) and `fall_chance` (0 to 1).
+- **Keyframes:** `contacts` `{"LH", "RH", "LF", "RF"}` = the hold id each hand and foot is on
+  (null = bare wall or floor), and `physics` = `{"com": [x, y], "effort", "stable",
+  "forces": [{"limb", "at": [x, y], "f": [fx, fy], "share"}]}` (pixels; f in body-weights).
+- **Top level:** `physics` = `{"model", "max_effort", "mean_effort", "unstable_positions",
+  "finish_chance", "sequence": "safest"}`. The moves shown are the sequence least likely to
+  end in a fall; the grade still comes from the hand-only search.
+- **Climb rules:** the climber starts standing on the floor with hands on the start hold(s),
+  never touches the floor again, and finishes with both hands on the top hold.
+- **`POST /depth`** (form field `file`): a greyscale PNG relief map of the wall photo,
+  black = flat wall, white = sticks out most. The 3D viewer uses it as `reliefUrl`.
+
 Nobody changes the contract without telling the other two first.
