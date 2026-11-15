@@ -20,7 +20,8 @@ HEAD_L, SUB_L = F("BarlowCondensed-Bold.ttf", 128), F("Barlow-Medium.ttf", 48)
 HEAD, SUB, LABEL = F("BarlowCondensed-Bold.ttf", 96), F("Barlow-Medium.ttf", 40), F("BarlowSemiCondensed-SemiBold.ttf", 34)
 
 # (source start, source end, speed) on Adam's ascend-demo.mp4 clock
-SEGS = [(0.8, 4, 1.0), (4, 9.5, 3.0), (9.5, 17, 1.3), (17, 24, 4.0), (24, 29, 2.0), (29, 39, 1.0)]
+SEGS = [(0.8, 3.9, 1.0), (6.6, 9.9, 1.0), (9.9, 9.9, 0, 1.3), (9.9, 17, 1.0), (17, 24, 1.5), (24, 30.5, 1.0),
+        (30.5, 30.5, 0, 1.0), (30.5, 39, 1.0)]  # 3.9-6.6: old-to-new recording seam, cut; speed 0 = hold the frame for n s
 # (source time, step label, headline, sub-line)
 CAPS = [
     (0.0, "PHOTO", "Take one photo", "of the wall you want to climb"),
@@ -38,7 +39,10 @@ STEPS = ["PHOTO", "HOLDS", "ROUTE", "CHECK", "YOU", "BETA"]
 def out_times():
     """Output frame -> source time."""
     ts = []
-    for a, b, sp in SEGS:
+    for a, b, sp, *hold in SEGS:
+        if sp == 0:
+            ts += [a] * int(round(hold[0] * FPS))
+            continue
         n = int(round((b - a) / sp * FPS))
         ts += [a + i * sp / FPS for i in range(n)]
     return ts
