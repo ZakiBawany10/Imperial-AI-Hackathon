@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { HOLDS, PHOTOS, unsplash, type Hold } from "../lib/wall";
 import { BottomSheet, Btn, MONO, Screen, StickyBar, TopBar, WallPhoto } from "../ui/kit";
 import { HoldPin } from "../ui/HoldPins";
+import { WallSketch } from "../ui/WallSketch";
 import { C } from "../lib/wall";
 
 export type Example = { id: string; label: string; photo: string; credit?: string };
@@ -228,7 +229,7 @@ function EmptySheet({ onTap }: { onTap: () => void }) {
       <WallSketch />
       <button
         onClick={onTap}
-        className="absolute inset-0 flex items-center justify-center active:bg-ink/5"
+        className="absolute inset-0 flex items-end justify-center pb-6 active:bg-ink/5"
         aria-label="Choose a photo of the wall"
       >
         <span
@@ -339,73 +340,3 @@ function FindingSheet({
   );
 }
 
-/* Faint line drawing of a bolted wall with hold outlines and setter tags. */
-function WallSketch() {
-  const bolts: [number, number][] = [];
-  for (let x = 40; x < 400; x += 40) for (let y = 40; y < 440; y += 40) bolts.push([x, y]);
-  const tag = "font-mono text-[11px] font-medium tracking-[0.12em]";
-  return (
-    <svg
-      data-name="upload/wall-drawing"
-      viewBox="0 0 400 440"
-      preserveAspectRatio="xMidYMid slice"
-      className="absolute inset-0 h-full w-full"
-      aria-hidden
-    >
-      <g stroke="#D9D2C3" fill="none">
-        <line x1="200" y1="0" x2="200" y2="440" />
-        <line x1="0" y1="220" x2="400" y2="220" />
-        <line x1="0" y1="400" x2="400" y2="400" />
-      </g>
-      <g fill="#D9D2C3">
-        {bolts.map(([x, y]) => (
-          <circle key={`${x}-${y}`} cx={x} cy={y} r="1.5" />
-        ))}
-      </g>
-      <g stroke="#1B1A17" strokeOpacity="0.32" strokeWidth="1.25" fill="none">
-        <circle cx="90" cy="350" r="13" />
-        <rect x="140" y="292" width="36" height="20" rx="9" transform="rotate(-12 158 302)" />
-        <circle cx="96" cy="240" r="9" />
-        <rect x="250" y="300" width="28" height="28" rx="8" />
-        <circle cx="300" cy="200" r="15" />
-        <circle cx="330" cy="360" r="10" />
-        <rect x="300" y="96" width="32" height="22" rx="9" transform="rotate(-20 316 107)" />
-        <circle cx="180" cy="110" r="13" />
-        <circle cx="70" cy="90" r="9" />
-        <path d="M 200 170 q 16 -12 30 2 q 6 14 -10 20 q -22 4 -20 -22 z" />
-      </g>
-      <g stroke="#1B1A17" strokeOpacity="0.4">
-        <line x1="103" y1="350" x2="124" y2="372" />
-        <line x1="315" y1="200" x2="338" y2="184" />
-        <line x1="193" y1="110" x2="216" y2="94" />
-      </g>
-      <g fill="#6B665C" className={tag}>
-        <text x="134" y="380">
-          A1
-        </text>
-        <text x="348" y="186">
-          B4
-        </text>
-        <text x="226" y="96">
-          C2
-        </text>
-      </g>
-      <circle cx="128" cy="376" r="3" fill="#2F6FDE" />
-      <circle cx="342" cy="182" r="3" fill="#E8B100" />
-      <circle cx="220" cy="92" r="3" fill="#2E8B57" />
-      <g stroke="#1B1A17" strokeOpacity="0.45">
-        <line x1="22" y1="40" x2="22" y2="400" />
-        <line x1="16" y1="40" x2="28" y2="40" />
-        <line x1="16" y1="400" x2="28" y2="400" />
-      </g>
-      <text
-        transform="translate(38 220) rotate(-90)"
-        fill="#6B665C"
-        textAnchor="middle"
-        className={tag}
-      >
-        4.0 M
-      </text>
-    </svg>
-  );
-}

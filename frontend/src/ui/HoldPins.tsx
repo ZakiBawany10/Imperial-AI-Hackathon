@@ -5,7 +5,7 @@ import { C } from "../lib/wall";
 
 export type PinKind = "jug" | "pinch" | "sloper" | "crimp";
 
-const BODY: Record<PinKind, string> = {
+export const BODY: Record<PinKind, string> = {
   jug: "M10 36C8 22 20 10 34 10C50 10 58 22 55 36C53 48 44 56 32 55C20 55 11 48 10 36Z",
   pinch: "M24 6C38 4 46 14 44 32C43 48 38 58 28 58C18 58 16 46 17 32C18 18 16 8 24 6Z",
   sloper: "M5 46C6 24 20 10 34 10C48 10 59 24 59 46C59 52 54 54 48 54L16 54C9 54 5 52 5 46Z",
@@ -13,7 +13,7 @@ const BODY: Record<PinKind, string> = {
 };
 
 // Surface detail: finger bowl, squeeze line, friction contours, edge lip.
-const DETAIL: Record<PinKind, string> = {
+export const DETAIL: Record<PinKind, string> = {
   jug: "M18 29C23 21 42 20 47 29C42 35 24 36 18 29Z",
   pinch: "M23 14C30 13 35 19 34 32",
   sloper: "M13 44C16 30 25 21 34 21C43 21 51 30 52 44 M22 46C24 38 28 33 34 33C40 33 44 38 46 46",

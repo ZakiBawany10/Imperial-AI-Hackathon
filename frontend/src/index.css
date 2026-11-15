@@ -142,6 +142,32 @@
     transform: scaleY(1);
   }
 }
+/* Upload sketch: the beta line inks itself in once; the climber's arm reaches. */
+@keyframes draw {
+  from {
+    stroke-dashoffset: 100;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes reach {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(-7deg);
+  }
+}
+.anim-draw {
+  stroke-dasharray: 100;
+  animation: draw 1.8s cubic-bezier(0.4, 0, 0.2, 1) 0.3s both;
+}
+.anim-reach {
+  transform-box: view-box;
+  animation: reach 3.2s ease-in-out infinite;
+}
 .anim-pop {
   animation: pop 300ms cubic-bezier(0.2, 0.8, 0.3, 1.2) both;
 }
@@ -167,7 +193,9 @@
   .anim-sheet,
   .anim-ring,
   .anim-pulse,
-  .anim-wave {
+  .anim-wave,
+  .anim-draw,
+  .anim-reach {
     animation: none;
   }
   .anim-trace {
