@@ -161,11 +161,13 @@ export function poseFromTargets(targets) {
       handY[i] = hy; handZ[i] = hz;
       W[i] = wristOf(i);
 
-      // Foot: the toe is on the hold. The more the leg is folded, the more the foot turns out.
+      // Foot: the toe is on the hold, the shoe nearly level and pointed into the wall, turning
+      // out a little more as the knee folds (at most about 35 degrees: climbers stand on the
+      // inside edge of the toe, not with the foot sideways).
       const dT = len(sub(T[i], Hj[i]));
       bend[i] = clamp((1 - dT / (Ll + 0.05 * H)) / 0.5, 0, 1);
-      const turn = 0.3 + 0.75 * bend[i];
-      const fwd = norm([SIDE[i] * Math.sin(turn), -0.2, -Math.cos(turn)]);
+      const turn = 0.15 + 0.45 * bend[i];
+      const fwd = norm([SIDE[i] * Math.sin(turn), -0.06, -Math.cos(turn)]);
       const fz = mul(fwd, -1);
       const fy = norm(reject([0, 1, 0], fz));
       footY[i] = fy; footZ[i] = fz;
