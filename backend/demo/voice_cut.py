@@ -30,7 +30,9 @@ LINES = {   # coach: ElevenLabs take of 15 Nov 11:34 (crux = blue foot chip); za
     "grade": ("COACH", "coach", 3.85, 8.20, "It's about a V2. The crux is a high step onto the blue foot chip."),
     "on": ("ZAKI", "zaki", 1.60, 2.80, "I'm on the start holds."),
     "first": ("COACH", "coach", 8.40, 13.05, "Great. First move, right hand up to the small blue crimp, head height."),
-    "crux": ("COACH", "coach", 13.15, 18.15, "This is the crux. Left foot high onto the yellow volume. Knee to your chest."),
+    # the take still said "yellow volume" here: spliced with "blue foot chip" from the grade line
+    "crux": ("COACH", "coach", [(13.15, 15.84), (7.24, 8.12), (17.02, 18.15)],
+             "This is the crux. Left foot high onto the blue foot chip. Knee to your chest."),
     "feet?": ("ZAKI", "zaki", 4.45, 6.85, "How much pressure in my feet and left hand?"),
     "feet": ("COACH", "coach", 18.45, 22.70, "Mostly feet, about 70%. Left hand's light, just balance."),
     "top": ("COACH", "coach", 22.90, 25.40, "That's the top. Brilliant climbing."),
@@ -96,14 +98,11 @@ def render(frames, cues, out, left=False):
     audio = np.zeros(int(n / FPS * SR) + SR, np.float32)
     subs = []
     for key, t in cues:
-        who, src, a, b, text = LINES[key]
-        clip = AUD[src][int(a * SR):int(b * SR)].copy()
-        fade = int(0.03 * SR)
-        clip[:fade] *= np.linspace(0, 1, fade)
-        clip[-fade:] *= np.linspace(1, 0, fade)
+        clip = audio_of(key)
+        who, text = LINES[key][0], LINES[key][-1]
         s = int(t * SR)
         audio[s:s + len(clip)] += clip[:max(0, len(audio) - s)]
-        subs.append((t, t + (b - a) + 0.25, who, text))
+        subs.append((t, t + dur(key) + 0.25, who, text))
     wav = out + ".f32"
     np.clip(audio[:int(n / FPS * SR)], -1, 1).astype(np.float32).tofile(wav)
     p = subprocess.Popen(["ffmpeg", "-v", "error", "-y", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{W}x{H}",
@@ -123,8 +122,25 @@ def render(frames, cues, out, left=False):
     os.remove(wav)
 
 
+def pieces(key):
+    _, src, a, *rest = LINES[key]
+    return src, (a if isinstance(a, list) else [(a, rest[0])])
+
+
+def audio_of(key):
+    src, ps = pieces(key)
+    fade = int(0.025 * SR)
+    out = []
+    for a, b in ps:
+        c = AUD[src][int(a * SR):int(b * SR)].copy()
+        c[:fade] *= np.linspace(0, 1, fade)
+        c[-fade:] *= np.linspace(1, 0, fade)
+        out.append(c)
+    return np.concatenate(out)
+
+
 def dur(key):
-    return LINES[key][3] - LINES[key][2]
+    return len(audio_of(key)) / SR
 
 
 def main():
