@@ -97,18 +97,18 @@ c.save(f"{OUT}/t3-physics.png")
 
 # 4. grade + 3D -----------------------------------------------------------------------------
 c, d = base()
-head(d, "Grade and 3D", "A grade for your body")
-card(d, 110, 380, 800, 560)
-d.text((160, 420), "GRADE · LIGHTGBM", font=LBL, fill=ACC)
-d.text((160, 470), "24 features of your solved\nsequence + wall angle", font=BODY, fill=INK, spacing=10)
-d.text((160, 600), "0.94 / 1.30", font=BIG, fill=ACC)
-d.text((164, 750), "grade error, MoonBoard / Kilter", font=BODY, fill=INK)
-d.text((164, 800), "guessing: 1.67 / 3.74 · range from 15th–85th %", font=SMALL, fill=MUTED)
-card(d, 1010, 380, 800, 560)
-d.text((1060, 420), "3D · DEPTH ANYTHING V2", font=LBL, fill=ACC)
-d.text((1060, 470), "Depth from the one photo.\nSubtract a wide blur: only what\nsticks out remains. Each outlined\nhold is raised as a dome.", font=BODY, fill=INK, spacing=10)
-d.text((1060, 750), "95%", font=BIG, fill=ACC)
-d.text((1250, 800), "of holds raised", font=BODY, fill=INK)
+head(d, "Grade and 3D · personal to you", "A grade for your height\nand strength")
+card(d, 110, 400, 800, 560)
+d.text((160, 440), "GRADE · LIGHTGBM", font=LBL, fill=ACC)
+d.text((160, 490), "Height rescales every reach, strength\nscales every grip: a 1.60 m and a 1.90 m\nclimber get their own grade.", font=BODY, fill=INK, spacing=10)
+d.text((160, 660), "0.94 / 1.30", font=BIG, fill=ACC)
+d.text((164, 810), "grade error, MoonBoard / Kilter (guessing 1.67 / 3.74)", font=SMALL, fill=MUTED)
+d.text((164, 850), "LightGBM on 24 features of your solved sequence", font=SMALL, fill=MUTED)
+card(d, 1010, 400, 800, 560)
+d.text((1060, 440), "3D · DEPTH ANYTHING V2", font=LBL, fill=ACC)
+d.text((1060, 490), "Depth from the one photo.\nSubtract a wide blur: only what\nsticks out remains. Each outlined\nhold is raised as a dome.", font=BODY, fill=INK, spacing=10)
+d.text((1060, 760), "95%", font=BIG, fill=ACC)
+d.text((1290, 815), "of holds raised", font=BODY, fill=INK)
 c.save(f"{OUT}/t4-grade-3d.png")
 
 # 5. coach + live camera ----------------------------------------------------------------------
@@ -126,12 +126,14 @@ c.save(f"{OUT}/t5-coach.png")
 
 # 6. accessibility + loop ---------------------------------------------------------------------
 c, d = base()
-head(d, "Accessibility + learning", "Climb without seeing\nthe colours")
+head(d, "Accessibility · social · learning", "Climb without seeing\nthe colours")
 stat(d, 110, 440, "1 in 12", "men is colourblind", "routes are marked by colour alone")
-d.text((114, 720), "Colours are read from the pixels.\nThe coach says which hand and where,\nnever \"grab the red one\".", font=BODY, fill=INK, spacing=12)
+d.text((114, 700), "Colours are read from the pixels. The coach\nsays which hand and where, never \"grab the\nred one\": a sight guide without a second person.", font=BODY, fill=INK, spacing=12)
+d.rounded_rectangle([110, 880, 900, 950], 35, fill=ACC)
+d.text((140, 892), "Share your climb · compare personal grades", font=BODY, fill=PAPER)
 card(d, 1010, 400, 800, 520)
 d.text((1060, 440), "EVERY CLIMB MAKES IT BETTER", font=LBL, fill=ACC)
-steps = ["climb", "followed by the camera", "saved, limb by limb", "physics retrained"]
+steps = ["climb, hands-free", "followed by the camera", "shared with friends", "physics retrained"]
 for i, s in enumerate(steps):
     yy = 510 + i * 95
     d.ellipse([1060, yy, 1110, yy + 50], fill=ACC if i < 3 else MINT)

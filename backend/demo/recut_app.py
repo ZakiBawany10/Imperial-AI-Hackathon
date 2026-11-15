@@ -16,7 +16,7 @@ LAND = sys.argv[4:5] == ["landscape"]
 W, H, FPS = (1920, 1080, 30) if LAND else (1080, 1920, 30)
 INK, PAPER, MINT, MUTED_ON_INK, ACCENT = (36, 62, 54), (255, 255, 255), (150, 235, 190), (170, 196, 184), (124, 169, 130)
 F = lambda n, s: ImageFont.truetype(os.path.join(FONTS, n), s)
-HEAD_L, SUB_L = F("BarlowCondensed-Bold.ttf", 128), F("Barlow-Medium.ttf", 48)
+HEAD_L, SUB_L = F("BarlowCondensed-Bold.ttf", 100), F("Barlow-Medium.ttf", 48)
 HEAD, SUB, LABEL = F("BarlowCondensed-Bold.ttf", 96), F("Barlow-Medium.ttf", 40), F("BarlowSemiCondensed-SemiBold.ttf", 34)
 
 # (source start, source end, speed) on Adam's ascend-demo.mp4 clock
