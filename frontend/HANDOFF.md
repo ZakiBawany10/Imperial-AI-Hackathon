@@ -51,6 +51,10 @@ React 19 + Vite 8 + Tailwind v4 + TS, originally a Figma Make export (`.figma/` 
 ## Testing method
 No browser tool. Headless Chrome via `puppeteer-core` installed in a scratchpad dir (not the repo); Chrome at `/Applications/Google Chrome.app`; viewport 390x844 mobile; for the 3D viewer launch with `--use-angle=swiftshader --enable-unsafe-swiftshader`. The last session's scripts lived in the old scratchpad (`.../scratchpad/pt/`, e.g. `e2e.mjs` = full flow on wall-1 with 3D + strength re-solve, `every.mjs` = tap every hold on `~/Downloads/126.jpg`); recreate if the scratchpad is gone. Route holds are `[data-hold]` groups containing `path[stroke-width="3"]`. Old scripts that click `examples/thumb-example` are obsolete.
 
+## Demo video
+`handoff-demo/` holds the gym demo video (real recording + automated app recording + ghost climber over real
+footage), its clips, the source footage, the pipeline scripts and data. Its README is the handoff to Krishna.
+
 ## Waiting on teammates (tell Adam)
 - **Zaki**: ElevenLabs agent id for `frontend/.env.local` (`VITE_ELEVENLABS_AGENT_ID`); rename the agent from "BetaCrux coach" to Ascend (`coach/agent.config.json`); narrow the coach's height range to 1.40-2.10; `docs/demo_timestamps.json` for the filmed-climb demo (`createVideoProgress`, not wired yet).
 - **Krishna**: her demo pages still say BetaCrux.
