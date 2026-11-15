@@ -12,7 +12,7 @@
    "h": 76,
    "type": "jug",
    "quality": 0.9,
-   "color": "#efda4e",
+   "color": "#ebd754",
    "score": 0.92,
    "needs_review": false,
    "suggestions": [
@@ -28,7 +28,9 @@
      "type": "crimp",
      "p": 0.0
     }
-   ]
+   ],
+   "color_name": "yellow",
+   "route": 11
   },
   {
    "id": 166,
@@ -38,7 +40,7 @@
    "h": 32,
    "type": "jug",
    "quality": 0.9,
-   "color": "#d8c55c",
+   "color": "#d4c061",
    "score": 0.88,
    "needs_review": false,
    "suggestions": [
@@ -54,7 +56,9 @@
      "type": "pinch",
      "p": 0.0
     }
-   ]
+   ],
+   "color_name": "yellow",
+   "route": 11
   },
   {
    "id": 146,
@@ -64,7 +68,7 @@
    "h": 30,
    "type": "foot",
    "quality": 0.1,
-   "color": "#c5cf81",
+   "color": "#c7d188",
    "score": 0.84,
    "needs_review": false,
    "suggestions": [
@@ -80,7 +84,9 @@
      "type": "pinch",
      "p": 0.01
     }
-   ]
+   ],
+   "color_name": "green",
+   "route": 8
   },
   {
    "id": 106,
@@ -90,7 +96,7 @@
    "h": 64,
    "type": "sloper",
    "quality": 0.3,
-   "color": "#e9d284",
+   "color": "#ecd68e",
    "score": 0.71,
    "needs_review": false,
    "suggestions": [
@@ -106,7 +112,9 @@
      "type": "crimp",
      "p": 0.17
     }
-   ]
+   ],
+   "color_name": "yellow",
+   "route": 3
   },
   {
    "id": 53,
@@ -116,7 +124,7 @@
    "h": 56,
    "type": "jug",
    "quality": 0.9,
-   "color": "#d3bb46",
+   "color": "#d4be4d",
    "score": 0.88,
    "needs_review": false,
    "suggestions": [
@@ -132,7 +140,9 @@
      "type": "pinch",
      "p": 0.03
     }
-   ]
+   ],
+   "color_name": "yellow",
+   "route": 11
   },
   {
    "id": 32,
@@ -142,7 +152,7 @@
    "h": 36,
    "type": "jug",
    "quality": 0.9,
-   "color": "#f4dc8a",
+   "color": "#f2da8d",
    "score": 0.89,
    "needs_review": false,
    "suggestions": [
@@ -158,7 +168,9 @@
      "type": "sloper",
      "p": 0.0
     }
-   ]
+   ],
+   "color_name": "yellow",
+   "route": 3
   },
   {
    "id": 2,
@@ -168,7 +180,7 @@
    "h": 58,
    "type": "jug",
    "quality": 0.9,
-   "color": "#e6df7d",
+   "color": "#ede286",
    "score": 0.9,
    "needs_review": false,
    "suggestions": [
@@ -184,7 +196,9 @@
      "type": "crimp",
      "p": 0.01
     }
-   ]
+   ],
+   "color_name": "yellow",
+   "route": null
   }
  ],
  "start": [

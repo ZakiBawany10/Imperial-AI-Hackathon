@@ -10,10 +10,10 @@ server is not running.
 | File | What it is |
 |---|---|
 | `wall.jpg` | The photo (1920 × 1440) |
-| `analyze.json` | `POST /analyze` response for `wall.jpg`: 178 holds, 69 of them with `needs_review: true` |
+| `analyze.json` | `POST /analyze` response for `wall.jpg`: 178 holds grouped into 32 routes (trained models) |
 | `hold_types.json` | `GET /hold-types` response |
 | `solve_request.json` | A `POST /solve` body: the yellow route on the left wall, 7 holds, after the user has confirmed each hold's type |
-| `solve.json` | The response to that body: 4 moves, 5 keyframes, grade 6a+ |
+| `solve.json` | The response to that body: 11 moves (hands and feet), 12 keyframes, physics, grade 6a+ |
 
 ## Points the plan leaves open, and what the backend does
 
@@ -21,6 +21,19 @@ These are readings of the contract, not changes to it.
 
 - **Hold position.** `x`, `y` are the centre of the hold. `w`, `h` are the full
   width and height of its box. All in pixels of the photo.
+- **Colours and routes** (`/analyze`, from `backend/routes.py`). Gyms colour-code
+  climbs, so the backend groups holds by colour and position:
+  - top level `routes: [{"id", "color", "color_name", "holds": [hold ids]}]`,
+    biggest first; `id` is the index in the list;
+  - per hold `route`: index into `routes`, or `null` for a hold that groups with
+    no other;
+  - per hold `color_name`: a plain word (`"yellow"`, `"grey"`, ...);
+  - per hold `color`: the refined colour from `routes.py` (read from the hold's
+    own pixels, not the box), as `#rrggbb`.
+  Tapping a hold can select `routes[hold.route].holds`. The grouping is not
+  perfect (on 8 labelled photos it gets a whole route in one group about half
+  the time; on `wall.jpg` the yellow climb is split over routes 11 and 3), so let
+  the user add or remove holds.
 - **Photo orientation.** `/analyze` turns a phone photo upright using its EXIF
   tag before measuring, the same way a browser `<img>` shows it. `image.w` and
   `image.h` are the upright size.
