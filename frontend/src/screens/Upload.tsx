@@ -236,7 +236,7 @@ export function UploadScreen({
 function PinnedSheet({ children, name }: { children: ReactNode; name: string }) {
   return (
     <div data-name={name} className="relative">
-      <div className="relative h-[340px] overflow-hidden rounded-[4px] bg-ink">
+      <div className="relative h-[340px] overflow-hidden rounded-[20px] bg-ink">
         {children}
       </div>
     </div>
