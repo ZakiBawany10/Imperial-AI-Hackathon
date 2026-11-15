@@ -5,7 +5,7 @@ import type { Coach } from "../lib/coach";
 import { openCamera, track, type Body, type ClimbEvent } from "../lib/tracker";
 import { Btn, Flame, Glyph, Slider, MONO, Screen, StickyBar, TopBar, WallPhoto } from "../ui/kit";
 import { RouteOverlay, StrengthPicker } from "./Route";
-import { API_URL, HEIGHT_RANGE, type SolveRequest, type SolveResponse } from "../lib/api";
+import { API_URL, HEIGHT_RANGE, similarClimbs, type SimilarClimb, type SolveRequest, type SolveResponse } from "../lib/api";
 
 type Props = {
   photo: string;
@@ -554,6 +554,7 @@ export function PlayScreen({
                 : "Change height or strength: the climb re-solves"}
           </p>
         </div>
+        <Compare req={viewerInput?.req} grade={g.font} moves={n} />
       </div>
 
       <StickyBar>
@@ -599,6 +600,62 @@ export function PlayScreen({
         </div>
       </StickyBar>
     </Screen>
+  );
+}
+
+/** Climbs on routes like this one (stored by the live camera), and sharing your own. */
+function Compare({ req, grade, moves }: { req?: SolveRequest; grade: string; moves: number }) {
+  const [list, setList] = useState<SimilarClimb[] | null>(null);
+  const [note, setNote] = useState<string | null>(null);
+  useEffect(() => {
+    if (!req) return;
+    let gone = false;
+    similarClimbs(req)
+      .then((l) => !gone && setList(l))
+      .catch(() => !gone && setList([]));
+    return () => {
+      gone = true;
+    };
+  }, [req]);
+  if (!req) return null;
+  const share = async () => {
+    const text = `I worked out a ${grade} on Ascend: ${moves} moves, planned for my height. Can you beat it?`;
+    try {
+      if (navigator.share) await navigator.share({ title: "Ascend", text, url: location.origin });
+      else {
+        await navigator.clipboard.writeText(`${text} ${location.origin}`);
+        setNote("Copied. Paste it to your friends.");
+      }
+    } catch {
+      /* the user closed the share sheet */
+    }
+  };
+  return (
+    <div data-name="play/compare" className="mx-4 mt-4 mb-4 rounded-[4px] border border-hairline bg-surface px-4 py-3">
+      <div className="flex items-center justify-between">
+        <p className={`${MONO} text-muted`}>Climbs like this</p>
+        <button onClick={share} className={`${MONO} rounded-[4px] border border-ink px-2 py-1`}>
+          Share
+        </button>
+      </div>
+      {list === null ? (
+        <p className="mt-2 text-[14px] text-muted">Looking for climbs on routes like this…</p>
+      ) : list.length ? (
+        <ul className="mt-2 space-y-1.5">
+          {list.map((c) => (
+            <li key={c.id} className="text-[14px] leading-[1.35]">
+              {c.what_they_did}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="mt-2 text-[14px] leading-[1.4] text-muted">
+          Nobody has climbed a route like this with Ascend yet. Use Live mode with the camera and your climb is
+          saved here, so you can compare with friends, and it helps train the next version.
+        </p>
+      )}
+      {note && <p className={`${MONO} mt-2 text-muted`}>{note}</p>}
+    </div>
   );
 }
 

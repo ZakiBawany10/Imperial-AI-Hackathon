@@ -378,6 +378,11 @@ export function ReviewScreen({
             })}
           </div>
         )}
+        {choices.length > 0 && !s.route && (
+          <p className="mt-1.5 text-[12px] leading-[1.35] text-muted">
+            Colour names come from the photo, so you don't need to tell colours apart.
+          </p>
+        )}
         <p data-name="review/instruction" className="mt-2.5 min-h-[40px] text-[15px] leading-[1.35] text-ink" aria-live="polite">
           {instruction}
         </p>

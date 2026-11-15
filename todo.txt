@@ -8,6 +8,16 @@ DONE
 - Physics: climber stands up under low start holds (no more squatting), start feet on the floor,
   body leans out to smear when there is no foothold. Standing starts now 89-100% on most demo routes
 - Putting things together, 3D mesh, ElevenLabs coach (Zaki), hold types, routes, grade model v1
+- (night) Colour picker: chips for every climb found, tick two for a split climb, then start/top
+- (night) Live camera: "Follow me with the camera" or "Use a filmed climb" on the Live screen.
+  Tracker found a real climber (filmed from behind, 204x360 clip) in 99.9% of frames.
+  Not yet tested with a tripod and a real route: do that at the gym.
+- (night) Climb recording + continuous improvement: every followed climb -> POST /climbs
+  (backend/climbs_store.py, kept in backend/data/climbs, not in git); POST /climbs/similar finds
+  climbs on routes like this one (shown on Play "Climbs like this" and on the Live screen);
+  ASCEND_CLIMBS=1 python3 train_physics.py retrains on Way Up + ours and scores ours alone
+- (night) Accessibility line (route screen + How it works), accuracy section in How it works,
+  Share button + "Climbs like this" on the Play screen (social, real data only)
 
 TONIGHT (Krishna + Claude), in order
 1. Route colour picker: at the start, pop up every colour route found on the wall as a list of
@@ -50,9 +60,13 @@ OPEN / ASK THE TEAM
 - Grading (Zaki): where is it? The grade model is no better than guessing on real gym walls.
   Adaption: only the dataset (climb text -> grade) exists; nothing uploaded or trained yet.
   Adaption is for text models, so it does not help hold-type recognition from photos.
-- Tell Adam: Krishna changed frontend/src/screens/Play.tsx (3D wall buttons) and frontend/.gitignore.
+- Tell Adam: Krishna changed frontend/ tonight: Review.tsx (colour chips), Play.tsx (3D buttons,
+  live camera, Climbs like this), Upload.tsx (accuracy, accessibility), App.tsx, ui/kit.tsx,
+  lib/coach.ts, lib/api.ts, new lib/tracker.ts, .gitignore.
+- Tell Zaki: the coach can use POST /climbs/similar ("what_they_did") as a tool for "people on
+  routes like this did ..."; that is his folder, so it is his call.
 - Delete the spare "dist" project in the Vercel dashboard.
-- create a small section for benchmarks?
+- create a small section for benchmarks?  -> done: "How accurate it is" in How it works
 
 LATER (pitch only unless time)
 - Physics: sit starts, routes with no low footholds of their own colour

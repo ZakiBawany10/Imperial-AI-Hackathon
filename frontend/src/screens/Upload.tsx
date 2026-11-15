@@ -167,7 +167,7 @@ export function UploadScreen({
         )}
       </StickyBar>
 
-      <BottomSheet name="sheet/how-it-works" open={howOpen} onClose={() => setHowOpen(false)}>
+      <BottomSheet name="sheet/how-it-works" tall open={howOpen} onClose={() => setHowOpen(false)}>
         <div className="px-6 pb-2">
           <h2 className="font-josefin text-[30px] leading-none font-bold tracking-[0.01em]">
             How it works
@@ -181,7 +181,7 @@ export function UploadScreen({
             {(
               [
                 ["jug", C.accent, "Find holds", "Every hold on the wall, outlined."],
-                ["crimp", C.surface, "Pick a route", "Tap one hold and we find the rest of its colour."],
+                ["crimp", C.surface, "Pick a route", "Choose its colour from the list; we light it up and you fix any hold we missed."],
                 ["sloper", C.ink, "Solve and grade", "Beta for your height, and the grade it climbs at."],
               ] as const
             ).map(([kind, colour, t, d], i) => (
@@ -205,10 +205,24 @@ export function UploadScreen({
               </li>
             ))}
           </ol>
+          <p data-name="how-it-works/access" className="text-[14px] leading-[1.45]">
+            <span className="font-semibold">Colourblind? </span>
+            Ascend reads each climb's colour from the photo and names it, and the voice coach tells you which hold to
+            grab next, so you never have to tell colours apart.
+          </p>
+          <h3 className={`${MONO} mt-5 text-muted`}>How accurate it is</h3>
+          <ul data-name="how-it-works/accuracy" className="mt-2 space-y-1.5 text-[14px] leading-[1.4]">
+            <li><span className="font-semibold">95%</span> of holds found (50 test photos, 3,433 holds)</li>
+            <li><span className="font-semibold">87%</span> of hold types right, 98% in the top three it offers</li>
+            <li><span className="font-semibold">85%</span> match with the hand holds real climbers chose (22 recorded climbs)</li>
+            <li><span className="font-semibold">1.3</span> grade steps off on average on board climbs; not yet measured on gym walls</li>
+            <li><span className="font-semibold">95%</span> of holds stand out in the 3D wall</li>
+            <li>Climb colours are grouped right about half the time, so you can fix them in one tap</li>
+          </ul>
           <Btn
             variant="outline"
             size="md"
-            className="mt-2 w-full"
+            className="mt-5 w-full"
             onClick={() => setHowOpen(false)}
           >
             Got it
