@@ -196,11 +196,14 @@ export function WallPhoto({
   dim = 0,
   name = "photo/wall",
   aspect,
+  under,
 }: {
   photo: string;
   children?: ReactNode;
   dim?: number;
   name?: string;
+  /** drawn over the photo and under the overlay, in the photo's own box (the live camera) */
+  under?: ReactNode;
   /** height / width of a real photo. Shows the whole photo (no crop) and
    *  makes the overlay 1000 wide by 1000 * aspect high. */
   aspect?: number;
@@ -231,6 +234,7 @@ export function WallPhoto({
             className="absolute inset-0 h-full w-full"
             style={{ filter: "saturate(0.85) contrast(0.95)" }}
           />
+          {under}
           {dim > 0 && <div className="absolute inset-0 bg-ink" style={{ opacity: dim }} />}
           <svg viewBox={`0 0 1000 ${1000 * aspect}`} className="absolute inset-0 h-full w-full">
             {children}

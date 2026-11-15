@@ -329,6 +329,7 @@ function Flow() {
           photo={wall!.photo}
           beta={solved!.beta}
           coach={coach}
+          onMove={(m) => setMove(m)}
           onExit={() => {
             coach.stop();
             setStep("play");

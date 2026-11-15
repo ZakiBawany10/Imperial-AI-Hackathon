@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { C, TYPE_INFO, betaFor, type Limb, type Pt } from "../lib/wall";
 import { LIMB_NAME, mockBeta, type BetaView, type Pose } from "../lib/beta";
 import type { Coach } from "../lib/coach";
+import { openCamera, track, type Body } from "../lib/tracker";
 import { Btn, Flame, Glyph, Slider, MONO, Screen, StickyBar, TopBar, WallPhoto } from "../ui/kit";
 import { RouteOverlay, StrengthPicker } from "./Route";
 import { API_URL, HEIGHT_RANGE, type SolveRequest, type SolveResponse } from "../lib/api";
@@ -614,6 +615,7 @@ export function LiveScreen({
   onExit,
   beta: real,
   coach,
+  onMove,
 }: {
   photo: string;
   height: number;
@@ -621,6 +623,8 @@ export function LiveScreen({
   voice?: Voice;
   move?: number;
   onExit?: () => void;
+  /** the live camera saw a move done (or the user skipped one): the next move, 1-based */
+  onMove?: (move: number) => void;
   beta?: BetaView;
   /** the real ElevenLabs coach; without it the button cycles the design states */
   coach?: Coach;
@@ -638,6 +642,74 @@ export function LiveScreen({
   const who = LIMB_NAME[hand];
   const kind = m.hold && m.hold.type !== "foot" ? TYPE_INFO[m.hold.type].name.toLowerCase() + " " : "";
   const cue = m.hold ? `${who} to ${kind}${m.label}` : `${who} smears on the wall`;
+
+  /* ---- live camera: the phone films the climber from where it took the photo ---- */
+  const [cam, setCam] = useState<"off" | "starting" | "on">("off");
+  const [camNote, setCamNote] = useState<string | null>(null);
+  const [ghost, setGhost] = useState(true);
+  const [body, setBody] = useState<Body | null>(null);
+  const [topped, setTopped] = useState(false);
+  const video = useRef<HTMLVideoElement>(null);
+  const stopCam = useRef<(() => void) | null>(null);
+  const tracker = useRef<{ stop: () => void; setDone: (n: number) => void } | null>(null);
+  const moveRef = useRef(k);
+  moveRef.current = k;
+  const closeCam = () => {
+    tracker.current?.stop();
+    stopCam.current?.();
+    tracker.current = stopCam.current = null;
+    setCam("off");
+    setBody(null);
+  };
+  useEffect(() => {
+    if (cam !== "starting" || !video.current) return;
+    let gone = false;
+    (async () => {
+      try {
+        stopCam.current = await openCamera(video.current!);
+        if (gone) return stopCam.current();
+        const t = await track(video.current!, {
+          aspect: beta.aspect ?? 1,
+          moves: beta.moves.map((mv) => ({
+            limb: mv.limb,
+            at: mv.at,
+            r: (mv.hold?.r ?? 14) * 1.3 + 30,
+            hasHold: !!mv.hold,
+          })),
+          done: moveRef.current - 1,
+          onBody: setBody,
+          onDone: (d) => {
+            if (d >= n) setTopped(true);
+            onMove?.(Math.min(d + 1, n));
+          },
+          onStatus: (msg) => setCamNote(msg || null),
+        });
+        if (gone) return t.stop();
+        tracker.current = t;
+        setCam("on");
+      } catch (e) {
+        setCamNote(
+          e instanceof Error && e.name === "NotAllowedError"
+            ? "Camera blocked. Allow the camera for this site and try again."
+            : `Camera could not start: ${e instanceof Error ? e.message : e}`,
+        );
+        stopCam.current?.();
+        setCam("off");
+      }
+    })();
+    return () => {
+      gone = true;
+    };
+  }, [cam]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => () => closeCam(), []); // eslint-disable-line react-hooks/exhaustive-deps
+  const step = (d: number) => {
+    const next = Math.max(1, Math.min(n, k + d));
+    setTopped(false);
+    tracker.current?.setDone(next - 1);
+    onMove?.(next);
+  };
+  const live = cam !== "off";
+  const mover = body ? (body[hand] as Pt) : null;
   const demoNext = () =>
     setVoice(voice === "idle" ? "listening" : voice === "listening" ? "speaking" : "idle");
   const st = coach?.status;
@@ -676,17 +748,47 @@ export function LiveScreen({
         data-name="live/feed"
         className="relative h-[calc(70%-var(--sat)*0.3-74px)] shrink-0 bg-ink"
       >
-        <WallPhoto photo={photo} name="live/camera" aspect={beta.aspect}>
-          <Climber pose={beta.poseAt(k - 1)} />
-          <line
-            x1={wrist.x}
-            y1={wrist.y}
-            x2={target.x}
-            y2={target.y}
-            stroke={C.surface}
-            strokeWidth={3}
-            strokeDasharray="10 8"
-          />
+        <WallPhoto
+          photo={photo}
+          name="live/camera"
+          aspect={beta.aspect}
+          under={
+            live && (
+              <>
+                <video ref={video} playsInline muted className="absolute inset-0 h-full w-full object-cover" />
+                {ghost && (
+                  <img src={photo} alt="" className="pointer-events-none absolute inset-0 h-full w-full opacity-35" />
+                )}
+              </>
+            )
+          }
+        >
+          {!live && <Climber pose={beta.poseAt(k - 1)} />}
+          {live && body && (
+            <g data-name="live/tracked-body" pointerEvents="none" stroke={C.surface} strokeWidth={5} strokeLinecap="round">
+              <line x1={(body.shoulders[0].x + body.shoulders[1].x) / 2} y1={(body.shoulders[0].y + body.shoulders[1].y) / 2}
+                    x2={(body.hips[0].x + body.hips[1].x) / 2} y2={(body.hips[0].y + body.hips[1].y) / 2} />
+              {([[body.shoulders[0], body.lw, body.LH], [body.shoulders[1], body.rw, body.RH],
+                 [body.hips[0], body.lh, body.LF], [body.hips[1], body.rh, body.RF]] as Pt[][]).map((seg, i) => (
+                <polyline key={i} fill="none" points={seg.map((q) => `${q.x},${q.y}`).join(" ")} />
+              ))}
+              {(["LH", "RH", "LF", "RF"] as const).map((l) => (
+                <circle key={l} cx={body[l].x} cy={body[l].y} r={l === hand ? 14 : 9}
+                        fill={l === hand ? C.accent : C.surface} stroke={C.ink} strokeWidth={3} />
+              ))}
+            </g>
+          )}
+          {(!live || mover) && (
+            <line
+              x1={(mover ?? wrist).x}
+              y1={(mover ?? wrist).y}
+              x2={target.x}
+              y2={target.y}
+              stroke={C.surface}
+              strokeWidth={3}
+              strokeDasharray="10 8"
+            />
+          )}
           <g data-name="live/next-hold">
             <circle
               cx={target.x}
@@ -728,7 +830,7 @@ export function LiveScreen({
               NEXT {m.label}
             </text>
           </g>
-          <g data-name="live/wrist-point">
+          {!live && <g data-name="live/wrist-point">
             <circle
               cx={wrist.x}
               cy={wrist.y}
@@ -749,8 +851,31 @@ export function LiveScreen({
             >
               {hand === "LH" || hand === "RH" ? "WRIST" : "FOOT"} · {cm} CM
             </text>
-          </g>
+          </g>}
         </WallPhoto>
+        <div data-name="live/camera-controls" className="absolute inset-x-3 bottom-3 z-10 flex flex-wrap items-center gap-1.5">
+          <button
+            onClick={() => (live ? closeCam() : (setCamNote(null), setCam("starting")))}
+            className={`${MONO} rounded-[4px] border border-ink px-2.5 py-1.5 ${live ? "bg-ink text-surface" : "bg-surface"}`}
+          >
+            {cam === "starting" ? "Starting…" : live ? "Stop camera" : "Follow me with the camera"}
+          </button>
+          {live && (
+            <>
+              <button onClick={() => setGhost(!ghost)} className={`${MONO} rounded-[4px] border border-ink bg-surface px-2.5 py-1.5`}>
+                {ghost ? "Lined up" : "Line up"}
+              </button>
+              <button onClick={() => step(-1)} className={`${MONO} rounded-[4px] border border-ink bg-surface px-2.5 py-1.5`} aria-label="Back one move">‹</button>
+              <button onClick={() => step(1)} className={`${MONO} rounded-[4px] border border-ink bg-surface px-2.5 py-1.5`} aria-label="Move done">Done ›</button>
+            </>
+          )}
+          {(camNote || (live && !body && cam === "on")) && (
+            <span className={`${MONO} rounded-[4px] bg-ink/80 px-2 py-1 text-surface`}>
+              {camNote ?? "Looking for you… stand in the picture"}
+            </span>
+          )}
+          {topped && <span className={`${MONO} rounded-[4px] bg-accent px-2 py-1 text-surface`}>Topped it!</span>}
+        </div>
         <div
           data-name="live/progress"
           className="absolute inset-x-0 top-0 z-10 bg-ink/80 px-4 py-2"

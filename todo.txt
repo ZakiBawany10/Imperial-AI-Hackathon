@@ -17,6 +17,18 @@ TONIGHT (Krishna + Claude), in order
 2. Live camera: phone on a tripod takes the wall photo from the same spot, a pose model in the
    browser (MediaPipe) tracks hands and feet on the live video, works out which hold each is on,
    and tells Zaki's coach "move done" so it calls the next move out loud.
+   [built tonight: "Follow me with the camera" on the Live screen, frontend/src/lib/tracker.ts]
+   - Record every climb: timestamps and, for every move, which limb went onto which hold id. Save
+     it in The Way Up's format (backend/wayup.py) so train_physics.py can use it straight away.
+   - Tomorrow: film Zaki's climbs on a tripod from the same spot as the wall photo and run the
+     tracker over the footage. Each climb becomes one more training climb next to the 22 from
+     The Way Up.
+   - Retrain the physics settings on Way Up + our climbs. Ship the new settings only if they still
+     win on the random split and the held-out-route split, as now. Also report the score on
+     Zaki's climbs alone.
+   - This is also the continuous-improvement loop of item 4: every recorded climb is (a) stored and
+     found again for similar routes, to inform the coach, and (b) used in the next physics
+     retrain. One slide: climb -> tracked -> saved -> app gets better.
 3. Accessibility: voice mode + automatic colour finding = climbing for colourblind climbers.
    Put it in the pitch / Devpost (Zaki's docs) and a line in the app.
 4. Continuous improvement ("gets better with every climb"): save every confirmed hold type, route

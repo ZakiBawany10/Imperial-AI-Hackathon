@@ -8,6 +8,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createCoach, type CoachMode, type HeadlessCoach } from "@coach/mountCoach.js";
 import type { CoachState } from "@coach/coachTools.js";
+import { liveProgress } from "./tracker";
 
 export const COACH_AGENT_ID = (import.meta.env.VITE_ELEVENLABS_AGENT_ID as string | undefined) || "";
 
@@ -47,6 +48,8 @@ export function useCoach(o: {
       getState: () => opts.current.getState(),
       onHeightChange: (h) => opts.current.onHeightChange(h),
       onStepChange: (i) => opts.current.onStep(i),
+      // the live camera's count of moves done (-1, ignored, when the camera is off)
+      getProgress: liveProgress,
       onStatus: ({ status: st, mode: m, message }) => {
         setStatus(st === "idle" || st === "error" ? "off" : st);
         setMode(m);
