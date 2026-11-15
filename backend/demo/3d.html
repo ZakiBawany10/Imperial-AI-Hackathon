@@ -5,36 +5,35 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>BetaCrux 3D wall</title>
 <link rel="icon" href="data:,">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap">
 <style>
-  html, body { margin:0; height:100%; background:#04060b; color:#d9f6ff;
-    font:13px/1.4 ui-monospace,"SF Mono","JetBrains Mono",Menlo,Consolas,monospace; }
+  /* the product's palette (frontend/src/index.css): paper, ink, sage */
+  html, body { margin:0; height:100%; background:#f1f7ed; color:#243e36; font:14px/1.4 "Barlow",ui-sans-serif,system-ui,sans-serif; }
   body { display:flex; flex-direction:column; }
-  header { display:flex; flex-wrap:wrap; gap:6px 10px; align-items:center; padding:7px 12px;
-    border-bottom:1px solid rgba(39,230,255,.3); background:#060b15; }
-  header b { color:#ff2bd6; letter-spacing:.18em; text-transform:uppercase; font-size:12px; }
-  header button, header select { font:inherit; font-size:12px; color:#d9f6ff; background:#06101c; border:1px solid rgba(39,230,255,.4);
-    padding:4px 9px; cursor:pointer; }
-  header label { font-size:12px; display:flex; align-items:center; gap:6px; }
-  header input[type=range] { width:110px; accent-color:#27e6ff; }
-  header button.on { background:#27e6ff; color:#04060b; font-weight:700; }
-  #status { color:rgba(217,246,255,.7); font-size:12px; margin-left:auto; }
-  #status.err { color:#ff6b81; }
+  header { display:flex; flex-wrap:wrap; gap:8px 12px; align-items:center; padding:10px 16px; border-bottom:1px solid #d2e2cb; background:#f8fbf5; }
+  header b { font-family:"Barlow Condensed","Arial Narrow",sans-serif; font-size:22px; letter-spacing:.02em; color:#243e36; margin-right:6px; }
+  header button, header select { font:inherit; font-size:14px; font-weight:600; color:#243e36; background:#fff; border:1px solid #d2e2cb;
+    border-radius:999px; padding:6px 14px; cursor:pointer; }
+  header button.on { background:#243e36; color:#f1f7ed; border-color:#243e36; }
+  header label { font-size:14px; display:flex; align-items:center; gap:8px; color:#5a6e66; }
+  header input[type=range] { width:120px; accent-color:#3f7a55; }
+  #status { color:#5a6e66; font-size:13px; margin-left:auto; }
+  #status.err { color:#b5452f; }
   #stage { flex:1; min-height:0; position:relative; }
-  #guide { position:absolute; left:50%; top:16px; transform:translateX(-50%); z-index:5; display:none;
-    padding:10px 16px; background:rgba(4,10,20,.92); border:1px solid #27e6ff; box-shadow:0 0 22px rgba(39,230,255,.3);
-    font-size:14px; text-align:center; }
+  #guide { position:absolute; left:50%; top:16px; transform:translateX(-50%); z-index:5; display:none; padding:12px 18px;
+    background:#f8fbf5; border:1px solid #d2e2cb; border-radius:14px; box-shadow:0 8px 28px rgba(36,62,54,.14); font-size:15px; text-align:center; }
   #guide.on { display:block; }
-  #guide .step { color:#27e6ff; font-weight:700; margin-right:6px; }
-  #guide button { margin-left:10px; font:inherit; font-size:12px; color:#04060b; background:#27e6ff; border:0; padding:4px 10px; cursor:pointer; }
-  #guide button.ghost { color:#d9f6ff; background:transparent; border:1px solid rgba(39,230,255,.4); }
+  #guide .step { color:#3f7a55; font-weight:700; margin-right:8px; }
+  #guide button { margin-left:10px; font:inherit; font-size:14px; font-weight:600; color:#f1f7ed; background:#243e36; border:0; border-radius:999px; padding:6px 14px; cursor:pointer; }
+  #guide button.ghost { color:#243e36; background:transparent; border:1px solid #d2e2cb; }
 </style>
 </head>
 <body>
 <header>
   <b>BetaCrux</b>
   <select id="wallpick" title="Which wall to look at">
-    <option value="/demo/walls/seattle-bp-06.jpg">Wall 1</option>
-    <option value="/demo/walls/seattle-bp-05.jpg">Wall 2</option>
+    <option value="/demo/walls/wall-1.jpg" data-wall-m="4.3">Wall 1</option>
+    <option value="/demo/walls/wall-2.jpg" data-wall-m="4.0">Wall 2</option>
   </select>
   <button id="pick" title="Choose which climb to work out, and where it starts and ends">Pick a climb</button>
   <label title="The climber's height: 1.40 m to 2.10 m">Height <input id="height" type="range" min="1.4" max="2.1" step="0.05" value="1.75"> <span id="heightv">1.75 m</span></label>
@@ -55,12 +54,13 @@ import { mountViewer } from "./viewer/betacrux-viewer.js";
 const query = new URLSearchParams(location.search);
 const stage = document.getElementById("stage"), status = document.getElementById("status"), guide = document.getElementById("guide");
 const say = (text, bad = false) => { status.textContent = text; status.className = bad ? "err" : ""; };
-const WALL_M = Number(query.get("wall_m")) || 5;
+// Height of wall the photo shows, in metres: from the address, else from the chosen wall.
+const wallM = () => Number(query.get("wall_m")) || Number(document.getElementById("wallpick").selectedOptions[0]?.dataset.wallM) || 4.3;
 let viewer = null, analyze = null, photoUrl = null, picking = null;
 
 const solveReq = (holds, start, finish) => ({ image: analyze.image, holds, start, finish,
   climber_height_m: +document.getElementById("height").value, strength: +document.getElementById("strength").value,
-  wall_height_m: WALL_M, wall_angle_deg: 0 });
+  wall_height_m: wallM(), wall_angle_deg: 0 });
 let current = null;      // the request now shown, so height and strength changes can solve it again
 async function solve(req) {
   const res = await fetch("/solve", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(req) });
@@ -70,7 +70,7 @@ async function solve(req) {
 }
 const byId = (id) => analyze.holds.find((h) => h.id === id);
 const groupOf = (h) => h.route === null || h.route === undefined ? [h] : analyze.holds.filter((x) => x.route === h.route);
-const reachableFromFloor = (h) => (analyze.image.h - h.y) * WALL_M / analyze.image.h <= 1.9;
+const reachableFromFloor = (h) => (analyze.image.h - h.y) * wallM() / analyze.image.h <= 1.9;
 
 async function load() {
   photoUrl = query.get("photo") || document.getElementById("wallpick").value;
@@ -97,7 +97,8 @@ async function load() {
   }
   viewer?.dispose();
   viewer = mountViewer(stage, { imageUrl: photoUrl, reliefUrl, analyze, solveRequest: first?.req || null, solve: first?.out || null,
-                                autoplay: true, sway: false, bloom: true, hud: true, mesh: false });
+                                autoplay: true, sway: false, bloom: false, hud: true, mesh: false,
+                                theme: query.get("theme") === "neon" ? "neon" : "paper" });
   viewer.on("hold", onHold);
   current = first?.req || null;
   window.viewer = viewer;

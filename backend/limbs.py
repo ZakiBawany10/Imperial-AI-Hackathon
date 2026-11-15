@@ -63,6 +63,7 @@ class _Planner:
         self._range = [None] * len(self.states)     # per hand position: {sorted footholds: (x_lo, x_hi) or None}
         self._floor = [floor] * len(self.states)    # the floor rule in force for that hand position
         self._setups, self._results = {}, {}
+        self.start_on_floor = True                  # False when position 0 is not the start of the climb
 
     # ---- geometry ----
 
@@ -148,7 +149,13 @@ class _Planner:
             if j is not None:
                 out.append((limb, self.pts[j][0], self.pts[j][1], "hold"))
             else:
-                (x, y), floor = pose.wall_foot(neck, _SIDE[limb], self.height, self.floor)
+                # Boulder rule: the feet may be on the ground only in the start position (k = 0 of a
+                # whole climb). After that a foot that is on no hold presses on the bare wall, never
+                # lower than just above the floor.
+                on_ground = self.floor if (k == 0 and self.start_on_floor) else None
+                (x, y), floor = pose.wall_foot(neck, _SIDE[limb], self.height, on_ground)
+                if not floor and self.floor is not None:
+                    y = max(y, self.floor + 0.04 * self.height)
                 on_floor = on_floor or floor
                 out.append((limb, x, y, "floor" if floor else "wall"))
         # Standing on the floor: the ground carries the weight whatever the wall above does.
@@ -490,6 +497,7 @@ def safest_hands(pts, start, finish, kinds=None, quality=None, angle_deg=0.0, he
         if key in seen:
             return seen[key]
         p = _Planner(pts, [cur, nxt], kinds, quality, quality, None, angle_deg, height, body_out, floor)
+        p.start_on_floor = cur == s0
         p.top = [t[:SEARCH_FEET] for t in p.top]        # the search only needs a good foot choice, not the best
         options = p.candidates(1)
         best = min(options, key=lambda f: p.quick(1, f, mover).effort)

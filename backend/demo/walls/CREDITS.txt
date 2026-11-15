@@ -1,6 +1,3 @@
-Example wall photos for the 3D demo.
-
-seattle-bp-06.jpg, seattle-bp-05.jpg: Joe Mabel, "Bouldering Project (old University National Bank) 06 / 05 -
-ground floor climbing walls", Wikimedia Commons, CC BY-SA 4.0
-(https://commons.wikimedia.org/wiki/Category:University_National_Bank_Headquarters_-_interior).
-Resized to 1920 pixels wide by Wikimedia; otherwise unchanged.
+Example wall photos for the 3D demo: Alt. Rock (Barrie, Ontario) base wall photos, credited to Alt. Rock
+via BoulderBase (https://www.boulderbase.app/gyms/alt-rock), from "wall training images/300-graded-gym-problems"
+(Adam). Cropped at the base of the wall. No explicit reuse licence was found; for the hackathon demo only.

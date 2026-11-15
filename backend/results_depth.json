@@ -1,0 +1,31 @@
+{
+ "what": "How well does the 3D wall mesh show what sticks out of the wall?",
+ "data": "19 photos with every hold and volume outlined by hand",
+ "results": {
+  "base, wall blur 0.05": {
+   "photos": 19,
+   "stands_out_auc": 0.754,
+   "holds_raised": 0.308,
+   "volumes_above_holds": -0.059
+  },
+  "base, wall blur 0.02": {
+   "photos": 19,
+   "stands_out_auc": 0.793,
+   "holds_raised": 0.645,
+   "volumes_above_holds": -0.085
+  },
+  "base, wall blur bumps": {
+   "photos": 19,
+   "stands_out_auc": 0.957,
+   "holds_raised": 0.932,
+   "volumes_above_holds": 0.124
+  },
+  "base, wall blur depth+bumps": {
+   "photos": 19,
+   "stands_out_auc": 0.936,
+   "holds_raised": 0.947,
+   "volumes_above_holds": 0.053
+  }
+ },
+ "best": "base, wall blur bumps"
+}

@@ -51,7 +51,7 @@ export function describeMove(move, hold, joins) {
 
 // ---------------------------------------------------------------- look
 
-const CYAN = "#27e6ff", MAGENTA = "#ff2bd6", HOT = "#ff2a4f";
+let CYAN = "#27e6ff", MAGENTA = "#ff2bd6", HOT = "#ff2a4f";   // the "neon" theme; opts.theme = "paper" swaps them
 // How far each kind of hold stands out from the wall, in metres, and how it is shaped:
 // top = size of the flat top compared with the base, rings = how many steps make the rounded side.
 const RELIEF = {
@@ -141,6 +141,32 @@ const STYLE = `
 .bcx.small .bcx-bottom{left:10px;right:10px;bottom:10px}.bcx.small .bcx-ctl button{padding:6px 8px;font-size:11px}
 .bcx.small .bcx-alert{top:auto;bottom:150px;font-size:12px}.bcx.small .bcx-alert:not(.danger){display:none}
 .bcx.nohud .bcx-card,.bcx.nohud .bcx-bottom,.bcx.nohud .bcx-alert{display:none}
+/* "paper": the product's own look (frontend/src/index.css): paper, ink, sage */
+.bcx.paper{background:#f1f7ed;color:#243e36;font:14px/1.4 "Barlow",ui-sans-serif,system-ui,sans-serif}
+.bcx.paper .bcx-fx,.bcx.paper .bcx-corner{display:none}
+.bcx.paper .bcx-card,.bcx.paper .bcx-info{background:rgba(248,251,245,.95);border:1px solid #d2e2cb;box-shadow:0 6px 24px rgba(36,62,54,.10);clip-path:none;border-radius:12px}
+.bcx.paper .bcx-tag{color:#3f7a55;letter-spacing:.14em;font-weight:600}
+.bcx.paper .bcx-brand{color:#5a6e66}.bcx.paper .bcx-brand b{color:#243e36}
+.bcx.paper .bcx-grade{color:#243e36;text-shadow:none;font-family:"Barlow Condensed","Arial Narrow",sans-serif;font-size:38px}
+.bcx.paper .bcx-grade small{color:#3f7a55}
+.bcx.paper .bcx-sub,.bcx.paper .bcx-note,.bcx.paper .bcx-barrow{color:#5a6e66}
+.bcx.paper .bcx-rule{background:#d2e2cb;opacity:1}
+.bcx.paper .bcx-flag{background:#b5452f;box-shadow:none;animation:none;border-radius:4px}
+.bcx.paper .bcx-what,.bcx.paper .bcx-limb.moving{color:#243e36}
+.bcx.paper .bcx-bar,.bcx.paper .bcx-seg{background:#e3eedd;border:1px solid #d2e2cb;border-radius:5px;overflow:hidden}
+.bcx.paper .bcx-bar i,.bcx.paper .bcx-seg i{background:#7ca982;box-shadow:none}
+.bcx.paper .bcx-seg.hard{border-color:#b5452f;background:#f3e2dc}.bcx.paper .bcx-seg.hard i{background:#b5452f;box-shadow:none}
+.bcx.paper .bcx-seg.hard::after{color:#b5452f}
+.bcx.paper .bcx-warn{color:#b5452f;background:#f7e6e1;border-color:#b5452f;animation:none;border-radius:6px}
+.bcx.paper .bcx-ctl button{color:#243e36;background:#f8fbf5;border:1px solid #d2e2cb;clip-path:none;border-radius:999px;
+  font-family:"Barlow",system-ui,sans-serif;font-weight:600;letter-spacing:.02em;box-shadow:0 2px 8px rgba(36,62,54,.08)}
+.bcx.paper .bcx-ctl button:hover{background:#e9f2e5;color:#243e36}
+.bcx.paper .bcx-ctl button.main{color:#f1f7ed;background:#243e36;border-color:#243e36}
+.bcx.paper .bcx-info canvas{background:#e9f0e4;border-color:#d2e2cb;border-radius:8px}
+.bcx.paper .bcx-info h3{font-family:"Barlow Condensed","Arial Narrow",sans-serif;font-size:24px}
+.bcx.paper .bcx-alert{color:#243e36;background:#f8fbf5;border-color:#7ca982;text-shadow:none;box-shadow:0 6px 20px rgba(36,62,54,.12);
+  border-radius:999px;letter-spacing:.12em;font-family:"Barlow",system-ui,sans-serif}
+.bcx.paper .bcx-alert.danger{color:#b5452f;border-color:#b5452f;text-shadow:none;box-shadow:0 6px 20px rgba(181,69,47,.18)}
 @keyframes bcx-blink{to{opacity:.45}}
 @keyframes bcx-pulse{to{transform:translateX(-50%) scale(1.05)}}
 `;
@@ -226,7 +252,9 @@ export function mountViewer(container, options = {}) {
 
   // ---- page elements
   const root = document.createElement("div");
-  root.className = "bcx" + (opts.hud ? "" : " nohud");
+  const paper = opts.theme === "paper";
+  if (paper) { CYAN = "#3f7a55"; MAGENTA = "#b5452f"; HOT = "#b5452f"; } else { CYAN = "#27e6ff"; MAGENTA = "#ff2bd6"; HOT = "#ff2a4f"; }
+  root.className = "bcx" + (opts.hud ? "" : " nohud") + (paper ? " paper" : "");
   root.tabIndex = 0;
   root.innerHTML = `
     <div class="bcx-fx"></div>
@@ -284,7 +312,7 @@ export function mountViewer(container, options = {}) {
     for (const name of ["setSolve", "play", "pause", "seek", "setSpeed", "setView", "resetView", "setFollow", "setCamera", "resize"]) stub[name] = () => stub;
     return stub;
   }
-  renderer.setClearColor(0x04060b, 1);
+  renderer.setClearColor(paper ? 0xf1f7ed : 0x04060b, 1);
   renderer.toneMapping = THREE.NoToneMapping;
   root.insertBefore(renderer.domElement, root.firstChild);
   let pixelRatio = Math.min(window.devicePixelRatio || 1, 1.5);
@@ -294,7 +322,7 @@ export function mountViewer(container, options = {}) {
   const key = new THREE.DirectionalLight(0xffffff, 2.6);
   key.position.set(-2.5, 4, 5);
   scene.add(key);
-  scene.background = new THREE.Color(0x04060b);
+  scene.background = new THREE.Color(paper ? 0xf1f7ed : 0x04060b);
   const camera = new THREE.PerspectiveCamera(38, 1, 0.05, 200);
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
@@ -309,7 +337,7 @@ export function mountViewer(container, options = {}) {
   const composer = new EffectComposer(renderer, new THREE.WebGLRenderTarget(4, 4, { type: THREE.HalfFloatType, samples: 4 }));
   composer.addPass(new RenderPass(scene, camera));
   const bloom = new UnrealBloomPass(new THREE.Vector2(4, 4), 0.7, 0.5, 0.85);
-  bloom.enabled = !!opts.bloom;
+  bloom.enabled = !!opts.bloom && !paper;
   composer.addPass(bloom);
   renderer.info.autoReset = false;                      // count a whole frame, not just its last pass
   composer.addPass(new OutputPass());
@@ -341,7 +369,12 @@ export function mountViewer(container, options = {}) {
         gl_FragColor = vec4(c + vec3(0.003, 0.007, 0.014) * fade, 1.0);
       }`,
   });
-  const floor = new THREE.Mesh(new THREE.PlaneGeometry(120, 120), floorMat);
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(120, 120), paper ? new THREE.MeshBasicMaterial({ color: 0xe7efe2 }) : floorMat);
+  if (paper) {
+    const grid = new THREE.GridHelper(40, 80, 0xc9d9c2, 0xd9e5d3);
+    grid.position.y = 0.002;
+    staticGroup.add(grid);
+  }
   floor.rotation.x = -Math.PI / 2;
   staticGroup.add(floor);
 
@@ -384,7 +417,7 @@ export function mountViewer(container, options = {}) {
   wall.add(figure);
   // The realistic climber (../climber/climber.js) is shown by default; opts.figure = "simple" keeps the
   // tube-and-ball figure. The simple figure is still posed every frame: its joints drive the climber.
-  const climber = opts.figure === "simple" ? null : createClimber(THREE, { style: opts.climberStyle || "hologram" });
+  const climber = opts.figure === "simple" ? null : createClimber(THREE, { style: opts.climberStyle || (paper ? "solid" : "hologram") });
   if (climber) { climber.group.visible = false; wall.add(climber.group); }
   const mk = (geo) => { const m = new THREE.Mesh(geo, bodyMat); m.visible = !climber; figure.add(m); return m; };
   const body = {
