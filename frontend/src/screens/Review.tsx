@@ -22,7 +22,7 @@ import {
 import { API_URL, getHoldTypes } from "../lib/api";
 import { routeStroke } from "./Route";
 import { HoldTick } from "../ui/HoldPins";
-import { selectRoute, type Prepared, type RoutePick } from "../lib/contract";
+import { backendRoute, selectRoute, type Prepared, type RoutePick } from "../lib/contract";
 import {
   BottomSheet,
   Btn,
@@ -151,7 +151,7 @@ export function ReviewScreen({
   };
 
   const pickRoute = (hold: Hold) => {
-    const ids = data ? selectRoute(s.holds, hold, data.aspect) : null;
+    const ids = data ? (backendRoute(data, hold) ?? selectRoute(s.holds, hold, data.aspect)) : null;
     // Start hold first (contract/README.md climb rules): its colour picks the climb,
     // and it's where the hands begin. The top hold is chosen next.
     setS({ ...s, route: hold.colour, ids, confirmed: {}, start: [hold.id], finish: [] });

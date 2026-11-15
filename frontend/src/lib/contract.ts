@@ -20,8 +20,12 @@ export type ApiHold = {
   score: number;
   needs_review: boolean;
   suggestions: { type: string; p: number }[];
+  /** index into Analyze.routes, null = groups with no other hold (contract/README.md) */
+  route?: number | null;
+  color_name?: string;
 };
-export type Analyze = { image: { w: number; h: number }; holds: ApiHold[] };
+export type ApiRoute = { id: number; color: string; color_name: string; holds: number[] };
+export type Analyze = { image: { w: number; h: number }; holds: ApiHold[]; routes?: ApiRoute[] };
 export type ApiHoldType = {
   id: string;
   name: string;
@@ -120,7 +124,26 @@ export function prepare(photo: string, a: Analyze): Prepared {
 }
 
 /* ---- route selection ----
-   Tapping a hold selects its route: holds of a close colour that link to it
+   The backend groups holds into routes (contract/README.md "Colours and
+   routes"); tapping a hold selects its backend route. `selectRoute` below is
+   only the fallback for an answer without routes or a hold the user added. */
+
+/** Overlay ids of the tapped hold's backend route; [tapped] if the backend
+ *  grouped it with nothing; null if there is no backend grouping to use. */
+export function backendRoute(p: Prepared, tapped: Hold): string[] | null {
+  const own = p.api[tapped.id];
+  if (!own || !p.raw.routes || own.route === undefined) return null;
+  // A tap can land on a stacked duplicate (e.g. a hold's shadow) that the
+  // backend left alone: take the route of a hold it sits on.
+  const same = (h: Hold) => Math.hypot(h.x - tapped.x, h.y - tapped.y) < Math.max(h.r, tapped.r) * 0.6;
+  const route = own.route ?? p.holds.find((h) => same(h) && p.api[h.id]?.route != null)?.id;
+  const r = typeof route === "string" ? p.api[route].route : route;
+  if (r == null) return [tapped.id];
+  const ids = p.holds.filter((h) => p.api[h.id]?.route === r).map((h) => h.id);
+  return ids.includes(tapped.id) ? ids : [tapped.id, ...ids];
+}
+
+/* Fallback: holds of a close colour that link to the tapped one
    in a chain at climbing distances, minus duplicate detections.
    - Colour: white, cream and grey are one family (low saturation), matched on
      brightness; colours match on hue (within 18 deg), and must be clearly
