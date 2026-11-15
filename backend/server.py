@@ -52,6 +52,16 @@ app = FastAPI(title="BetaCrux", lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
 
+@app.middleware("http")
+async def no_stale_pages(request, call_next):
+    # The demo pages and the viewer change often: tell browsers to check for a new copy every
+    # time instead of reusing an old one (which left people running old code).
+    response = await call_next(request)
+    if request.url.path.startswith(("/demo", "/contract", "/hold-types")):
+        response.headers["Cache-Control"] = "no-cache"
+    return response
+
+
 @app.exception_handler(RequestValidationError)
 async def bad_request(request, exc):
     # Same {"detail": "message"} shape as every other error, not FastAPI's list of objects.

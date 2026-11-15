@@ -386,7 +386,7 @@ export function mountViewer(container, options = {}) {
   let meshOn = opts.mesh !== false;                     // false: flat photo with raised holds, even when a relief map is loaded
   let photo = null;                                     // texture of the wall photo
   let viewMode = opts.view === "schematic" ? "schematic" : "photo";
-  let showForces = true;
+  let showForces = !!opts.forces;                       // force arrows, balance point and the weight panel: off unless asked
   let S = null;                                         // sizes and lookups for the current wall, set by build()
   let timeline = [], total = 0, t = 0, playing = !!opts.autoplay, stepping = false, speed = opts.speed || 1;
   let lastMove = -2, disposed = false, swaying = !!opts.sway, userMoved = false, following = false, clock = 0;
@@ -963,7 +963,7 @@ export function mountViewer(container, options = {}) {
       _at2.copy(ca).lerp(cb, eBody);
       _w.set(_at2.x, _at2.y, st.hipZ * 0.9);
       wall.localToWorld(_w);
-      comGroup.visible = true;
+      comGroup.visible = showForces;
       com.position.copy(_w);
       com.rotation.y = clock * 1.4;
       const arr = dropGeo.attributes.position.array;
@@ -999,7 +999,7 @@ export function mountViewer(container, options = {}) {
         : routes ? `${routes} colour groups found. Pick a route to see how to climb it.` : "Pick a route to see how to climb it.");
     }
     ui.movebox.hidden = !K;
-    ui.physbox.hidden = !(K && K.hasPhysics);
+    ui.physbox.hidden = !(K && K.hasPhysics && showForces);
     if (buttons.forces) buttons.forces.hidden = !(K && K.hasPhysics);
     for (const a of ["prev", "play", "next"]) buttons[a].hidden = !K || !K.moves.length;
     if (buttons.follow) buttons.follow.hidden = !K;
