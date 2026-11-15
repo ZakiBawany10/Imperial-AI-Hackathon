@@ -286,8 +286,8 @@ function Solving({
       <StickyBar>
         {error ? (
           <div data-name="solving/error" role="alert">
-            <p className={`${MONO} flex items-center gap-2 pt-2 text-accent`}>
-              <span className="inline-block size-1.5 rounded-full bg-accent" aria-hidden />
+            <p className={`${MONO} flex items-center gap-2 pt-2 text-alert`}>
+              <span className="inline-block size-1.5 rounded-full bg-alert" aria-hidden />
               Couldn't solve this route
             </p>
             <p className="mt-2 text-[16px] leading-[1.4]">{error}</p>

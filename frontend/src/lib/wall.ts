@@ -2,12 +2,14 @@
 // 1000 x 1000 coordinate space laid over the photo (xMidYMid slice).
 
 export const C = {
-  paper: "#F4EFE6",
-  surface: "#FBF8F2",
-  ink: "#1B1A17",
-  muted: "#6B665C",
-  hairline: "#D9D2C3",
-  accent: "#E8431F",
+  paper: "#F1F7ED",
+  surface: "#F8FBF5",
+  ink: "#243E36",
+  muted: "#5A6E66",
+  hairline: "#D2E2CB",
+  accent: "#7CA982",
+  accentInk: "#3F7A55",
+  alert: "#B5452F",
   blue: "#2F6FDE",
   yellow: "#E8B100",
   green: "#2E8B57",
@@ -17,7 +19,7 @@ export const HOLD_COLOURS: Record<string, string> = {
   blue: C.blue,
   yellow: C.yellow,
   green: C.green,
-  red: C.accent,
+  red: "#C8553D", // a red hold stays red whatever the UI accent is
   black: C.ink,
   white: C.surface,
 };

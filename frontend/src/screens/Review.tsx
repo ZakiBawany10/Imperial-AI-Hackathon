@@ -1,4 +1,5 @@
 import {
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -23,6 +24,7 @@ import { selectRoute, type Prepared, type RoutePick } from "../lib/contract";
 import {
   BottomSheet,
   Btn,
+  Glyph,
   HoldShape,
   MONO,
   Screen,
@@ -33,7 +35,8 @@ import {
 } from "../ui/kit";
 
 export type ReviewPreset = "empty" | "route" | "confirm" | "other";
-type Tool = "add" | "delete" | "start" | "finish" | null;
+type Tool = "add" | null;
+type Sheet = null | "confirm" | "other" | "actions";
 
 type State = {
   holds: Hold[];
@@ -63,6 +66,8 @@ function autoEnds(route: Hold[]) {
   };
 }
 
+const pad2 = (n: number) => String(n).padStart(2, "0");
+
 export function ReviewScreen({
   photo,
   preset = "empty",
@@ -77,24 +82,25 @@ export function ReviewScreen({
 }) {
   const [s, setS] = useState<State>(() => presetState(preset, data));
   const [tool, setTool] = useState<Tool>(null);
-  const [sheet, setSheet] = useState<null | "confirm" | "other">(
+  const [sheet, setSheet] = useState<Sheet>(
     preset === "confirm" ? "confirm" : preset === "other" ? "other" : null,
   );
   const [current, setCurrent] = useState<string>(
     data ? (data.unsure[0] ?? "") : preset === "confirm" || preset === "other" ? "yA" : UNSURE_ORDER[0],
   );
+  // "flow": walking through the open questions; "single": asked about one hold from its menu
+  const [asking, setAsking] = useState<"flow" | "single">("flow");
+  const [touched, setTouched] = useState(false);
 
-  const routeHolds = useMemo(
-    () => {
-      if (!s.route) return [];
-      const ids = s.ids && new Set(s.ids);
-      return s.holds
-        .filter((h) => (ids ? ids.has(h.id) : h.colour === s.route))
-        .sort((a, b) => b.y - a.y);
-    },
-    [s.holds, s.route, s.ids],
-  );
+  const routeHolds = useMemo(() => {
+    if (!s.route) return [];
+    const ids = s.ids && new Set(s.ids);
+    return s.holds
+      .filter((h) => (ids ? ids.has(h.id) : h.colour === s.route))
+      .sort((a, b) => b.y - a.y);
+  }, [s.holds, s.route, s.ids]);
   const routeIds = new Set(routeHolds.map((h) => h.id));
+  const num = (id: string) => pad2(routeHolds.findIndex((h) => h.id === id) + 1);
   // Real data: only holds on the chosen route are asked about (PLAN.md step 3).
   const unsure = data
     ? routeHolds.filter((h) => data.unsure.includes(h.id)).map((h) => h.id)
@@ -102,14 +108,24 @@ export function ReviewScreen({
   const isOpenQ = (id: string) =>
     (data ? s.route !== null : true) && unsure.includes(id) && !s.confirmed[id];
   const routeLeft = routeHolds.filter((h) => isOpenQ(h.id)).length;
+  const routeAsked = routeHolds.filter((h) => unsure.includes(h.id)).length;
   const ends = s.start.length > 0 && s.finish.length > 0;
   const ready = !!s.route && routeLeft === 0 && ends;
+  const step = !s.route ? 1 : !ends ? 2 : routeLeft > 0 ? 3 : 4;
+
+  // Auto-zoom (real photos): fit the picked route.
+  const focus = useMemo(() => {
+    if (!data || !routeHolds.length) return null;
+    const xs = routeHolds.flatMap((h) => [h.x - h.r * (h.sx ?? 1), h.x + h.r * (h.sx ?? 1)]);
+    const ys = routeHolds.flatMap((h) => [h.y - h.r * (h.sy ?? 1), h.y + h.r * (h.sy ?? 1)]);
+    return { x0: Math.min(...xs), y0: Math.min(...ys), x1: Math.max(...xs), y1: Math.max(...ys) };
+  }, [data, routeHolds]);
 
   const nextUnsure = (from: string, confirmed: Record<string, HoldType>) => {
     const i = unsure.indexOf(from);
     for (let k = 1; k <= unsure.length; k++) {
       const id = unsure[(i + k) % unsure.length];
-      if (!confirmed[id]) return id;
+      if (!confirmed[id] && routeIds.has(id)) return id;
     }
     return null;
   };
@@ -117,50 +133,42 @@ export function ReviewScreen({
   const answer = (type: HoldType) => {
     const confirmed = { ...s.confirmed, [current]: type };
     setS({ ...s, holds: s.holds.map((h) => (h.id === current ? { ...h, type } : h)), confirmed });
-    const nx = nextUnsure(current, confirmed);
+    const nx = asking === "flow" ? nextUnsure(current, confirmed) : null;
     if (nx) {
       setCurrent(nx);
       setSheet("confirm");
     } else setSheet(null);
   };
 
+  const askQuestions = () => {
+    const first = routeHolds.find((h) => isOpenQ(h.id));
+    if (!first) return;
+    setAsking("flow");
+    setCurrent(first.id);
+    setSheet("confirm");
+  };
+
+  const pickRoute = (hold: Hold) => {
+    const ids = data ? selectRoute(s.holds, hold) : null;
+    const route = ids
+      ? s.holds.filter((h) => ids.includes(h.id))
+      : s.holds.filter((h) => h.colour === hold.colour);
+    setS({ ...s, route: hold.colour, ids, confirmed: {}, ...autoEnds(route) });
+  };
+
   const tapHold = (id: string) => {
+    setTouched(true);
     const hold = s.holds.find((h) => h.id === id)!;
-    if (tool === "delete") {
-      setS({
-        ...s,
-        holds: s.holds.filter((h) => h.id !== id),
-        ids: s.ids && s.ids.filter((x) => x !== id),
-        start: s.start.filter((x) => x !== id),
-        finish: s.finish.filter((x) => x !== id),
-      });
-      return;
-    }
-    if ((tool === "start" || tool === "finish") && routeIds.has(id)) {
-      const key = tool;
-      const list = s[key].includes(id)
-        ? s[key].filter((x) => x !== id)
-        : [...s[key], id].slice(key === "start" ? -2 : -1);
-      const other = key === "start" ? "finish" : "start";
-      setS({ ...s, [key]: list, [other]: s[other].filter((x) => x !== id) });
-      return;
-    }
-    if (!routeIds.has(id)) {
-      const ids = data ? selectRoute(s.holds, hold) : null;
-      const route = ids
-        ? s.holds.filter((h) => ids.includes(h.id))
-        : s.holds.filter((h) => h.colour === hold.colour);
-      setS({ ...s, route: hold.colour, ids, confirmed: {}, ...autoEnds(route) });
-      return;
-    }
-    if (isOpenQ(id)) {
-      setCurrent(id);
-      setSheet("confirm");
-    }
+    if (tool === "add") return;
+    if (!routeIds.has(id)) return pickRoute(hold);
+    setCurrent(id);
+    setSheet("actions");
   };
 
   const tapEmpty = (x: number, y: number) => {
+    setTouched(true);
     if (tool !== "add") return;
+    setTool(null);
     const colour = s.route ?? "blue";
     const id = `u${Date.now()}`;
     const anchor = routeHolds[0];
@@ -176,25 +184,86 @@ export function ReviewScreen({
     } else setS({ ...s, holds, ids: s.ids && [...s.ids, id] });
   };
 
-  const caption =
+  /* ---- the hold-actions menu ---- */
+  const toggleEnd = (key: "start" | "finish", id: string) => {
+    const list = s[key].includes(id)
+      ? s[key].filter((x) => x !== id)
+      : [...s[key], id].slice(key === "start" ? -2 : -1);
+    const other = key === "start" ? "finish" : "start";
+    setS({ ...s, [key]: list, [other]: s[other].filter((x) => x !== id) });
+  };
+  const removeFromRoute = (id: string) => {
+    const ids = (s.ids ?? routeHolds.map((h) => h.id)).filter((x) => x !== id);
+    setS({
+      ...s,
+      ids,
+      start: s.start.filter((x) => x !== id),
+      finish: s.finish.filter((x) => x !== id),
+      route: ids.length ? s.route : null,
+    });
+    setSheet(null);
+  };
+  const askAbout = (id: string) => {
+    setAsking(isOpenQ(id) ? "flow" : "single");
+    setCurrent(id);
+    setSheet("confirm");
+  };
+  const clearRoute = () => {
+    setS({ ...s, route: null, ids: null, start: [], finish: [], confirmed: {} });
+    setTool(null);
+  };
+
+  const instruction =
     tool === "add"
-      ? "Tap the wall to add a hold"
-      : tool === "delete"
-        ? "Tap a hold to delete it"
-        : tool === "start"
-          ? "Tap route holds to mark the start"
-          : tool === "finish"
-            ? "Tap a route hold to mark the finish"
-            : data
-              ? "Tap a hold to select its route"
-              : "Tap a hold to select its whole colour";
+      ? "Tap the wall where the missing hold is"
+      : step === 1
+        ? data
+          ? "Tap any hold on the route you want to climb"
+          : "Tap a hold to pick its route"
+        : step === 2
+          ? "Tap a route hold to mark where you start and finish"
+          : step === 3
+            ? `Tap a hold with a ?, or press the button below`
+            : `Start ${s.start.map(num).join(" + ")}, finish ${s.finish.map(num).join("")}. Tap any route hold to change it.`;
+
+  const cta = !s.route
+    ? { label: "Tap a hold to start", enabled: false, go: () => {} }
+    : !ends
+      ? { label: "Mark a start and a finish", enabled: false, go: () => {} }
+      : routeLeft > 0
+        ? {
+            label: `Answer ${routeLeft} ${routeLeft === 1 ? "question" : "questions"}`,
+            enabled: true,
+            go: askQuestions,
+          }
+        : {
+            label: "Next: set climber",
+            enabled: true,
+            go: () =>
+              s.route &&
+              onNext?.({
+                colour: s.route,
+                holds: routeHolds,
+                start: s.start,
+                finish: s.finish,
+                confirmed: s.confirmed,
+              }),
+          };
 
   const currentHold = s.holds.find((h) => h.id === current);
+  const qIndex = asking === "flow" ? unsure.indexOf(current) : 0;
+  const qList = asking === "flow" ? unsure : [current];
 
   return (
     <Screen name="screen/2-review">
       <TopBar step={2} />
-      <ZoomPhoto onTapHold={tapHold} onTapEmpty={tapEmpty}>
+      <ZoomPhoto
+        onTapHold={tapHold}
+        onTapEmpty={tapEmpty}
+        focus={focus}
+        aspect={data?.aspect}
+        hint={!s.route && !touched ? (data ? "Tap any hold on your route" : "Tap a hold") : null}
+      >
         <WallPhoto photo={photo} name="review/photo" aspect={data?.aspect}>
           <HoldsOverlay
             holds={s.holds}
@@ -207,97 +276,82 @@ export function ReviewScreen({
         </WallPhoto>
       </ZoomPhoto>
 
-      <div data-name="review/tools" className="shrink-0 px-4 pt-3 pb-3">
-        <p
-          data-name="review/caption"
-          className={`${MONO} flex h-6 items-center justify-between px-2 text-muted`}
-        >
-          <span>{caption}</span>
-        </p>
-        <div
-          data-name="review/toolbar"
-          role="toolbar"
-          className="mt-2 grid grid-cols-4 overflow-hidden rounded-[6px] border border-ink"
-        >
+      <div data-name="review/tools" className="shrink-0 px-5 pt-3 pb-2">
+        <ol data-name="review/steps" className="grid grid-cols-3 gap-1.5" aria-label="Steps">
           {(
             [
-              ["add", "Add hold"],
-              ["delete", "Delete"],
-              ["start", "Start"],
-              ["finish", "Finish"],
+              ["Route", step > 1],
+              ["Start · Top", step > 2],
+              [routeAsked ? `Types ${routeAsked - routeLeft}/${routeAsked}` : "Types", step > 3],
             ] as const
-          ).map(([k, label], i) => {
-            const disabled = (k === "start" || k === "finish") && !s.route;
-            const on = tool === k;
+          ).map(([label, done], i) => {
+            const now = step === i + 1;
             return (
-              <button
-                key={k}
-                data-name={`toolbar/${k}`}
-                aria-pressed={on}
-                disabled={disabled}
-                onClick={() => setTool(on ? null : k)}
-                className={`flex h-12 items-center justify-center gap-1.5 text-[14px] font-semibold transition-colors disabled:text-hairline ${i ? "border-l border-ink" : ""} ${on ? "bg-ink text-surface" : "bg-surface text-ink active:bg-paper"}`}
+              <li
+                key={i}
+                data-name={`step/${i + 1}`}
+                aria-current={now ? "step" : undefined}
+                className={`flex h-9 items-center gap-1.5 rounded-[4px] border px-2 ${now ? "border-accent bg-accent/8 text-ink" : done ? "border-hairline text-ink" : "border-hairline text-muted"}`}
               >
-                {k === "start" && <Marker kind="S" small />}
-                {k === "finish" && <Marker kind="F" small />}
-                {label}
-              </button>
+                <span
+                  className={`flex size-5 shrink-0 items-center justify-center rounded-full font-mono text-[12px] font-semibold ${done ? "bg-tape-green text-surface" : now ? "bg-accent text-surface" : "bg-hairline text-muted"}`}
+                  aria-hidden
+                >
+                  {done ? "✓" : i + 1}
+                </span>
+                <span className="truncate text-[13px] leading-none font-semibold">{label}</span>
+              </li>
             );
           })}
+        </ol>
+        <p data-name="review/instruction" className="mt-2.5 min-h-[40px] text-[15px] leading-[1.35] text-ink" aria-live="polite">
+          {instruction}
+        </p>
+        <div className="flex items-center justify-between">
+          <button
+            data-name="review/add-hold"
+            aria-pressed={tool === "add"}
+            onClick={() => setTool(tool === "add" ? null : "add")}
+            className={`${MONO} -ml-1 flex h-10 items-center gap-1.5 px-1 text-[12px] ${tool === "add" ? "text-accent-ink" : "text-muted"}`}
+          >
+            <span aria-hidden className="text-[16px] leading-none">+</span>
+            {tool === "add" ? "Cancel add" : "Add a missed hold"}
+          </button>
+          {s.route && (
+            <button
+              data-name="review/change-route"
+              onClick={clearRoute}
+              className={`${MONO} -mr-1 flex h-10 items-center px-1 text-[12px] text-muted`}
+            >
+              Pick another route
+            </button>
+          )}
         </div>
       </div>
 
       <StickyBar>
-        <Btn
-          className="w-full"
-          disabled={!ready}
-          onClick={() =>
-            s.route &&
-            onNext?.({
-              colour: s.route,
-              holds: routeHolds,
-              start: s.start,
-              finish: s.finish,
-              confirmed: s.confirmed,
-            })
-          }
-        >
-          Next: set climber
+        <Btn name="review/cta" className="w-full" disabled={!cta.enabled} onClick={cta.go}>
+          {cta.label}
         </Btn>
-        <button
-          data-name="bottom-bar/status"
-          disabled={!s.route || ready}
-          onClick={() => {
-            const first = routeHolds.find((h) => isOpenQ(h.id));
-            if (first) {
-              setCurrent(first.id);
-              setSheet("confirm");
-            }
-          }}
-          className={`${MONO} mt-1 flex h-8 w-full items-center justify-center gap-2 ${ready ? "text-ink" : "text-muted"}`}
-        >
-          {!s.route ? (
-            "Pick a route colour first"
-          ) : routeLeft === 0 && !ends ? (
-            <>
-              <span className="size-1.5 rounded-full bg-tape-yellow" />
-              Mark a start and a finish hold
-            </>
-          ) : ready ? (
-            <>
-              <span className="size-1.5 rounded-full bg-tape-green" /> All route holds confirmed
-            </>
-          ) : (
-            <>
-              <span className="size-1.5 rounded-full bg-tape-yellow" />
-              <span className="underline decoration-hairline underline-offset-4">
-                {routeLeft} {routeLeft === 1 ? "hold" : "holds"} left to confirm
-              </span>
-            </>
-          )}
-        </button>
       </StickyBar>
 
+      <BottomSheet name="sheet/hold-actions" open={sheet === "actions" && !!currentHold} onClose={() => setSheet(null)}>
+        {currentHold && (
+          <HoldActions
+            hold={currentHold}
+            photo={photo}
+            aspect={data?.aspect}
+            number={num(currentHold.id)}
+            isStart={s.start.includes(currentHold.id)}
+            isFinish={s.finish.includes(currentHold.id)}
+            open={isOpenQ(currentHold.id)}
+            onStart={() => toggleEnd("start", currentHold.id)}
+            onFinish={() => toggleEnd("finish", currentHold.id)}
+            onType={() => askAbout(currentHold.id)}
+            onRemove={() => removeFromRoute(currentHold.id)}
+          />
+        )}
+      </BottomSheet>
       <BottomSheet
         name="sheet/confirm-hold"
         open={sheet === "confirm" && !!currentHold}
@@ -308,10 +362,10 @@ export function ReviewScreen({
             hold={currentHold}
             photo={photo}
             aspect={data?.aspect}
-            index={unsure.indexOf(current)}
-            total={unsure.length}
+            index={qIndex}
+            total={qList.length}
             confirmed={s.confirmed}
-            unsure={unsure}
+            unsure={qList}
             onAnswer={answer}
             onOther={() => setSheet("other")}
           />
@@ -334,10 +388,129 @@ function Marker({ kind, small = false }: { kind: "S" | "F"; small?: boolean }) {
     <span
       aria-hidden
       className={`inline-flex items-center justify-center rounded-[3px] font-mono font-medium text-surface ${small ? "size-4 text-[10px]" : "size-5 text-[12px]"}`}
-      style={{ background: kind === "S" ? C.green : C.accent }}
+      style={{ background: kind === "S" ? C.green : C.ink }}
     >
       {kind}
     </span>
+  );
+}
+
+/** Tapping a hold that's on the route: what to do with it. */
+function HoldActions({
+  hold,
+  photo,
+  aspect,
+  number,
+  isStart,
+  isFinish,
+  open,
+  onStart,
+  onFinish,
+  onType,
+  onRemove,
+}: {
+  hold: Hold;
+  photo: string;
+  aspect?: number;
+  number: string;
+  isStart: boolean;
+  isFinish: boolean;
+  open: boolean;
+  onStart: () => void;
+  onFinish: () => void;
+  onType: () => void;
+  onRemove: () => void;
+}) {
+  const Row = ({
+    name,
+    icon,
+    title,
+    sub,
+    subAccent = false,
+    right,
+    onClick,
+    danger = false,
+  }: {
+    name: string;
+    icon: ReactNode;
+    title: string;
+    sub: string;
+    subAccent?: boolean;
+    right?: ReactNode;
+    onClick: () => void;
+    danger?: boolean;
+  }) => (
+    <li>
+      <button
+        data-name={`action/${name}`}
+        onClick={onClick}
+        className="flex min-h-16 w-full items-center gap-4 border-b border-hairline py-2 text-left active:bg-paper"
+      >
+        <span className="flex size-8 shrink-0 items-center justify-center">{icon}</span>
+        <span className="min-w-0 flex-1">
+          <span className={`block text-[16px] font-semibold ${danger ? "text-alert" : ""}`}>{title}</span>
+          <span className={`block text-[14px] ${subAccent ? "text-accent-ink" : "text-muted"}`}>{sub}</span>
+        </span>
+        {right}
+      </button>
+    </li>
+  );
+  const Switch = ({ on }: { on: boolean }) => (
+    <span
+      aria-hidden
+      className={`${MONO} flex h-7 w-12 items-center justify-center rounded-full border text-[11px] ${on ? "border-ink bg-ink text-surface" : "border-hairline text-muted"}`}
+    >
+      {on ? "On" : "Off"}
+    </span>
+  );
+  return (
+    <div className="flex min-h-0 flex-col overflow-y-auto px-6">
+      <div className="flex items-end gap-4">
+        <Closeup hold={hold} photo={photo} aspect={aspect} label={number} />
+        <div className="pb-1">
+          <p className={`${MONO} text-muted`}>
+            Hold {number} · {TYPE_INFO[hold.type].name}
+          </p>
+          <h2 className="mt-1 font-display text-[30px] leading-[1.02] font-bold tracking-[0.005em]">
+            What's this hold for?
+          </h2>
+        </div>
+      </div>
+      <ul data-name="hold-actions/list" className="mt-5 border-t border-hairline">
+        <Row
+          name="start"
+          icon={<Marker kind="S" />}
+          title="Start hold"
+          sub="Where your hands begin (up to two)"
+          right={<Switch on={isStart} />}
+          onClick={onStart}
+        />
+        <Row
+          name="finish"
+          icon={<Marker kind="F" />}
+          title="Finish hold"
+          sub="The last hold of the climb"
+          right={<Switch on={isFinish} />}
+          onClick={onFinish}
+        />
+        <Row
+          name="type"
+          icon={<span className="flex size-6 items-center justify-center rounded-full border-2 border-ink font-mono text-[13px] font-bold">?</span>}
+          title="What type is it?"
+          sub={open ? "Needs an answer" : `Currently: ${TYPE_INFO[hold.type].name}`}
+          subAccent={open}
+          onClick={onType}
+        />
+        <Row
+          name="remove"
+          icon={<Glyph kind="close" className="size-4 text-alert" />}
+          title="Remove from route"
+          sub="It isn't part of this climb"
+          onClick={onRemove}
+          danger
+        />
+      </ul>
+    </div>
   );
 }
 
@@ -357,25 +530,50 @@ function HoldsOverlay({
   isOpenQ: (id: string) => boolean;
 }) {
   const num = new Map(routeHolds.map((h, i) => [h.id, i + 1]));
-  const ordered = [
-    ...holds.filter((h) => !inRoute.has(h.id)),
-    ...holds.filter((h) => inRoute.has(h.id)),
-  ];
   const route = inRoute.size > 0;
+  const ordered = [...holds.filter((h) => !inRoute.has(h.id)), ...holds.filter((h) => inRoute.has(h.id))];
   return (
     <g data-name="review/holds">
+      {/* Before a pick every hold is a button: its own colour, a white ring that breathes. */}
+      {!route && (
+        <g className="anim-breathe" pointerEvents="none" aria-hidden>
+          {holds.map((h) => (
+            <circle
+              key={`ring-${h.id}`}
+              cx={h.x}
+              cy={h.y}
+              r={Math.max(h.r * Math.max(h.sx ?? 1, h.sy ?? 1) * 1.25, 9)}
+              fill="none"
+              stroke={C.surface}
+              strokeWidth={2}
+              vectorEffect="non-scaling-stroke"
+            />
+          ))}
+        </g>
+      )}
       {ordered.map((h) => {
         const sel = inRoute.has(h.id);
         return (
           <g key={h.id} data-hold={h.id} style={{ cursor: "pointer" }}>
             {/* generous invisible hit area so small holds stay tappable */}
             <circle cx={h.x} cy={h.y} r={Math.max(h.r * 1.4, 34)} fill="transparent" />
-            <HoldShape
-              hold={h}
-              opacity={route && !sel ? 0.35 : 1}
-              stroke={sel ? C.accent : C.ink}
-              strokeWidth={sel ? 3 : 1}
-            />
+            {route ? (
+              <HoldShape
+                hold={h}
+                opacity={sel ? 1 : 0.18}
+                stroke={sel ? C.accent : C.ink}
+                strokeWidth={sel ? 3 : 1}
+              />
+            ) : (
+              <path
+                d={holdPath(h)}
+                fill={h.own ?? h.hex ?? HOLD_COLOURS[h.colour]}
+                fillOpacity={0.9}
+                stroke={C.ink}
+                strokeWidth={1}
+                vectorEffect="non-scaling-stroke"
+              />
+            )}
           </g>
         );
       })}
@@ -395,7 +593,7 @@ function HoldsOverlay({
               fontWeight={500}
               letterSpacing={1}
             >
-              {String(n).padStart(2, "0")}
+              {pad2(n)}
             </text>
           </g>
         );
@@ -408,21 +606,14 @@ function HoldsOverlay({
           const y = h.y - 4;
           return (
             <g key={`${k}-${id}`} pointerEvents="none">
-              <line
-                x1={x + 40}
-                y1={y + 20}
-                x2={h.x - h.r * 0.6}
-                y2={h.y}
-                stroke={C.ink}
-                strokeWidth={2}
-              />
+              <line x1={x + 40} y1={y + 20} x2={h.x - h.r * 0.6} y2={h.y} stroke={C.ink} strokeWidth={2} />
               <rect
                 x={x}
                 y={y}
                 width={40}
                 height={40}
                 rx={4}
-                fill={k === "S" ? C.green : C.accent}
+                fill={k === "S" ? C.green : C.ink}
                 stroke={C.surface}
                 strokeWidth={3}
               />
@@ -441,47 +632,51 @@ function HoldsOverlay({
           );
         },
       )}
-      {holds
-        .filter((h) => isOpenQ(h.id))
-        .map((h) => (
-          <g key={`q-${h.id}`} pointerEvents="none">
-            <circle
-              cx={h.x + h.r * 0.7}
-              cy={h.y + h.r * 0.9}
-              r={20}
-              fill={C.yellow}
-              stroke={C.ink}
-              strokeWidth={2}
-            />
-            <text
-              x={h.x + h.r * 0.7}
-              y={h.y + h.r * 0.9 + 8}
-              textAnchor="middle"
-              fill={C.ink}
-              fontSize={24}
-              fontFamily="Barlow Semi Condensed"
-              fontWeight={500}
-            >
-              ?
-            </text>
-          </g>
-        ))}
+      <g className="anim-breathe">
+        {holds
+          .filter((h) => isOpenQ(h.id))
+          .map((h) => (
+            <g key={`q-${h.id}`} pointerEvents="none">
+              <circle cx={h.x + h.r * 0.7} cy={h.y + h.r * 0.9} r={20} fill={C.yellow} stroke={C.ink} strokeWidth={2} />
+              <text
+                x={h.x + h.r * 0.7}
+                y={h.y + h.r * 0.9 + 8}
+                textAnchor="middle"
+                fill={C.ink}
+                fontSize={24}
+                fontFamily="Barlow Semi Condensed"
+                fontWeight={500}
+              >
+                ?
+              </text>
+            </g>
+          ))}
+      </g>
     </g>
   );
 }
 
-/* Pinch to zoom, drag to pan, tap to select. */
+type Box = { x0: number; y0: number; x1: number; y1: number };
+
+/* Pinch to zoom, drag to pan, tap to select. `focus` (real photos) glides to fit a box. */
 function ZoomPhoto({
   children,
   onTapHold,
   onTapEmpty,
+  focus,
+  aspect,
+  hint,
 }: {
   children: ReactNode;
   onTapHold: (id: string) => void;
   onTapEmpty: (x: number, y: number) => void;
+  focus?: Box | null;
+  aspect?: number;
+  hint?: string | null;
 }) {
   const box = useRef<HTMLDivElement>(null);
   const [t, setT] = useState({ s: 1, x: 0, y: 0 });
+  const [glide, setGlide] = useState(false);
   const pts = useRef(new Map<number, { x: number; y: number }>());
   const gesture = useRef({ moved: false, startX: 0, startY: 0 });
 
@@ -501,7 +696,28 @@ function ZoomPhoto({
     return { x: e.clientX - r.left, y: e.clientY - r.top };
   };
 
+  // Fit the focus box: WallPhoto shows a real photo full width, centred vertically,
+  // so one overlay unit is W/1000 px, offset by (H - W*aspect)/2.
+  const key = focus ? `${focus.x0.toFixed(0)},${focus.y0.toFixed(0)},${focus.x1.toFixed(0)},${focus.y1.toFixed(0)}` : "";
+  useEffect(() => {
+    const el = box.current;
+    if (!el || !aspect) return;
+    setGlide(true);
+    if (!focus) return setT({ s: 1, x: 0, y: 0 });
+    const W = el.clientWidth;
+    const H = el.clientHeight;
+    const k = W / 1000;
+    const off = (H - W * aspect) / 2;
+    const bw = Math.max(40, focus.x1 - focus.x0) * k;
+    const bh = Math.max(40, focus.y1 - focus.y0) * k;
+    const s = Math.min(4, Math.max(1, 0.8 * Math.min(W / bw, H / bh)));
+    const cx = ((focus.x0 + focus.x1) / 2) * k;
+    const cy = off + ((focus.y0 + focus.y1) / 2) * k;
+    setT(clamp({ s, x: W / 2 - cx * s, y: H / 2 - cy * s }));
+  }, [key, aspect]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const down = (e: RPE) => {
+    setGlide(false);
     box.current!.setPointerCapture(e.pointerId);
     pts.current.set(e.pointerId, local(e));
     if (pts.current.size === 1)
@@ -544,6 +760,7 @@ function ZoomPhoto({
     onTapEmpty(Math.round(pt.x), Math.round(pt.y));
   };
   const wheel = (e: WheelEvent) => {
+    setGlide(false);
     const p = local(e);
     setT((o) => {
       const s = Math.min(4, Math.max(1, o.s * (e.deltaY < 0 ? 1.12 : 0.89)));
@@ -565,25 +782,69 @@ function ZoomPhoto({
     >
       <div
         className="absolute inset-0 origin-top-left"
-        style={{ transform: `translate(${t.x}px, ${t.y}px) scale(${t.s})` }}
+        style={{
+          transform: `translate(${t.x}px, ${t.y}px) scale(${t.s})`,
+          transition: glide ? "transform 350ms cubic-bezier(0.2, 0.8, 0.2, 1)" : "none",
+        }}
       >
         {children}
       </div>
+      {hint && (
+        <div
+          data-name="review/hint"
+          className="pointer-events-none absolute inset-x-0 top-1/2 flex -translate-y-1/2 justify-center"
+        >
+          <span className="flex items-center gap-2 rounded-full border border-ink bg-surface px-4 py-2.5 text-[15px] font-semibold shadow-[0_2px_0_#243E36]">
+            <TapGlyph />
+            {hint}
+          </span>
+        </div>
+      )}
       <button
         data-name="review/zoom-chip"
         onPointerDown={(e) => e.stopPropagation()}
         onPointerUp={(e) => e.stopPropagation()}
-        onClick={() => setT({ s: 1, x: 0, y: 0 })}
-        className={`${MONO} absolute right-3 bottom-3 flex h-12 min-w-12 items-center justify-center rounded-[4px] border border-ink bg-surface px-3`}
-        aria-label="Reset zoom"
+        onClick={() => {
+          setGlide(true);
+          setT({ s: 1, x: 0, y: 0 });
+        }}
+        className={`${MONO} absolute right-3 bottom-3 flex h-10 min-w-12 items-center justify-center rounded-[4px] border border-ink bg-surface px-3 text-[12px]`}
+        aria-label={t.s > 1.02 ? "Show whole wall" : "Pinch to zoom"}
       >
-        {t.s > 1.02 ? `${t.s.toFixed(1)}x  Reset` : "Pinch to zoom"}
+        {t.s > 1.02 ? "Show whole wall" : "Pinch to zoom"}
       </button>
     </div>
   );
 }
 
-function Closeup({ hold, photo, aspect }: { hold: Hold; photo: string; aspect?: number }) {
+/** A fingertip tapping, for the hint pill. */
+function TapGlyph() {
+  return (
+    <svg viewBox="0 0 24 24" className="size-5" aria-hidden>
+      <circle cx="12" cy="9" r="6.5" fill="none" stroke={C.accent} strokeWidth="1.6" className="anim-breathe" />
+      <path
+        d="M10.5 9.5v6.2l-1.4-1.3c-.6-.6-1.6-.5-2 .2-.3.5-.2 1.1.2 1.5l3.3 3.7c.6.7 1.5 1.1 2.4 1.1h2.3c1.9 0 3.4-1.5 3.4-3.4v-3.3c0-.8-.6-1.4-1.4-1.4-.3 0-.6.1-.8.3v-.4c0-.8-.6-1.4-1.4-1.4-.4 0-.7.1-.9.4-.2-.6-.7-1-1.3-1-.3 0-.6.1-.8.3V9.5c0-.8-.6-1.4-1.4-1.4s-1.2.6-1.2 1.4Z"
+        fill={C.surface}
+        stroke={C.ink}
+        strokeWidth="1.3"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function Closeup({
+  hold,
+  photo,
+  aspect,
+  label,
+}: {
+  hold: Hold;
+  photo: string;
+  aspect?: number;
+  /** shown in the corner instead of the detector's tag, e.g. the route number */
+  label?: string;
+}) {
   // Show about 3.4 hold-widths around the hold. Real photos zoom to fit that
   // span so the outline sits on the hold; the design mock keeps its fixed 6x.
   const span = Math.max(40, Math.max(hold.r * (hold.sx ?? 1), hold.r * (hold.sy ?? 1)) * 3.4);
@@ -649,7 +910,7 @@ function Closeup({ hold, photo, aspect }: { hold: Hold; photo: string; aspect?: 
         <span
           className={`${MONO} absolute bottom-1 left-1 rounded-[3px] bg-ink px-1 text-[10px] text-surface`}
         >
-          {hold.tag}
+          {label ?? hold.tag}
         </span>
       </div>
     </div>
@@ -727,7 +988,7 @@ function ConfirmHold({
                   {TYPE_INFO[type].line}
                 </span>
               </span>
-              <span className={`${MONO} text-[14px] ${i === 0 ? "text-accent" : "text-ink"}`}>
+              <span className={`${MONO} text-[14px] ${i === 0 ? "text-accent-ink" : "text-ink"}`}>
                 {pct}%
               </span>
             </button>

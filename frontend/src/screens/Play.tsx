@@ -219,7 +219,7 @@ export function PlayScreen({
             <span className={`${MONO} text-muted`}>{g.range}</span>
             <button
               onClick={() => go(beta.crux)}
-              className={`${MONO} inline-flex h-7 items-center gap-1.5 self-start rounded-[3px] border border-accent px-2 text-accent active:bg-accent active:text-surface`}
+              className={`${MONO} inline-flex h-7 items-center gap-1.5 self-start rounded-[3px] border border-accent px-2 text-accent-ink active:bg-accent active:text-surface`}
             >
               <Flame /> Crux: move {beta.crux}
             </button>
@@ -253,7 +253,7 @@ export function PlayScreen({
             {beta.moves.map((_, i) => (
               <span
                 key={i}
-                className={`w-7 text-center font-mono text-[12px] font-medium ${i + 1 === move ? "text-accent" : "text-muted"}`}
+                className={`w-7 text-center font-mono text-[12px] font-medium ${i + 1 === move ? "text-accent-ink" : "text-muted"}`}
               >
                 {i + 1}
               </span>
@@ -272,7 +272,7 @@ export function PlayScreen({
           {(m.fall != null || beta.finishChance != null) && (
             <p data-name="play/risk" className={`${MONO} mt-1 flex flex-wrap gap-x-4 text-muted`}>
               {m.fall != null && (
-                <span className={m.fall >= 0.2 ? "text-accent" : ""}>
+                <span className={m.fall >= 0.2 ? "text-alert" : ""}>
                   {Math.round(m.fall * 100)}% fall chance
                 </span>
               )}
@@ -304,7 +304,7 @@ export function PlayScreen({
           </div>
           <p
             data-name="play/height-status"
-            className={`${MONO} mt-2 ${solveError ? "text-accent" : "text-muted"}`}
+            className={`${MONO} mt-2 ${solveError ? "text-alert" : "text-muted"}`}
             aria-live="polite"
           >
             {resolving
@@ -574,7 +574,7 @@ export function LiveScreen({
               </>
             )}
             <span
-              className={`relative flex size-20 items-center justify-center rounded-full ${shown === "idle" ? "border border-ink bg-surface text-ink" : shown === "listening" ? "bg-accent text-surface" : "bg-ink text-surface"}`}
+              className={`relative flex size-20 items-center justify-center rounded-full ${shown === "idle" ? "border border-ink bg-surface text-ink" : shown === "listening" ? "bg-accent text-ink" : "bg-ink text-surface"}`}
             >
               {shown === "speaking" ? <Waveform /> : <Mic />}
             </span>
@@ -582,7 +582,7 @@ export function LiveScreen({
           <span className={`${MONO} text-center leading-tight`}>
             Voice coach
             <span
-              className={`block text-[12px] ${shown === "idle" ? "text-muted" : "text-accent"}`}
+              className={`block text-[12px] ${shown === "idle" ? "text-muted" : "text-accent-ink"}`}
             >
               {sub}
             </span>

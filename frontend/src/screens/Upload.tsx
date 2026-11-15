@@ -165,9 +165,6 @@ export function UploadScreen({
             </Btn>
           </div>
         )}
-        <p className={`${MONO} mt-3 text-center text-[12px] text-muted`}>
-          Straight-on, whole wall, good light
-        </p>
       </StickyBar>
 
       <BottomSheet name="sheet/how-it-works" open={howOpen} onClose={() => setHowOpen(false)}>
@@ -187,7 +184,7 @@ export function UploadScreen({
                 data-name={`how-it-works/step-0${i + 1}`}
                 className="flex gap-6 border-b border-hairline py-4"
               >
-                <span className={`${MONO} w-6 pt-1 text-accent`}>0{i + 1}</span>
+                <span className={`${MONO} w-6 pt-1 text-accent-ink`}>0{i + 1}</span>
                 <span>
                   <span className="block text-[16px] font-semibold">{t}</span>
                   <span className="block text-[14px] text-muted">{d}</span>
@@ -290,13 +287,13 @@ function FindingSheet({
         <WallPhoto photo={photo} aspect={real?.found?.aspect ?? real?.aspect}>
           {order.slice(0, n).map((h, i) => (
             <g key={h.id} className="anim-pop" style={{ transformOrigin: `${h.x}px ${h.y}px` }}>
-              <circle cx={h.x} cy={h.y} r={pinR} fill="#E8431F" stroke="#FBF8F2" strokeWidth={real ? 3 : 5} />
+              <circle cx={h.x} cy={h.y} r={pinR} fill={C.accent} stroke={C.surface} strokeWidth={real ? 3 : 5} />
               {!real && (
                 <text
                   x={h.x}
                   y={h.y + 9}
                   textAnchor="middle"
-                  fill="#FBF8F2"
+                  fill={C.surface}
                   fontFamily="Barlow Semi Condensed"
                   fontSize={26}
                   fontWeight={500}
@@ -311,8 +308,8 @@ function FindingSheet({
       </PinnedSheet>
       {error ? (
         <div data-name="finding/error" role="alert" className="mt-6">
-          <p className={`${MONO} flex items-center gap-2 text-accent`}>
-            <span className="inline-block size-1.5 rounded-full bg-accent" aria-hidden />
+          <p className={`${MONO} flex items-center gap-2 text-alert`}>
+            <span className="inline-block size-1.5 rounded-full bg-alert" aria-hidden />
             Couldn't find holds
           </p>
           <p className="mt-2 text-[16px] leading-[1.4]">{error}</p>

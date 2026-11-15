@@ -478,7 +478,7 @@ function Row({ n, title, children }: { n: string; title: string; children: React
   return (
     <section data-name={`board/screen-${n}`} className="border-t border-ink pt-6 pb-16">
       <header className="mb-8 flex items-baseline gap-6">
-        <span className={`${MONO} text-accent`}>Screen {n} / 4</span>
+        <span className={`${MONO} text-accent-ink`}>Screen {n} / 4</span>
         <h2 className="font-display text-[32px] leading-none font-bold tracking-[0.005em]">
           {title}
         </h2>

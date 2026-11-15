@@ -72,7 +72,7 @@ export function Btn({ variant = "primary", size = "lg", name, className = "", ..
   const base = `inline-flex select-none items-center justify-center gap-2 rounded-[6px] text-[16px] font-semibold transition-[transform,background-color] active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${size === "lg" ? "h-14 px-6" : "h-12 px-5"}`;
   const v =
     variant === "primary"
-      ? "bg-accent text-surface active:bg-ink disabled:bg-hairline disabled:text-muted disabled:active:translate-y-0"
+      ? "bg-ink text-surface active:bg-accent-ink disabled:bg-hairline disabled:text-muted disabled:active:translate-y-0"
       : variant === "outline"
         ? "border border-ink text-ink active:bg-ink active:text-surface"
         : "text-ink underline decoration-hairline underline-offset-4 active:decoration-ink";

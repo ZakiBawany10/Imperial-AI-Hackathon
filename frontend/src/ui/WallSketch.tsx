@@ -293,7 +293,7 @@ export function WallSketch() {
       {/* ---- setter tape ---- */}
       <Tape x={96} y={276} r={-10} text="S" colour={C.green} w={20} />
       <Tape x={208} y={284} r={8} text="S" colour={C.green} w={20} />
-      <Tape x={276} y={36} r={-6} text="TOP" colour={C.accent} w={36} />
+      <Tape x={276} y={36} r={-6} text="TOP" colour={C.ink} w={36} />
 
       {/* ---- beta line, inked in on load ---- */}
       <g mask={`url(#${reveal})`}>
