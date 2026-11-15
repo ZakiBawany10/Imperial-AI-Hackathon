@@ -20,7 +20,7 @@ export function Screen({ name, children }: { name: string; children: ReactNode }
 const STEPS = ["Photo", "Route", "You", "Beta"];
 
 /** Progress as a tiny route: one hold per step, joined by the beta line.
- *  Done holds are ink with a tick, the current one is sage with a grip ring,
+ *  Done holds are ink with a tick, the current one is sage,
  *  the rest are outlines. */
 function StepRoute({ step }: { step: number }) {
   const xs = [14, 76, 138, 200];
@@ -57,12 +57,6 @@ function StepRoute({ step }: { step: number }) {
         const now = n === step;
         return (
           <g key={n} data-name={`step-route/${STEPS[i].toLowerCase()}`}>
-            {now && (
-              <>
-                <circle cx={x} cy={y} r={11} fill="none" stroke={C.accent} strokeWidth={1.5} />
-
-              </>
-            )}
             <g transform={`translate(${x - 11} ${y - 11}) scale(${22 / 64})`}>
               <HoldGlyph
                 kind={kinds[i]}
