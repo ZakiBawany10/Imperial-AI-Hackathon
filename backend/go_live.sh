@@ -30,7 +30,7 @@ echo "Backend is public at $API"
 echo "Building and uploading the frontend..."
 cd "$FRONT"
 [ -d node_modules ] || npx -y pnpm@9 install --frozen-lockfile
-VITE_API_URL="$API" npx vite build > /dev/null
+VITE_API_URL="$API" VITE_ELEVENLABS_AGENT_ID="${VITE_ELEVENLABS_AGENT_ID:-agent_0401m7dsq9z7ef7spt1qqdmca2n0}" npx vite build > /dev/null
 [ -d .vercel ] && cp -r .vercel dist/          # keep deploying to the same Vercel project
 SITE=$(cd dist && npx -y vercel deploy --prod --yes | tail -1)
 [ -d dist/.vercel ] && cp -r dist/.vercel .
