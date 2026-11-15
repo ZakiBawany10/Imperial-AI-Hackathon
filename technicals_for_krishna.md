@@ -4,7 +4,7 @@ Photo of a gym wall in → every hold found → you pick a climb → the app wor
 of your height and strength would climb it (hands and feet, with physics) → a 3D climber shows the
 moves → a grade → a voice coach talks you up it, and the phone camera follows you as you climb.
 
-Live: **https://ascend-rho-weld.vercel.app**. The backend runs on Krishna's laptop (see Hosting).
+Live: **https://ascend-climb.vercel.app**. The backend runs on Krishna's laptop (see Hosting).
 
 ## Who built what
 

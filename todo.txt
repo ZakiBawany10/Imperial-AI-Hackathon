@@ -2,7 +2,7 @@ ASCEND TO-DO  (updated Sun 15 Nov, night before Zaki's gym test)
 Goal for tomorrow: Zaki climbs a real route at his gym and the app works live while he does it.
 
 DONE
-- Hosting: frontend on Vercel (https://ascend-rho-weld.vercel.app), backend on Krishna's laptop
+- Hosting: frontend on Vercel (https://ascend-climb.vercel.app), backend on Krishna's laptop
   through a Cloudflare tunnel. One command: cd backend && ./go_live.sh
 - 3D wall mesh on in the app, with "3D wall on/off" and "Reset view"
 - Physics: climber stands up under low start holds (no more squatting), start feet on the floor,

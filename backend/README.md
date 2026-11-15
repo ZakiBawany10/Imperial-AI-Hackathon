@@ -45,7 +45,7 @@ cd backend && ./go_live.sh
 Runs the API on this laptop (using its GPU), gives it a public https address
 through a Cloudflare quick tunnel, then builds the frontend against that
 address and uploads it to Vercel (project `ascend`:
-https://ascend-rho-weld.vercel.app). Needs `brew install cloudflared` and
+https://ascend-climb.vercel.app). Needs `brew install cloudflared` and
 `npx vercel login` once. The tunnel address changes every run, which is why
 the frontend is rebuilt each time. The site works only while the laptop is
 on, online and running the script; Ctrl-C takes the backend down. Nothing on
