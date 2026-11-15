@@ -20,8 +20,8 @@ HEAD_L, SUB_L = F("BarlowCondensed-Bold.ttf", 128), F("Barlow-Medium.ttf", 48)
 HEAD, SUB, LABEL = F("BarlowCondensed-Bold.ttf", 96), F("Barlow-Medium.ttf", 40), F("BarlowSemiCondensed-SemiBold.ttf", 34)
 
 # (source start, source end, speed) on Adam's ascend-demo.mp4 clock
-SEGS = [(0.8, 3.9, 1.0), (6.6, 9.9, 1.0), (9.9, 9.9, 0, 1.3), (9.9, 17, 1.0), (17, 24, 1.5), (24, 30.5, 1.0),
-        (30.5, 30.5, 0, 1.0), (30.5, 34, 1.0)]  # 3.9-6.6: old-to-new recording seam, cut; speed 0 = hold the frame for n s
+SEGS = [(0.8, 3.9, 1.0), (6.6, 9.9, 1.0), (9.9, 9.9, 0, 1.3), (9.9, 17, 1.0), (17, 24, 1.5), (24, 29.4, 1.0),
+        (32.0, 32.0, 0, 1.0), (32.0, 41, 1.0)]  # 3.9-6.6 recording seam and 29.4-32.0 old 2D view cut; 3.9-6.6: old-to-new recording seam, cut; speed 0 = hold the frame for n s
 # (source time, step label, headline, sub-line)
 CAPS = [
     (0.0, "PHOTO", "Take one photo", "of the wall you want to climb"),
@@ -31,6 +31,7 @@ CAPS = [
     (17.0, "CHECK", "It asks only when unsure", "what each hold is for, and its type"),
     (25.5, "YOU", "Set your height", "the moves are worked out for your body"),
     (29.0, "BETA", "Graded 5b / V1", "every move, for your body"),
+    (36.0, "BETA", "Your climb, in 3D", "balance, effort, chance to top it"),
 ]
 STEPS = ["PHOTO", "HOLDS", "ROUTE", "CHECK", "YOU", "BETA"]
 
