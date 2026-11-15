@@ -168,8 +168,14 @@ Then **Live mode**: the coach and the camera.
   on the hold doesn't count, which handles matching.
 - **Drives the coach:** it feeds the coach's progress, so the coach calls the next move by itself.
   There are manual ‹ and Done › buttons as back-up.
-- **Tested:** the camera and tracker start, in headless Chrome with a fake camera. **Not yet tested
-  on a real climber.**
+- **Records the climb:** every hand and foot landing on a route hold, with timestamps. When the
+  camera stops it goes to `POST /climbs`. "Use a filmed climb" runs the same tracker on a video
+  file, which is how tomorrow's footage gets processed.
+- **Tested:**
+  - On a real indoor clip filmed from behind (Wikimedia, CC BY-SA, 204×360): the climber was found
+    in **99.9%** of frames, with 30 limb-on-hold events recorded in 30 s.
+  - The camera flow, in headless Chrome with a fake camera.
+  - **Not yet tested with a tripod on a real route.**
 
 ## 11. Hosting
 
@@ -192,10 +198,17 @@ Then **Live mode**: the coach and the camera.
   climber.
 - **Accessibility:** the app sees colours for you and the voice tells you which hold to grab, so
   it works for colourblind climbers.
-- **Continuous improvement:** every tracked climb is saved, can be found again for similar routes
-  (RAG for the coach), and is added to the physics training data, which is retrained and shipped
-  only if it still beats the held-out tests. (Planned; see `todo.txt`.)
-- **Social (pitch):** auto-record climbs and compare beta with friends.
+- **Continuous improvement (built tonight, `backend/climbs_store.py`):** every tracked climb is
+  - saved (`POST /climbs`, in The Way Up's format);
+  - found again for similar routes (`POST /climbs/similar`, shown as "Climbs like this" and on the
+    Live screen; this is the retrieval/RAG part);
+  - added to physics training: `ASCEND_CLIMBS=1 python3 train_physics.py` retrains on Way Up plus
+    ours and scores ours alone. New settings ship only if they still win on both held-out tests.
+
+  One slide: climb → tracked → saved → app gets better.
+- **Social:** a Share button and "Climbs like this" on the Play screen use real stored climbs only.
+  Livestreaming to friends is pitch only.
+- **Accuracy in the app:** "How it works" lists the real numbers, including the weak ones.
 
 ## 13. Honest limits (for judges' questions)
 
