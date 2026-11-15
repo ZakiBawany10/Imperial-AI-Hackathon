@@ -14,18 +14,18 @@ uv venv .venv --python 3.13 && uv pip install --python .venv/bin/python -r requi
 
 Port 8010 by default; `PORT=9000 ./run.sh` to change it.
 
-The trained weights (`models/holds.pt`, `models/hold_type.pt`) are not in git.
-With them, `/analyze` uses the trained detector and type classifier. Without
-them it falls back to the zero-shot finder (downloads about 900 MB from Hugging
-Face on first use) and guesses type from size, flagging every hold for review.
-See "Reproduce" to train them.
+The trained weights (`models/holds.pt`, `models/holds_seg.pt`, `models/hold_type.pt`)
+are in git, so a fresh clone runs the real models. `/depth` downloads Depth
+Anything V2 Base (about 400 MB) from Hugging Face on first use.
 
 | Call | Does | Time on an M5 laptop |
 |---|---|---|
 | `POST /analyze` (form field `file`) | Photo in, holds out | 0.3 to 1.5 s with the trained models, 4 to 10 s without |
 | `POST /solve` (JSON) | Route in; moves, poses and grade out | under 0.1 s |
+| `POST /depth` (form field `file`) | Photo in, greyscale relief PNG out (the 3D wall's shape) | about 1 s |
 | `GET /hold-types` | The hold database | instant |
 | `GET /health` | `{"ok": true}` | instant |
+| `GET /demo/3d.html` | The 3D demo: pick a climb, set height and strength, watch it climbed | — |
 | `GET /demo/` | A plain test page: load a photo, click a route, mark start and finish, solve, watch the figure climb | — |
 
 ```bash
@@ -34,6 +34,22 @@ curl -X POST localhost:8010/solve -H 'Content-Type: application/json' -d @../con
 ```
 
 Request and response shapes are in [contract/](../contract/).
+
+## Put it online
+
+```bash
+cd backend && ./go_live.sh
+```
+
+Runs the API on this laptop (using its GPU), gives it a public https address
+through a Cloudflare quick tunnel, then builds the frontend against that
+address and uploads it to Vercel (project `ascend`:
+https://ascend-rho-weld.vercel.app). Needs `brew install cloudflared` and
+`npx vercel login` once. The tunnel address changes every run, which is why
+the frontend is rebuilt each time. The site works only while the laptop is
+on, online and running the script; Ctrl-C takes the backend down. Nothing on
+the laptop is reachable except port 8010. To add the voice coach, run it as
+`VITE_ELEVENLABS_AGENT_ID=agent_... ./go_live.sh`.
 
 ## Files
 
