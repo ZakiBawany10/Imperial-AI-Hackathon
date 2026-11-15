@@ -44,6 +44,8 @@ type MountedViewer = {
   on(ev: string, fn: (i: number) => void): () => void;
   dispose(): void;
   resize(): void;
+  resetView(): void;
+  setMesh(on: boolean): void;
 };
 
 /** Krishna's 3D viewer, loaded from the API server (contract: CLAUDE.md section 6).
@@ -67,7 +69,7 @@ function useViewer3D(input: Viewer3DInput | undefined, box: React.RefObject<HTML
           solveRequest: input.req,
           solve: input.res,
           theme: "paper",
-          mesh: false,
+          mesh: true,
           hud: false,
           autoplay: false,
           loop: false,
@@ -262,6 +264,12 @@ export function PlayScreen({
   const stage = useRef<HTMLDivElement>(null);
   const v3d = useViewer3D(viewerInput, stage);
   const in3d = v3d.status === "ready";
+  const [meshOn, setMeshOn] = useState(true);
+  useEffect(() => setMeshOn(true), [viewerInput?.reliefUrl]); // a new relief map mounts a fresh viewer, mesh on
+  const toggleMesh = () => {
+    v3d.viewer.current?.setMesh(!meshOn);
+    setMeshOn(!meshOn);
+  };
   const n = beta.moves.length;
   const g = beta.grade;
   const [t, setT] = useState(Math.min(initialMove, n));
@@ -366,9 +374,24 @@ export function PlayScreen({
           {height.toFixed(2)} m · {wallH.toFixed(1)} m wall
         </span>
         {in3d && (
-          <span className={`${MONO} absolute top-3 right-3 z-[2] rounded-[4px] bg-ink px-2 py-1 text-surface`}>
-            3D · drag to turn
-          </span>
+          <div data-name="play/3d-controls" className="absolute top-3 right-3 z-[2] flex gap-1.5">
+            {viewerInput?.reliefUrl && (
+              <button
+                onClick={toggleMesh}
+                title="The wall's 3D shape from the photo, or a flat wall with raised holds"
+                className={`${MONO} rounded-[4px] border border-ink px-2 py-1 ${meshOn ? "bg-ink text-surface" : "bg-surface"}`}
+              >
+                3D wall {meshOn ? "on" : "off"}
+              </button>
+            )}
+            <button
+              onClick={() => v3d.viewer.current?.resetView()}
+              title="Put the camera back"
+              className={`${MONO} rounded-[4px] border border-ink bg-surface px-2 py-1 active:bg-ink active:text-surface`}
+            >
+              Reset view
+            </button>
+          </div>
         )}
       </div>
 
