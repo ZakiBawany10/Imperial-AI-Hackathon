@@ -19,7 +19,9 @@ import {
   getHoldTypes,
   loadHoldTypes,
   qualityOf,
+  saveClimb,
   shrinkPhoto,
+  similarClimbs,
   solve,
   type SolveRequest,
   type SolveResponse,
@@ -75,6 +77,8 @@ function Flow() {
   const [wallH, setWallH] = useState(4.0);
   const [angle, setAngle] = useState<Angle>("vertical");
   const [move, setMove] = useState(0);
+  // what people did on similar routes before (stored climbs, backend/climbs_store.py)
+  const [similar, setSimilar] = useState<string | null>(null);
   // the wall being worked on: a photo /analyze answered for, and the photo itself
   const [wall, setWall] = useState<Prepared | null>(null);
   const photoBlob = useRef<Blob | null>(null);
@@ -316,6 +320,10 @@ function Flow() {
             setStep("upload");
           }}
           onLive={(m) => {
+            setSimilar(null);
+            similarClimbs(solved!.req)
+              .then((list) => setSimilar(list[0]?.what_they_did ?? null))
+              .catch(() => {});
             setMove(Math.max(1, m));
             setStep("live");
           }}
@@ -330,6 +338,24 @@ function Flow() {
           beta={solved!.beta}
           coach={coach}
           onMove={(m) => setMove(m)}
+          similar={similar}
+          onRecorded={async ({ events, topped, source }) => {
+            const req = solved!.req;
+            const { id } = await saveClimb({
+              image: req.image,
+              wall_height_m: req.wall_height_m,
+              climber_height_m: req.climber_height_m,
+              strength: req.strength ?? 1,
+              holds: req.holds.map((h) => ({ id: h.id, x: h.x, y: h.y, w: h.w, h: h.h, type: h.type })),
+              start: req.start,
+              finish: req.finish,
+              events,
+              planned: solved!.res.moves.map((m) => ({ limb: m.limb, hold: m.hold })),
+              topped,
+              source,
+            });
+            return `Climb saved (${id}). It will help train the next version.`;
+          }}
           onExit={() => {
             coach.stop();
             setStep("play");

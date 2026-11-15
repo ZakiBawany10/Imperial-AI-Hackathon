@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { C, TYPE_INFO, betaFor, type Limb, type Pt } from "../lib/wall";
 import { LIMB_NAME, mockBeta, type BetaView, type Pose } from "../lib/beta";
 import type { Coach } from "../lib/coach";
-import { openCamera, track, type Body } from "../lib/tracker";
+import { openCamera, track, type Body, type ClimbEvent } from "../lib/tracker";
 import { Btn, Flame, Glyph, Slider, MONO, Screen, StickyBar, TopBar, WallPhoto } from "../ui/kit";
 import { RouteOverlay, StrengthPicker } from "./Route";
 import { API_URL, HEIGHT_RANGE, type SolveRequest, type SolveResponse } from "../lib/api";
@@ -616,6 +616,8 @@ export function LiveScreen({
   beta: real,
   coach,
   onMove,
+  onRecorded,
+  similar,
 }: {
   photo: string;
   height: number;
@@ -625,6 +627,10 @@ export function LiveScreen({
   onExit?: () => void;
   /** the live camera saw a move done (or the user skipped one): the next move, 1-based */
   onMove?: (move: number) => void;
+  /** the camera stopped after following a climb: save it (returns a note to show) */
+  onRecorded?: (r: { events: ClimbEvent[]; topped: boolean; source: "camera" | "video" }) => Promise<string>;
+  /** what people did on similar routes before (from stored climbs) */
+  similar?: string | null;
   beta?: BetaView;
   /** the real ElevenLabs coach; without it the button cycles the design states */
   coach?: Coach;
@@ -651,10 +657,21 @@ export function LiveScreen({
   const [topped, setTopped] = useState(false);
   const video = useRef<HTMLVideoElement>(null);
   const stopCam = useRef<(() => void) | null>(null);
-  const tracker = useRef<{ stop: () => void; setDone: (n: number) => void } | null>(null);
+  const tracker = useRef<{ stop: () => void; setDone: (n: number) => void; events: () => ClimbEvent[] } | null>(null);
+  const [file, setFile] = useState<File | null>(null); // a filmed climb instead of the live camera
+  const fileInput = useRef<HTMLInputElement>(null);
+  const toppedRef = useRef(false);
   const moveRef = useRef(k);
   moveRef.current = k;
   const closeCam = () => {
+    const t = tracker.current;
+    if (t && onRecorded) {
+      const events = t.events();
+      if (events.length >= 3)
+        onRecorded({ events, topped: toppedRef.current, source: file ? "video" : "camera" })
+          .then((msg) => setCamNote(msg))
+          .catch(() => setCamNote("Could not save this climb."));
+    }
     tracker.current?.stop();
     stopCam.current?.();
     tracker.current = stopCam.current = null;
@@ -666,7 +683,21 @@ export function LiveScreen({
     let gone = false;
     (async () => {
       try {
-        stopCam.current = await openCamera(video.current!);
+        if (file) {
+          const v = video.current!, url = URL.createObjectURL(file);
+          v.srcObject = null;
+          v.src = url;
+          v.muted = true;
+          v.playsInline = true;
+          v.onended = () => closeCam();
+          await v.play();
+          stopCam.current = () => {
+            v.pause();
+            v.onended = null;
+            v.removeAttribute("src");
+            URL.revokeObjectURL(url);
+          };
+        } else stopCam.current = await openCamera(video.current!);
         if (gone) return stopCam.current();
         const t = await track(video.current!, {
           aspect: beta.aspect ?? 1,
@@ -678,8 +709,14 @@ export function LiveScreen({
           })),
           done: moveRef.current - 1,
           onBody: setBody,
+          holds: beta.route
+            .filter((h) => /^h\d+$/.test(h.id))
+            .map((h) => ({ id: Number(h.id.slice(1)), at: { x: h.x, y: h.y }, r: h.r * 1.3 + 30 })),
           onDone: (d) => {
-            if (d >= n) setTopped(true);
+            if (d >= n) {
+              setTopped(true);
+              toppedRef.current = true;
+            }
             onMove?.(Math.min(d + 1, n));
           },
           onStatus: (msg) => setCamNote(msg || null),
@@ -855,11 +892,39 @@ export function LiveScreen({
         </WallPhoto>
         <div data-name="live/camera-controls" className="absolute inset-x-3 bottom-3 z-10 flex flex-wrap items-center gap-1.5">
           <button
-            onClick={() => (live ? closeCam() : (setCamNote(null), setCam("starting")))}
+            onClick={() =>
+              live ? closeCam() : (setFile(null), setCamNote(null), (toppedRef.current = false), setTopped(false), setCam("starting"))
+            }
             className={`${MONO} rounded-[4px] border border-ink px-2.5 py-1.5 ${live ? "bg-ink text-surface" : "bg-surface"}`}
           >
-            {cam === "starting" ? "Starting…" : live ? "Stop camera" : "Follow me with the camera"}
+            {cam === "starting" ? "Starting…" : live ? (file ? "Stop video" : "Stop camera") : "Follow me with the camera"}
           </button>
+          {!live && (
+            <>
+              <button
+                onClick={() => fileInput.current?.click()}
+                className={`${MONO} rounded-[4px] border border-ink bg-surface px-2.5 py-1.5`}
+              >
+                Use a filmed climb
+              </button>
+              <input
+                ref={fileInput}
+                type="file"
+                accept="video/*"
+                hidden
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  e.target.value = "";
+                  if (!f) return;
+                  setFile(f);
+                  setCamNote(null);
+                  toppedRef.current = false;
+                  setTopped(false);
+                  setCam("starting");
+                }}
+              />
+            </>
+          )}
           {live && (
             <>
               <button onClick={() => setGhost(!ghost)} className={`${MONO} rounded-[4px] border border-ink bg-surface px-2.5 py-1.5`}>
@@ -913,6 +978,11 @@ export function LiveScreen({
             {cue}
           </p>
           <p className="mt-2 text-[14px] leading-[1.4] text-muted">{text}</p>
+          {similar && (
+            <p data-name="live/similar" className="mt-2 text-[13px] leading-[1.4] text-muted">
+              On a route like this before: {similar}
+            </p>
+          )}
           {coach?.error && (
             <p data-name="live/coach-note" role="status" className="mt-2 text-[13px] leading-[1.4] text-muted">
               {coach.error}

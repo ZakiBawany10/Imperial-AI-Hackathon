@@ -20,6 +20,7 @@ from PIL import Image, UnidentifiedImageError
 from pydantic import BaseModel, ConfigDict, Field
 
 import analyze as analyze_mod
+import climbs_store
 import route
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -142,6 +143,27 @@ def post_solve(req: SolveRequest):
     except BrokenProcessPool:
         _solver = None                      # the next request starts a fresh solver process
         raise HTTPException(503, "The solver restarted. Send the request again.")
+
+
+@app.post("/climbs")
+def post_climb(rec: dict):
+    """Store a climb the live camera followed (see climbs_store.py). Returns its id."""
+    try:
+        return {"id": climbs_store.save(rec)}
+    except climbs_store.BadClimb as e:
+        raise HTTPException(422, str(e))
+
+
+@app.get("/climbs")
+def get_climbs():
+    """Every stored climb, short form, newest first."""
+    return [climbs_store.summary(r) for r in reversed(climbs_store.load_all())]
+
+
+@app.post("/climbs/similar")
+def post_similar(req: SolveRequest):
+    """Stored climbs on the routes most like this one (same body as /solve), nearest first."""
+    return climbs_store.similar(req.model_dump())
 
 
 # A plain test page at /demo/, and the contract example files it uses at /contract/.

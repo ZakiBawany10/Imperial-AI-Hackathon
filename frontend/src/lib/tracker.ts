@@ -23,6 +23,10 @@ export type Pt = { x: number; y: number };
 /** Tracked points in overlay units (1000 wide, 1000 * aspect high), or null when nobody is seen. */
 export type Body = { LH: Pt; RH: Pt; LF: Pt; RF: Pt; lw: Pt; rw: Pt; lh: Pt; rh: Pt; shoulders: [Pt, Pt]; hips: [Pt, Pt] };
 export type TrackMove = { limb: "LH" | "RH" | "LF" | "RF"; at: Pt; r: number; hasHold: boolean };
+/** A route hold for the climb record: its id in the /analyze answer, centre and catch radius in overlay units. */
+export type TrackHold = { id: number; at: Pt; r: number };
+/** One entry of the climb record: limb went onto hold (ms since tracking began, video time). */
+export type ClimbEvent = { t: number; limb: "LH" | "RH" | "LF" | "RF"; hold: number };
 
 /* ---- progress the voice coach reads: number of solve.moves done, -1 when not tracking ---- */
 let progress = -1;
@@ -105,8 +109,10 @@ export async function track(
     onBody: (b: Body | null) => void;
     onDone: (done: number) => void;
     onStatus?: (s: string) => void;
+    /** route holds: every limb landing on any of them is recorded (the climb record) */
+    holds?: TrackHold[];
   },
-): Promise<{ stop: () => void; setDone: (n: number) => void }> {
+): Promise<{ stop: () => void; setDone: (n: number) => void; events: () => ClimbEvent[] }> {
   o.onStatus?.("Loading the body tracker…");
   const model = await loadModel();
   o.onStatus?.("");
@@ -116,16 +122,21 @@ export async function track(
   let wasOff: Record<string, boolean> = {}, onSince: Record<string, number> = {};
   const reset = () => ((wasOff = {}), (onSince = {}));
   setLiveProgress(done);
+  // the climb record: which hold each limb is on, kept once it has stayed there HOLD_MS
+  const events: ClimbEvent[] = [];
+  const onHold: Record<string, number | null> = {};
+  const cand: Record<string, { hold: number | null; since: number }> = {};
+  const t0 = video.currentTime * 1000;
 
   const loop = () => {
     if (stopped) return;
     raf = requestAnimationFrame(loop);
     if (video.readyState < 2 || video.currentTime === last) return;
     last = video.currentTime;
-    const now = performance.now();
+    const now = video.currentTime * 1000; // video time: right for a live camera and for a filmed climb
     let res;
     try {
-      res = model.detectForVideo(video, now);
+      res = model.detectForVideo(video, performance.now());
     } catch {
       return;
     }
@@ -138,6 +149,21 @@ export async function track(
       shoulders: [p(11), p(12)], hips: [p(23), p(24)],
     };
     o.onBody(body);
+
+    for (const limb of ["LH", "RH", "LF", "RF"] as const) {
+      const pt = body[limb];
+      let best: number | null = null, bestD = Infinity;
+      for (const h of o.holds ?? []) {
+        const d = Math.hypot(pt.x - h.at.x, pt.y - h.at.y);
+        if (d <= h.r && d < bestD) (best = h.id), (bestD = d);
+      }
+      const c = cand[limb];
+      if (!c || c.hold !== best) cand[limb] = { hold: best, since: now };
+      else if (best !== null && onHold[limb] !== best && now - c.since >= HOLD_MS) {
+        onHold[limb] = best;
+        events.push({ t: Math.round(c.since - t0), limb, hold: best });
+      }
+    }
 
     // Moves with no hold (a foot smearing on the wall) are done as soon as they come up.
     while (done < o.moves.length && !o.moves[done].hasHold) {
@@ -181,5 +207,6 @@ export async function track(
       reset();
       setLiveProgress(done);
     },
+    events: () => events.slice(),
   };
 }

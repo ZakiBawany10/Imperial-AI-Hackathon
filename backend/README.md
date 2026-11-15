@@ -23,6 +23,7 @@ Anything V2 Base (about 400 MB) from Hugging Face on first use.
 | `POST /analyze` (form field `file`) | Photo in, holds out | 0.3 to 1.5 s with the trained models, 4 to 10 s without |
 | `POST /solve` (JSON) | Route in; moves, poses and grade out | under 0.1 s |
 | `POST /depth` (form field `file`) | Photo in, greyscale relief PNG out (the 3D wall's shape) | about 1 s |
+| `POST /climbs`, `GET /climbs`, `POST /climbs/similar` | Store a climb the live camera followed, list them, find climbs on similar routes (`climbs_store.py`) | instant |
 | `GET /hold-types` | The hold database | instant |
 | `GET /health` | `{"ok": true}` | instant |
 | `GET /demo/3d.html` | The 3D demo: pick a climb, set height and strength, watch it climbed | — |

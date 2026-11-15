@@ -150,6 +150,37 @@ export function solve(req: SolveRequest, signal?: AbortSignal) {
   });
 }
 
+/* ---- recorded climbs (backend/climbs_store.py): every climb the live camera follows is kept,
+   found again for similar routes, and used to retrain the physics ---- */
+export type ClimbRecord = {
+  image: { w: number; h: number };
+  wall_height_m: number;
+  climber_height_m: number;
+  strength: number;
+  holds: { id: number; x: number; y: number; w: number; h: number; type: string }[];
+  start: number[];
+  finish: number[];
+  events: { t: number; limb: Limb; hold: number }[];
+  planned: { limb: Limb; hold: number | null }[];
+  topped: boolean;
+  source: "camera" | "video";
+};
+export function saveClimb(rec: ClimbRecord) {
+  return call<{ id: string }>("/climbs", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(rec),
+  });
+}
+export type SimilarClimb = { id: string; topped: boolean; climber_height_m: number; what_they_did: string; distance: number };
+export function similarClimbs(req: SolveRequest) {
+  return call<SimilarClimb[]>("/climbs/similar", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(req),
+  });
+}
+
 /* ---- hold database: GET /hold-types, the contract example until it answers ---- */
 let holdTypes: ApiHoldType[] = HOLD_DB;
 export const getHoldTypes = () => holdTypes;

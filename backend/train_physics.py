@@ -145,6 +145,9 @@ def _task(args):
 
 
 CLIMBS = wayup.climbs()
+if os.environ.get("ASCEND_CLIMBS") == "1":       # add the climbs the app's live camera recorded
+    import climbs_store
+    CLIMBS += climbs_store.training_climbs()
 
 
 def evaluate(pool, configs, method="safest"):
@@ -209,6 +212,11 @@ def main():
            "results": results, "best_on_all": {k: round(v, 4) for k, v in configs[best_all].items()},
            "best_on_all_summary": summary(scores[best_all], all_idx), "shipped": bool(wins and best_all != 0),
            "per_climb_current": [{"id": CLIMBS[i]["id"], **{k: round(v, 3) if isinstance(v, float) else v for k, v in scores[0][i].items()}} for i in all_idx]}
+    ours = [i for i in all_idx if CLIMBS[i]["id"].startswith("ascend-")]
+    if ours:                                       # the app's own recorded climbs, scored alone
+        out["ascend_climbs"] = {"climbs": len(ours), "current settings": summary(scores[0], ours),
+                                "best on all": summary(scores[best_all], ours)}
+        print("ascend climbs alone:", out["ascend_climbs"])
     for name, r in results.items():
         print(f"--- {name} split")
         for k, v in r.items():

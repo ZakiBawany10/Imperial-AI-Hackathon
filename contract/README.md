@@ -83,4 +83,20 @@ All optional, all live on `/solve` now; older readers can ignore them.
 - **`POST /depth`** (form field `file`): a greyscale PNG relief map of the wall photo,
   black = flat wall, white = sticks out most. The 3D viewer uses it as `reliefUrl`.
 
+## Added for the live camera (15 November, night)
+
+All new endpoints; nothing above changed.
+
+- **`POST /climbs`**: store a climb the live camera followed. Body:
+  `{"image", "wall_height_m", "climber_height_m", "strength", "holds": [{"id", "x", "y", "w", "h", "type"}],
+  "start", "finish", "events": [{"t": ms, "limb": "LH"|"RH"|"LF"|"RF", "hold": id}],
+  "planned": [{"limb", "hold"}], "topped", "source": "camera"|"video"}`. Answers `{"id"}`, or 422
+  when a field is missing or an event names a limb or hold that is not on the route.
+- **`GET /climbs`**: every stored climb, short form, newest first.
+- **`POST /climbs/similar`**: same body as `/solve`; answers up to 3 stored climbs on the most
+  similar routes, nearest first, each with `what_they_did` (one plain sentence for the coach).
+
+Stored climbs are kept in `backend/data/climbs/` (not in git) and can be added to the physics
+training: `ASCEND_CLIMBS=1 python3 train_physics.py` (see `backend/climbs_store.py`).
+
 Nobody changes the contract without telling the other two first.
