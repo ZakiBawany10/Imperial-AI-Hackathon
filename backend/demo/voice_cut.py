@@ -162,7 +162,7 @@ def main():
         hold(1.3, dur(key) + gap)
 
     play(0.0, 1.3)                                   # Zaki walks up to the wall
-    for key in ("hello", "grade?", "grade", "on"):   # the talk before he climbs
+    for key in (("grade?", "grade", "on") if os.environ.get("NO_HELLO") else ("hello", "grade?", "grade", "on")):   # the talk before he climbs
         say(key)
     cues.append(("first", now()))                    # "Great. First move ..."
     hold(1.3, 1.6)
@@ -185,7 +185,7 @@ def main():
     for i in range(fade):
         k = (fade - i) / fade
         out[-fade + i] = (out[-fade + i].astype(np.float32) * k + np.float32(INK[::-1]) * (1 - k)).astype(np.uint8)
-    render(out, cues, os.path.join(E, f"climb_v_{O}.mp4"))
+    render(out, cues, os.path.join(E, f"climb_v_{O}{os.environ.get('SUFFIX', '')}.mp4"))
     print(O, "climb", round(len(out) / FPS, 1), "s;", [(k, round(t, 1)) for k, t in cues])
 
 
