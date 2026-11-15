@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { C, HOLDS, betaFor, holdPath, type Hold } from "../lib/wall";
+import { HEIGHT_RANGE, STRENGTHS } from "../lib/api";
 import {
   Btn,
   Glyph,
@@ -24,16 +25,50 @@ export const ANGLES: { k: Angle; label: string; deg: number }[] = [
 const MOCK_ROUTE = HOLDS.filter((h) => h.colour === "blue").sort((a, b) => b.y - a.y);
 const MOCK_OTHERS = HOLDS.filter((h) => h.colour !== "blue");
 
+/** Outline colour by role: green start, red finish, white for every other
+ *  route hold (white reads on any hold colour; a dark edge keeps it off white holds). */
+export function routeStroke(id: string, start: string[] = [], finish: string[] = []) {
+  return start.includes(id) ? C.green : finish.includes(id) ? C.alert : C.surface;
+}
+
 /** Route holds numbered bottom to top, the rest of the wall faded. */
 export function RouteOverlay({
   strokeWidth = 3,
   route = MOCK_ROUTE,
   others = MOCK_OTHERS,
+  start = route === MOCK_ROUTE ? ["y1", "y2"] : [],
+  finish = route === MOCK_ROUTE ? ["y8"] : [],
+  tags = false,
 }: {
   strokeWidth?: number;
   route?: Hold[];
   others?: Hold[];
+  start?: string[];
+  finish?: string[];
+  /** START / FINISH tags, a pulsing ring on the finish (Play) */
+  tags?: boolean;
 }) {
+  const tag = (h: Hold, text: string, fill: string, above: boolean) => {
+    const w = text.length * 13 + 16;
+    const y = above ? h.y - h.r * (h.sy ?? 1) - 40 : h.y + h.r * (h.sy ?? 1) + 12;
+    return (
+      <g key={`${text}-${h.id}`} pointerEvents="none" transform={`rotate(-4 ${h.x} ${y + 13})`}>
+        <rect x={h.x - w / 2} y={y} width={w} height={26} rx={3} fill={fill} stroke={C.surface} strokeWidth={2} />
+        <text
+          x={h.x}
+          y={y + 18.5}
+          textAnchor="middle"
+          fill={C.surface}
+          fontSize={17}
+          fontFamily="Barlow Semi Condensed"
+          fontWeight={600}
+          letterSpacing={1.6}
+        >
+          {text}
+        </text>
+      </g>
+    );
+  };
   return (
     <>
       {others.map((h) => (
@@ -44,7 +79,15 @@ export function RouteOverlay({
           <path
             d={holdPath(h, 1.15)}
             fill="none"
-            stroke={C.accent}
+            stroke={C.ink}
+            strokeOpacity={0.55}
+            strokeWidth={strokeWidth + 2}
+            vectorEffect="non-scaling-stroke"
+          />
+          <path
+            d={holdPath(h, 1.15)}
+            fill="none"
+            stroke={routeStroke(h.id, start, finish)}
             strokeWidth={strokeWidth}
             vectorEffect="non-scaling-stroke"
           />
@@ -65,6 +108,31 @@ export function RouteOverlay({
           </text>
         </g>
       ))}
+      {tags &&
+        route
+          .filter((h) => finish.includes(h.id))
+          .map((h) => {
+            const R = h.r * Math.max(h.sx ?? 1, h.sy ?? 1) + 16;
+            return (
+              <g key={`fin-${h.id}`} pointerEvents="none">
+                {[0, 0.8].map((d) => (
+                  <circle
+                    key={d}
+                    cx={h.x}
+                    cy={h.y}
+                    r={R}
+                    fill="none"
+                    stroke={C.alert}
+                    strokeWidth={3}
+                    className="anim-ring"
+                    style={{ transformOrigin: `${h.x}px ${h.y}px`, animationDelay: `${d}s` }}
+                  />
+                ))}
+              </g>
+            );
+          })}
+      {tags && route.filter((h) => finish.includes(h.id)).map((h) => tag(h, "FINISH", C.alert, true))}
+      {tags && route.filter((h) => start.includes(h.id)).slice(0, 1).map((h) => tag(h, "START", C.green, false))}
     </>
   );
 }
@@ -77,6 +145,9 @@ type Props = {
   setWallH: (n: number) => void;
   angle: Angle;
   setAngle: (a: Angle) => void;
+  /** grip strength sent to /solve (1.0 = a regular climber) */
+  strength?: number;
+  setStrength?: (s: number) => void;
   solving?: boolean;
   onSolve?: () => void;
   onCancel?: () => void;
@@ -84,6 +155,8 @@ type Props = {
   onSolved?: () => void;
   /** The real route from Review; without it the design mock is shown. */
   route?: Hold[];
+  start?: string[];
+  finish?: string[];
   others?: Hold[];
   colour?: string;
   aspect?: number;
@@ -103,7 +176,7 @@ export function RouteScreen(p: Props) {
       <TopBar step={3} />
       <div data-name="route/photo" className="relative h-[40%] shrink-0">
         <WallPhoto photo={p.photo} dim={0.45} aspect={p.aspect}>
-          <RouteOverlay route={route} others={p.others} />
+          <RouteOverlay route={route} others={p.others} start={p.start} finish={p.finish} />
         </WallPhoto>
         <MeasureLine metres={p.wallH} />
         <span className={`${MONO} absolute top-3 right-3 rounded-[4px] bg-surface px-2 py-1`}>
@@ -131,7 +204,7 @@ export function RouteScreen(p: Props) {
               id="height"
               label="Your height"
               min={1.4}
-              max={2}
+              max={HEIGHT_RANGE[1]}
               step={0.01}
               value={p.height}
               onChange={p.setHeight}
@@ -139,13 +212,23 @@ export function RouteScreen(p: Props) {
           </div>
           <div className={`${MONO} mt-1 flex justify-between text-muted`}>
             <span>1.40 m</span>
-            <span>2.00 m</span>
+            <span>{HEIGHT_RANGE[1].toFixed(2)} m</span>
           </div>
           <p className={`${MONO} mt-4 flex items-center gap-2 text-ink`}>
             <span className="size-1.5 rounded-full bg-tape-blue" aria-hidden />
             Reach is estimated from this
           </p>
         </section>
+
+        {p.setStrength && (
+          <section data-name="form/strength" className="border-b border-hairline px-6 py-6">
+            <p className={`${MONO} text-muted`}>Your grip strength</p>
+            <StrengthPicker value={p.strength ?? 1} onChange={p.setStrength} />
+            <p className="mt-3 text-[14px] leading-[1.45] text-muted">
+              How hard you can hang on. It changes which holds you can use and how you move.
+            </p>
+          </section>
+        )}
 
         <section data-name="form/wall-height" className="border-b border-hairline px-6 py-6">
           <p className={`${MONO} text-muted`}>Wall height in the photo</p>
@@ -211,6 +294,42 @@ export function RouteScreen(p: Props) {
   );
 }
 
+/** Beginner / Regular / Strong / Very strong, as one segmented control. */
+export function StrengthPicker({
+  value,
+  onChange,
+  compact = false,
+}: {
+  value: number;
+  onChange: (s: number) => void;
+  compact?: boolean;
+}) {
+  return (
+    <div
+      data-name="strength/segmented"
+      role="radiogroup"
+      aria-label="Grip strength"
+      className={`${compact ? "mt-2" : "mt-4"} grid grid-cols-4 overflow-hidden rounded-[6px] border border-ink`}
+    >
+      {STRENGTHS.map((s, i) => {
+        const on = Math.abs(value - s.v) < 0.01;
+        return (
+          <button
+            key={s.v}
+            role="radio"
+            aria-checked={on}
+            data-name={`strength/${s.label.toLowerCase().replace(" ", "-")}`}
+            onClick={() => onChange(s.v)}
+            className={`${compact ? "h-10 text-[13px]" : "h-12 text-[14px]"} font-semibold leading-tight ${i ? "border-l border-ink" : ""} ${on ? "bg-ink text-surface" : "bg-paper text-ink active:bg-hairline"}`}
+          >
+            {s.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 function AngleSketch({ deg }: { deg: number }) {
   const rad = (deg * Math.PI) / 180;
   const L = 22;
@@ -240,6 +359,8 @@ function Solving({
   aspect,
   route,
   others,
+  start,
+  finish,
   error,
   onCancel,
   onSolved,
@@ -257,7 +378,7 @@ function Solving({
       <TopBar step={3} />
       <div data-name="solving/photo" className="relative min-h-0 flex-1">
         <WallPhoto photo={photo} dim={0.45} aspect={aspect}>
-          <RouteOverlay strokeWidth={2} route={route} others={others} />
+          <RouteOverlay strokeWidth={2} route={route} others={others} start={start} finish={finish} />
           <path
             d={path}
             fill="none"

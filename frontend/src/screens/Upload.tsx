@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { HOLDS, PHOTOS, unsplash, type Hold } from "../lib/wall";
 import { BottomSheet, Btn, MONO, Screen, StickyBar, TopBar, WallPhoto } from "../ui/kit";
-import { HoldPin } from "../ui/HoldPins";
+import { HoldGlyph, HoldPin } from "../ui/HoldPins";
 import { WallSketch } from "../ui/WallSketch";
 import { C } from "../lib/wall";
 
@@ -169,25 +169,38 @@ export function UploadScreen({
 
       <BottomSheet name="sheet/how-it-works" open={howOpen} onClose={() => setHowOpen(false)}>
         <div className="px-6 pb-2">
-          <p className={`${MONO} text-muted`}>How it works</p>
-          <h2 className="mt-2 font-display text-[32px] leading-none font-bold tracking-[0.005em]">
-            Three steps, one photo.
+          <h2 className="font-josefin text-[30px] leading-none font-bold tracking-[0.01em]">
+            How it works
           </h2>
-          <ol className="mt-6 border-t border-hairline">
-            {[
-              ["Find holds", "Every hold on the wall, outlined and tagged."],
-              ["Pick a route", "Tap one hold to select its whole colour."],
-              ["Solve and grade", "Beta for your height, and the grade it climbs at."],
-            ].map(([t, d], i) => (
-              <li
-                key={t}
-                data-name={`how-it-works/step-0${i + 1}`}
-                className="flex gap-6 border-b border-hairline py-4"
-              >
-                <span className={`${MONO} w-6 pt-1 text-accent-ink`}>0{i + 1}</span>
-                <span>
-                  <span className="block text-[16px] font-semibold">{t}</span>
-                  <span className="block text-[14px] text-muted">{d}</span>
+          {/* the steps as a little route: a bolted hold each, joined by the beta line */}
+          <ol data-name="how-it-works/route" className="relative mt-6">
+            <span
+              aria-hidden
+              className="absolute top-6 bottom-10 left-[23px] border-l-2 border-dashed border-accent"
+            />
+            {(
+              [
+                ["jug", C.accent, "Find holds", "Every hold on the wall, outlined."],
+                ["crimp", C.surface, "Pick a route", "Tap one hold and we find the rest of its colour."],
+                ["sloper", C.ink, "Solve and grade", "Beta for your height, and the grade it climbs at."],
+              ] as const
+            ).map(([kind, colour, t, d], i) => (
+              <li key={t} data-name={`how-it-works/step-0${i + 1}`} className="relative flex gap-4 pb-6">
+                <span className="relative flex w-12 shrink-0 justify-center">
+                  <svg viewBox="0 0 64 64" className="size-12" aria-hidden>
+                    <HoldGlyph kind={kind} colour={colour} />
+                  </svg>
+                  {i === 2 && (
+                    <span
+                      className={`${MONO} absolute -bottom-2 left-0 rotate-[-8deg] bg-ink px-1.5 py-0.5 text-[9px] leading-none text-surface`}
+                    >
+                      Top
+                    </span>
+                  )}
+                </span>
+                <span className="pt-1.5">
+                  <span className="block font-josefin text-[18px] leading-tight font-semibold">{t}</span>
+                  <span className="mt-1 block text-[14px] leading-[1.4] text-muted">{d}</span>
                 </span>
               </li>
             ))}
@@ -195,7 +208,7 @@ export function UploadScreen({
           <Btn
             variant="outline"
             size="md"
-            className="mt-6 w-full"
+            className="mt-2 w-full"
             onClick={() => setHowOpen(false)}
           >
             Got it

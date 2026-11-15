@@ -30,6 +30,8 @@ export type BetaMove = {
   text: string;
   /** real /solve: chance of falling off on this move (0 to 1) */
   fall?: number;
+  /** real /solve: share of grip strength this move needs (1.0 or more can't be held) */
+  effort?: number;
 };
 export type BetaView = {
   moves: BetaMove[];
@@ -39,12 +41,17 @@ export type BetaView = {
   /** route holds, bottom to top (numbered on the photo), and the rest of the wall */
   route: Hold[];
   others: Hold[];
+  /** overlay ids of the start and finish holds */
+  start: string[];
+  finish: string[];
   colour: string;
   /** height / width of the photo; undefined for the square mock */
   aspect?: number;
   unitsPerMetre: number;
   /** real /solve: chance of topping the route on this sequence (0 to 1) */
   finishChance?: number;
+  /** real /solve: each limb's share of the body weight in keyframe k (0 to 1) */
+  loadsAt?: (k: number) => Record<Limb, number> | null;
   /** pose at t in [0, moves.length]: t = k is the pose after k moves */
   poseAt: (t: number) => Pose;
 };
@@ -78,6 +85,8 @@ export function mockBeta(height: number, wallH: number, angle = "vertical"): Bet
     grade: { font: g.grade, v: g.v, range: g.range },
     route,
     others: HOLDS.filter((h) => h.colour !== "blue"),
+    start: ["y1", "y2"],
+    finish: ["y8"],
     colour: "blue",
     unitsPerMetre: 1000 / wallH,
     poseAt: (t) => skeleton(placementAt(list, t), H),
@@ -146,7 +155,7 @@ export function realBeta(
       const at = poses[Math.min(i + 1, last)][m.limb];
       let text = `${who.toLowerCase()} smears on the wall.`;
       if (i === res.crux) text += " This is the crux.";
-      return { limb: m.limb, hold: null, at, label: "WALL", text: coachSays(i) ?? text, fall: m.fall_chance };
+      return { limb: m.limb, hold: null, at, label: "WALL", text: coachSays(i) ?? text, fall: m.fall_chance, effort: m.effort };
     }
     const label = num.get(hold.id) ?? hold.tag;
     const who = LIMB_NAME[m.limb].toLowerCase();
@@ -159,7 +168,7 @@ export function realBeta(
       : `${who} ${isHand ? "to" : "up to"} the ${type}, hold ${label}.`;
     if (!matched && m.span_m >= 0.3) text += ` Reach ${m.span_m.toFixed(2)} m.`;
     if (i === res.crux) text += " This is the crux.";
-    return { limb: m.limb, hold, at: hold, label, text: coachSays(i) ?? text, fall: m.fall_chance };
+    return { limb: m.limb, hold, at: hold, label, text: coachSays(i) ?? text, fall: m.fall_chance, effort: m.effort };
   });
 
   return {
@@ -168,10 +177,19 @@ export function realBeta(
     grade: { font: res.grade.font, v: res.grade.v, range: `Range ${res.grade.low} to ${res.grade.high}` },
     route: o.route,
     others: o.others,
+    start: (o.req?.start ?? []).map((n) => o.byId.get(n)?.id).filter((x): x is string => !!x),
+    finish: (o.req?.finish ?? []).map((n) => o.byId.get(n)?.id).filter((x): x is string => !!x),
     colour: o.colour,
     aspect: o.aspect,
     unitsPerMetre: (1000 * o.aspect) / o.wallH,
     finishChance: res.physics?.finish_chance,
+    loadsAt: (k) => {
+      const f = res.keyframes[Math.max(0, Math.min(last, Math.round(k)))]?.physics?.forces;
+      if (!f?.length) return null;
+      const out = { LH: 0, RH: 0, LF: 0, RF: 0 } as Record<Limb, number>;
+      for (const x of f) out[x.limb] = x.share;
+      return out;
+    },
     poseAt: (t) => {
       const i = Math.max(0, Math.min(last, Math.floor(t)));
       const j = Math.min(last, i + 1);

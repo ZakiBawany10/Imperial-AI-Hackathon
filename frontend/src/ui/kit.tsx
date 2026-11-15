@@ -1,5 +1,7 @@
 import { useEffect, useState, type ButtonHTMLAttributes, type ReactNode } from "react";
 import { C, HOLD_COLOURS, holdPath, unsplash, type Hold } from "../lib/wall";
+import { HoldGlyph } from "./HoldPins";
+import { Wordmark } from "./Logo";
 
 export const MONO = "font-mono text-[13px] font-semibold uppercase tracking-[0.14em]";
 
@@ -23,13 +25,8 @@ const STEPS = ["Photo", "Route", "You", "Beta"];
 function StepRoute({ step }: { step: number }) {
   const xs = [14, 76, 138, 200];
   const y = 10;
-  // small hold silhouettes, one per step (jug, sloper, crimp, pinch)
-  const shapes = [
-    "M-7 1C-7.5-4-3-7.5 1-7.5S7.5-4 7 1C6.6 5 3.5 7 0 7S-6.6 5-7 1Z",
-    "M-8 5C-7.5-1.5-3.5-6 0-6S7.5-1.5 8 5C8 6.5 6.5 7 5 7L-5 7C-6.5 7-8 6.5-8 5Z",
-    "M-8-1.5C-8-3.5-6-4-3.5-4L5-4.5C7.5-4.5 8.5-3 8.5-1L8.5 2.5C8.5 4.5 6.5 5 4 5L-4 5.3C-6.5 5.3-8 4-8 2Z",
-    "M-2-8C2.5-8.5 5-5 4.5 0C4 5 3 8 0 8S-4.5 5-4.3 0C-4-5-5-7.5-2-8Z",
-  ];
+  // one hold per step, drawn like the bolted pins on the upload sheet
+  const kinds = ["jug", "sloper", "crimp", "pinch"] as const;
   return (
     <svg
       data-name="topbar/step-route"
@@ -38,21 +35,20 @@ function StepRoute({ step }: { step: number }) {
       role="img"
       aria-label={`Step ${step} of 4: ${STEPS[step - 1]}`}
     >
+      {/* between holds: the wall's bolt holes ahead; a solid rope once that stretch is climbed */}
       {xs.slice(0, -1).map((x, i) => {
         const done = i + 1 < step;
+        const x1 = x + 14;
+        const x2 = xs[i + 1] - 14;
+        const bolts = [0.2, 0.5, 0.8].map((f) => x1 + (x2 - x1) * f);
         return (
-          <line
-            key={i}
-            x1={x + 10}
-            y1={y}
-            x2={xs[i + 1] - 10}
-            y2={y}
-            stroke={done ? C.ink : C.accent}
-            strokeOpacity={done ? 1 : i + 1 === step ? 1 : 0.45}
-            strokeWidth={done ? 2 : 1.6}
-            strokeDasharray={done ? undefined : "3 4"}
-            strokeLinecap="round"
-          />
+          <g key={i} data-name={done ? "step-route/rope" : "step-route/bolts"}>
+            {done && <line x1={x1 - 2} y1={y} x2={x2 + 2} y2={y} stroke={C.ink} strokeWidth={2} strokeLinecap="round" />}
+            {!done &&
+              bolts.map((bx) => (
+                <circle key={bx} cx={bx} cy={y} r={1.9} fill={C.surface} stroke={C.ink} strokeOpacity={0.4} strokeWidth={1.1} />
+              ))}
+          </g>
         );
       })}
       {xs.map((x, i) => {
@@ -64,37 +60,17 @@ function StepRoute({ step }: { step: number }) {
             {now && (
               <>
                 <circle cx={x} cy={y} r={11} fill="none" stroke={C.accent} strokeWidth={1.5} />
-                <circle
-                  cx={x}
-                  cy={y}
-                  r={11}
-                  fill="none"
-                  stroke={C.accent}
-                  strokeWidth={1.5}
-                  className="anim-ring"
-                  style={{ transformOrigin: `${x}px ${y}px` }}
-                />
+
               </>
             )}
-            <path
-              d={shapes[i]}
-              transform={`translate(${x} ${y})`}
-              fill={done ? C.ink : now ? C.accent : C.surface}
-              stroke={C.ink}
-              strokeOpacity={done || now ? 1 : 0.45}
-              strokeWidth={1.3}
-              strokeLinejoin="round"
-            />
-            {done && (
-              <path
-                d={`M${x - 3} ${y + 0.5}l2 2 4-4.5`}
-                fill="none"
-                stroke={C.surface}
-                strokeWidth={1.6}
-                strokeLinecap="round"
-                strokeLinejoin="round"
+            <g transform={`translate(${x - 11} ${y - 11}) scale(${22 / 64})`}>
+              <HoldGlyph
+                kind={kinds[i]}
+                colour={done ? C.ink : now ? C.accent : C.surface}
+                mark={done ? "tick" : "none"}
+                faded={!done && !now}
               />
-            )}
+            </g>
             <text
               x={x}
               y={31}
@@ -119,12 +95,7 @@ export function TopBar({ step, right }: { step: number; right?: ReactNode }) {
   return (
     <header data-name="topbar" className="shrink-0 bg-paper px-6 pt-2 pb-3">
       <div className="flex h-11 items-center justify-between gap-4">
-        <span
-          data-name="topbar/wordmark"
-          className="font-display text-[20px] font-bold tracking-[0.005em]"
-        >
-          BetaCrux
-        </span>
+        <Wordmark />
         {right ?? <StepRoute step={step} />}
       </div>
     </header>
@@ -243,8 +214,16 @@ export function WallPhoto({
       : unsplash(photo);
   if (aspect)
     return (
-      <div data-name={name} className="absolute inset-0 flex items-center bg-ink">
-        <div className="relative w-full overflow-hidden" style={{ aspectRatio: `${1 / aspect}` }}>
+      // Fit inside the frame whatever the shape: full width for landscape photos,
+      // full height for tall (portrait) ones, so no part of the wall is cut off.
+      <div
+        data-name={name}
+        className="absolute inset-0 flex items-center justify-center bg-ink [container-type:size]"
+      >
+        <div
+          className="relative overflow-hidden"
+          style={{ aspectRatio: `${1 / aspect}`, width: `min(100cqw, calc(100cqh / ${aspect}))` }}
+        >
           <img
             src={src}
             alt="Bouldering wall"

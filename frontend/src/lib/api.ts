@@ -2,8 +2,6 @@
 // Base URL: VITE_API_URL, else port 8010 on the host serving the app (so a
 // phone on the same Wi-Fi reaches the laptop running backend/run.sh).
 
-import solveJson from "@contract/solve.json";
-import solveRequestJson from "@contract/solve_request.json";
 import { HOLD_DB, type Analyze, type ApiHold, type ApiHoldType } from "./contract";
 
 export const API_URL: string =
@@ -29,6 +27,8 @@ export type SolveRequest = {
   start: number[];
   finish: number[];
   climber_height_m: number;
+  /** grip strength, 0.6 to 1.5; 1.0 = a regular gym climber */
+  strength?: number;
   wall_height_m: number;
   wall_angle_deg: number;
 };
@@ -41,8 +41,23 @@ export type SolveResponse = {
   // hold is null when the live backend puts a foot on the wall or floor (a smear).
   // Not in the contract yet: reported to Krishna.
   // fall_chance: live backend, not yet in the contract.
-  moves: { i: number; limb: Limb; hold: number | null; load: number; span_m: number; fall_chance?: number }[];
-  keyframes: { move: number; joints: Record<JointName, [number, number]> }[];
+  // effort: share of grip strength the hardest-working hand needs (1.0+ can't be held)
+  moves: {
+    i: number;
+    limb: Limb;
+    hold: number | null;
+    load: number;
+    span_m: number;
+    fall_chance?: number;
+    effort?: number;
+    stable?: boolean;
+  }[];
+  keyframes: {
+    move: number;
+    joints: Record<JointName, [number, number]>;
+    // live backend, not yet in the contract: who carries the weight in this pose
+    physics?: { effort: number; stable: boolean; forces: { limb: Limb; share: number }[] };
+  }[];
 };
 
 /** `offline` = the server could not be reached at all (vs. it answered with an error). */
@@ -62,7 +77,7 @@ async function call<T>(path: string, init?: RequestInit): Promise<T> {
     res = await fetch(API_URL + path, init);
   } catch (e) {
     if ((e as Error).name === "AbortError") throw e;
-    throw new ApiError(`Can't reach the BetaCrux server at ${API_URL}. Is backend/run.sh running?`, 0, true);
+    throw new ApiError(`Can't reach the Ascend server at ${API_URL}. Is backend/run.sh running?`, 0, true);
   }
   if (!res.ok) {
     let detail = `The server answered ${res.status}.`;
@@ -105,6 +120,27 @@ export async function shrinkPhoto(file: File, max = 2048): Promise<Blob> {
   }
 }
 
+/** POST /depth (form field `file`): a greyscale relief PNG of the wall for the 3D view. */
+export async function depth(photo: Blob, signal?: AbortSignal): Promise<string | null> {
+  try {
+    const body = new FormData();
+    body.append("file", photo, "wall.jpg");
+    const r = await fetch(API_URL + "/depth", { method: "POST", body, signal });
+    return r.ok ? URL.createObjectURL(await r.blob()) : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Climber height and strength limits /solve accepts (contract/README.md). */
+export const HEIGHT_RANGE = [1.4, 2.1] as const;
+export const STRENGTHS = [
+  { v: 0.7, label: "Beginner" },
+  { v: 1.0, label: "Regular" },
+  { v: 1.25, label: "Strong" },
+  { v: 1.5, label: "Very strong" },
+] as const;
+
 export function solve(req: SolveRequest, signal?: AbortSignal) {
   return call<SolveResponse>("/solve", {
     method: "POST",
@@ -128,9 +164,3 @@ export async function loadHoldTypes() {
 }
 export const qualityOf = (type: string) =>
   holdTypes.find((t) => t.id === type)?.quality ?? holdTypes.find((t) => t.id === "unknown")?.quality ?? 0.5;
-
-/** The fixed example pair (yellow route on contract/wall.jpg), for when the server is down. */
-export const EXAMPLE_SOLVE = {
-  req: solveRequestJson as SolveRequest,
-  res: solveJson as SolveResponse,
-};

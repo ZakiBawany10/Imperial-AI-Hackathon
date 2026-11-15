@@ -20,6 +20,8 @@ import {
   type HoldType,
 } from "../lib/wall";
 import { API_URL, getHoldTypes } from "../lib/api";
+import { routeStroke } from "./Route";
+import { HoldTick } from "../ui/HoldPins";
 import { selectRoute, type Prepared, type RoutePick } from "../lib/contract";
 import {
   BottomSheet,
@@ -149,18 +151,24 @@ export function ReviewScreen({
   };
 
   const pickRoute = (hold: Hold) => {
-    const ids = data ? selectRoute(s.holds, hold) : null;
-    const route = ids
-      ? s.holds.filter((h) => ids.includes(h.id))
-      : s.holds.filter((h) => h.colour === hold.colour);
-    setS({ ...s, route: hold.colour, ids, confirmed: {}, ...autoEnds(route) });
+    const ids = data ? selectRoute(s.holds, hold, data.aspect) : null;
+    // Start hold first (contract/README.md climb rules): its colour picks the climb,
+    // and it's where the hands begin. The top hold is chosen next.
+    setS({ ...s, route: hold.colour, ids, confirmed: {}, start: [hold.id], finish: [] });
+  };
+  const useHighest = () => {
+    const top = routeHolds.filter((h) => !s.start.includes(h.id) && h.type !== "foot").at(-1);
+    if (top) setS({ ...s, finish: [top.id] });
   };
 
   const tapHold = (id: string) => {
     setTouched(true);
     const hold = s.holds.find((h) => h.id === id)!;
     if (tool === "add") return;
-    if (!routeIds.has(id)) return pickRoute(hold);
+    if (!s.route) return pickRoute(hold);
+    if (!routeIds.has(id)) return addToRoute(id);
+    // step 2: a tap on a route hold marks the top
+    if (!s.finish.length && !s.start.includes(id)) return setS({ ...s, finish: [id] });
     setCurrent(id);
     setSheet("actions");
   };
@@ -183,6 +191,10 @@ export function ReviewScreen({
       setS({ ...s, holds, route: colour, ids, ...autoEnds(route) });
     } else setS({ ...s, holds, ids: s.ids && [...s.ids, id] });
   };
+
+  // A missed hold: one tap puts it on the route. "Pick another route" starts over.
+  const addToRoute = (id: string) =>
+    setS({ ...s, ids: [...(s.ids ?? routeHolds.map((h) => h.id)), id] });
 
   /* ---- the hold-actions menu ---- */
   const toggleEnd = (key: "start" | "finish", id: string) => {
@@ -217,19 +229,21 @@ export function ReviewScreen({
     tool === "add"
       ? "Tap the wall where the missing hold is"
       : step === 1
-        ? data
-          ? "Tap any hold on the route you want to climb"
-          : "Tap a hold to pick its route"
+        ? "Tap the start hold, the one you begin on. Its colour picks the climb."
         : step === 2
-          ? "Tap a route hold to mark where you start and finish"
+          ? !s.start.length
+            ? "Tap a route hold, then mark it as the start."
+            : "Now tap the top hold, or use the highest of this colour."
           : step === 3
-            ? `Tap a hold with a ?, or press the button below`
-            : `Start ${s.start.map(num).join(" + ")}, finish ${s.finish.map(num).join("")}. Tap any route hold to change it.`;
+            ? "Tap a hold with a ?, or press the button below. Tap any missed hold to add it."
+            : `Start ${s.start.map(num).join(" + ")}, finish ${s.finish.map(num).join("")}. Tap a missed hold to add it, or a route hold to change it.`;
 
   const cta = !s.route
-    ? { label: "Tap a hold to start", enabled: false, go: () => {} }
+    ? { label: "Tap the start hold", enabled: false, go: () => {} }
     : !ends
-      ? { label: "Mark a start and a finish", enabled: false, go: () => {} }
+      ? s.start.length
+        ? { label: "Use the highest as the top", enabled: true, go: useHighest }
+        : { label: "Mark a start hold", enabled: false, go: () => {} }
       : routeLeft > 0
         ? {
             label: `Answer ${routeLeft} ${routeLeft === 1 ? "question" : "questions"}`,
@@ -262,7 +276,7 @@ export function ReviewScreen({
         onTapEmpty={tapEmpty}
         focus={focus}
         aspect={data?.aspect}
-        hint={!s.route && !touched ? (data ? "Tap any hold on your route" : "Tap a hold") : null}
+        hint={!s.route && !touched ? "Tap the start hold" : null}
       >
         <WallPhoto photo={photo} name="review/photo" aspect={data?.aspect}>
           <HoldsOverlay
@@ -280,8 +294,8 @@ export function ReviewScreen({
         <ol data-name="review/steps" className="grid grid-cols-3 gap-1.5" aria-label="Steps">
           {(
             [
-              ["Route", step > 1],
-              ["Start · Top", step > 2],
+              ["Start", step > 1],
+              ["Top", step > 2],
               [routeAsked ? `Types ${routeAsked - routeLeft}/${routeAsked}` : "Types", step > 3],
             ] as const
           ).map(([label, done], i) => {
@@ -293,12 +307,16 @@ export function ReviewScreen({
                 aria-current={now ? "step" : undefined}
                 className={`flex h-9 items-center gap-1.5 rounded-[4px] border px-2 ${now ? "border-accent bg-accent/8 text-ink" : done ? "border-hairline text-ink" : "border-hairline text-muted"}`}
               >
-                <span
-                  className={`flex size-5 shrink-0 items-center justify-center rounded-full font-mono text-[12px] font-semibold ${done ? "bg-tape-green text-surface" : now ? "bg-accent text-surface" : "bg-hairline text-muted"}`}
-                  aria-hidden
-                >
-                  {done ? "✓" : i + 1}
-                </span>
+                {done ? (
+                  <HoldTick size={22} kind={(["jug", "sloper", "crimp"] as const)[i]} className="-my-1 shrink-0" />
+                ) : (
+                  <span
+                    className={`flex size-5 shrink-0 items-center justify-center rounded-full font-mono text-[12px] font-semibold ${now ? "bg-accent text-surface" : "bg-hairline text-muted"}`}
+                    aria-hidden
+                  >
+                    {i + 1}
+                  </span>
+                )}
                 <span className="truncate text-[13px] leading-none font-semibold">{label}</span>
               </li>
             );
@@ -558,12 +576,24 @@ function HoldsOverlay({
             {/* generous invisible hit area so small holds stay tappable */}
             <circle cx={h.x} cy={h.y} r={Math.max(h.r * 1.4, 34)} fill="transparent" />
             {route ? (
-              <HoldShape
-                hold={h}
-                opacity={sel ? 1 : 0.18}
-                stroke={sel ? C.accent : C.ink}
-                strokeWidth={sel ? 3 : 1}
-              />
+              <>
+                {sel && (
+                  <path
+                    d={holdPath(h)}
+                    fill="none"
+                    stroke={C.ink}
+                    strokeOpacity={0.55}
+                    strokeWidth={5}
+                    vectorEffect="non-scaling-stroke"
+                  />
+                )}
+                <HoldShape
+                  hold={h}
+                  opacity={sel ? 1 : 0.18}
+                  stroke={sel ? routeStroke(h.id, start, finish) : C.ink}
+                  strokeWidth={sel ? 3 : 1}
+                />
+              </>
             ) : (
               <path
                 d={holdPath(h)}
@@ -696,8 +726,8 @@ function ZoomPhoto({
     return { x: e.clientX - r.left, y: e.clientY - r.top };
   };
 
-  // Fit the focus box: WallPhoto shows a real photo full width, centred vertically,
-  // so one overlay unit is W/1000 px, offset by (H - W*aspect)/2.
+  // Fit the focus box: WallPhoto shows a real photo as big as fits, centred, so
+  // its displayed width is min(W, H/aspect); one overlay unit is that / 1000 px.
   const key = focus ? `${focus.x0.toFixed(0)},${focus.y0.toFixed(0)},${focus.x1.toFixed(0)},${focus.y1.toFixed(0)}` : "";
   useEffect(() => {
     const el = box.current;
@@ -706,12 +736,14 @@ function ZoomPhoto({
     if (!focus) return setT({ s: 1, x: 0, y: 0 });
     const W = el.clientWidth;
     const H = el.clientHeight;
-    const k = W / 1000;
-    const off = (H - W * aspect) / 2;
+    const dw = Math.min(W, H / aspect);
+    const k = dw / 1000;
+    const offX = (W - dw) / 2;
+    const off = (H - dw * aspect) / 2;
     const bw = Math.max(40, focus.x1 - focus.x0) * k;
     const bh = Math.max(40, focus.y1 - focus.y0) * k;
     const s = Math.min(4, Math.max(1, 0.8 * Math.min(W / bw, H / bh)));
-    const cx = ((focus.x0 + focus.x1) / 2) * k;
+    const cx = offX + ((focus.x0 + focus.x1) / 2) * k;
     const cy = off + ((focus.y0 + focus.y1) / 2) * k;
     setT(clamp({ s, x: W / 2 - cx * s, y: H / 2 - cy * s }));
   }, [key, aspect]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -808,7 +840,8 @@ function ZoomPhoto({
           setGlide(true);
           setT({ s: 1, x: 0, y: 0 });
         }}
-        className={`${MONO} absolute right-3 bottom-3 flex h-10 min-w-12 items-center justify-center rounded-[4px] border border-ink bg-surface px-3 text-[12px]`}
+        // Not zoomed: just a hint, so taps pass through to holds underneath it.
+        className={`${MONO} absolute right-3 bottom-3 flex h-10 min-w-12 items-center justify-center rounded-[4px] border border-ink bg-surface px-3 text-[12px] ${t.s > 1.02 ? "" : "pointer-events-none opacity-80"}`}
         aria-label={t.s > 1.02 ? "Show whole wall" : "Pinch to zoom"}
       >
         {t.s > 1.02 ? "Show whole wall" : "Pinch to zoom"}

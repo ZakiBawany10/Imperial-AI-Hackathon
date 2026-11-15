@@ -3,7 +3,8 @@ import { C, TYPE_INFO, betaFor, type Limb, type Pt } from "../lib/wall";
 import { LIMB_NAME, mockBeta, type BetaView, type Pose } from "../lib/beta";
 import type { Coach } from "../lib/coach";
 import { Btn, Flame, Glyph, Slider, MONO, Screen, StickyBar, TopBar, WallPhoto } from "../ui/kit";
-import { RouteOverlay } from "./Route";
+import { RouteOverlay, StrengthPicker } from "./Route";
+import { API_URL, HEIGHT_RANGE, type SolveRequest, type SolveResponse } from "../lib/api";
 
 type Props = {
   photo: string;
@@ -20,9 +21,76 @@ type Props = {
   resolving?: boolean;
   /** the last re-solve failed */
   solveError?: string | null;
-  /** the beta is the fixed contract example (server unreachable) */
-  example?: boolean;
+  /** grip strength (1.0 = regular); with setStrength, Play shows the picker */
+  strength?: number;
+  setStrength?: (s: number) => void;
+  /** Real flow: draw the climb with the backend's 3D viewer (backend/demo/viewer). */
+  viewer?: Viewer3DInput;
 };
+
+export type Viewer3DInput = {
+  imageUrl: string;
+  analyze: unknown;
+  reliefUrl: string | null;
+  req: SolveRequest;
+  res: SolveResponse;
+};
+type MountedViewer = {
+  play(): void;
+  pause(): void;
+  seek(i: number, o?: { animate?: boolean }): void;
+  setSpeed(x: number): void;
+  setSolve(req: unknown, res: unknown): void;
+  on(ev: string, fn: (i: number) => void): () => void;
+  dispose(): void;
+  resize(): void;
+};
+
+/** Krishna's 3D viewer, loaded from the API server (contract: CLAUDE.md section 6).
+ *  Our controls drive it (hud off). Status "failed" means use the 2D drawing. */
+function useViewer3D(input: Viewer3DInput | undefined, box: React.RefObject<HTMLDivElement | null>) {
+  const [status, setStatus] = useState<"off" | "loading" | "ready" | "failed">(input ? "loading" : "off");
+  const ref = useRef<MountedViewer | null>(null);
+  const handlers = useRef<{ move?: (i: number) => void; end?: () => void }>({});
+  useEffect(() => {
+    if (!input || !box.current) return;
+    let gone = false;
+    setStatus("loading");
+    const url = `${API_URL}/demo/viewer/betacrux-viewer.js`;
+    import(/* @vite-ignore */ url)
+      .then((mod: { mountViewer: (el: HTMLElement, o: Record<string, unknown>) => MountedViewer }) => {
+        if (gone || !box.current) return;
+        const v = mod.mountViewer(box.current, {
+          imageUrl: input.imageUrl,
+          reliefUrl: input.reliefUrl ?? undefined,
+          analyze: input.analyze,
+          solveRequest: input.req,
+          solve: input.res,
+          theme: "paper",
+          mesh: false,
+          hud: false,
+          autoplay: false,
+          loop: false,
+        });
+        ref.current = v;
+        v.on("move", (i) => handlers.current.move?.(i));
+        v.on("end", () => handlers.current.end?.());
+        v.seek(0, { animate: false });
+        setStatus("ready");
+      })
+      .catch(() => !gone && setStatus("failed"));
+    return () => {
+      gone = true;
+      ref.current?.dispose();
+      ref.current = null;
+    };
+    // a new photo or relief map needs a fresh scene; a new solve uses setSolve below
+  }, [input?.imageUrl, input?.reliefUrl]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (input && ref.current) ref.current.setSolve(input.req, input.res);
+  }, [input?.req, input?.res]); // eslint-disable-line react-hooks/exhaustive-deps
+  return { status, viewer: ref, handlers };
+}
 
 /** The mock beta changes only when the height crosses a band, so memo on that. */
 function useBeta(beta: BetaView | undefined, height: number, wallH: number, angle: string) {
@@ -34,6 +102,27 @@ function useBeta(beta: BetaView | undefined, height: number, wallH: number, angl
   return beta ?? mock!;
 }
 
+/* ---- the climber: a person seen from behind (they face the wall) ----
+   Shirt, trousers, skin and hair over the same pose the solver gives. Widths
+   scale with the torso, so the body keeps its proportions at any height. */
+const SKIN = "#E3BE9C";
+const HAIR = "#3B3027";
+
+type V = { x: number; y: number };
+const sub = (a: V, b: V) => ({ x: a.x - b.x, y: a.y - b.y });
+const len = (a: V) => Math.hypot(a.x, a.y) || 1;
+const at = (a: V, u: V, k: number) => ({ x: a.x + u.x * k, y: a.y + u.y * k });
+
+function Limb({ pts, w, fill }: { pts: V[]; w: number; fill: string }) {
+  const d = pts.map((p, i) => `${i ? "L" : "M"}${p.x} ${p.y}`).join(" ");
+  return (
+    <>
+      <path d={d} fill="none" stroke={C.ink} strokeWidth={w + 3.2} strokeLinecap="round" strokeLinejoin="round" />
+      <path d={d} fill="none" stroke={fill} strokeWidth={w} strokeLinecap="round" strokeLinejoin="round" />
+    </>
+  );
+}
+
 export function Climber({
   pose: sk,
   activeLimb,
@@ -43,85 +132,114 @@ export function Climber({
   activeLimb?: Limb;
   trail?: Pt[];
 }) {
-  const seg = (a: Pt, b: Pt, k: string) => <line key={k} x1={a.x} y1={a.y} x2={b.x} y2={b.y} />;
-  const joints: Pt[] = [sk.shL, sk.shR, sk.elL, sk.elR, sk.hip, sk.knL, sk.knR];
-  const ends: Pt[] = [sk.LH, sk.RH, sk.LF, sk.RF];
+  // body frame from the spine
+  const spine = sub(sk.neck, sk.hip);
+  const T = len(spine);
+  const up = { x: spine.x / T, y: spine.y / T };
+  const side = { x: -up.y, y: up.x }; // towards the climber's right as we look at their back
+  const flip = side.x < 0 ? -1 : 1;
+  const r = { x: side.x * flip, y: side.y * flip };
+  const shL = at(sk.neck, r, -0.36 * T);
+  const shR = at(sk.neck, r, 0.36 * T);
+  const hipL = at(sk.hip, r, -0.2 * T);
+  const hipR = at(sk.hip, r, 0.2 * T);
+  const waist = 0.26 * T;
+  const torso = [
+    at(shL, up, -0.02 * T),
+    at(shR, up, -0.02 * T),
+    at(at(sk.hip, r, waist), up, 0.12 * T),
+    at(at(sk.hip, r, -waist), up, 0.12 * T),
+  ];
+  const head = sk.head;
+  const headR = 0.25 * T;
+  const neckTop = at(sk.neck, up, 0.16 * T);
   const grip = activeLimb ? sk[activeLimb] : null;
+  const w = { upper: 0.17 * T, fore: 0.14 * T, thigh: 0.25 * T, shin: 0.19 * T };
+  const hand = (p: V) => <circle cx={p.x} cy={p.y} r={0.085 * T} fill={SKIN} stroke={C.ink} strokeWidth={1.6} />;
+  const shoe = (p: V, knee: V) => {
+    const u = sub(p, knee);
+    const a = (Math.atan2(u.y, u.x) * 180) / Math.PI - 90;
+    return (
+      <ellipse cx={p.x} cy={p.y} rx={0.11 * T} ry={0.16 * T} transform={`rotate(${a} ${p.x} ${p.y})`} fill={C.ink} stroke={C.surface} strokeWidth={1.2} />
+    );
+  };
   return (
     <g data-name="play/skeleton">
       {trail && trail.length > 1 && (
         <polyline
           points={trail.map((p) => `${p.x},${p.y}`).join(" ")}
           fill="none"
-          stroke={C.accent}
-          strokeOpacity={0.45}
+          stroke={C.surface}
+          strokeOpacity={0.7}
           strokeWidth={4}
           strokeDasharray="2 10"
           strokeLinecap="round"
         />
       )}
+      {/* soft shadow on the wall behind the body */}
+      <ellipse
+        cx={(sk.neck.x + sk.hip.x) / 2}
+        cy={(sk.neck.y + sk.hip.y) / 2}
+        rx={0.6 * T}
+        ry={0.9 * T}
+        fill={C.ink}
+        opacity={0.18}
+        style={{ filter: "blur(6px)" }}
+      />
       {grip && (
         <g data-name="play/grip-ring">
-          <circle cx={grip.x} cy={grip.y} r={52} fill={C.accent} fillOpacity={0.12} />
+          <circle cx={grip.x} cy={grip.y} r={0.42 * T} fill={C.accent} fillOpacity={0.18} />
           <circle
             cx={grip.x}
             cy={grip.y}
-            r={40}
+            r={0.36 * T}
             fill="none"
-            stroke={C.accent}
-            strokeOpacity={0.35}
-            strokeWidth={6}
+            stroke={C.surface}
+            strokeWidth={3}
             className="anim-ring"
             style={{ transformOrigin: `${grip.x}px ${grip.y}px` }}
           />
-          <circle cx={grip.x} cy={grip.y} r={34} fill="none" stroke={C.accent} strokeWidth={4} />
+          <circle cx={grip.x} cy={grip.y} r={0.3 * T} fill="none" stroke={C.accent} strokeWidth={3.5} />
         </g>
       )}
-      <g stroke={C.surface} strokeWidth={9} strokeLinecap="round" opacity={0.9}>
-        {bones(sk, seg)}
-      </g>
-      <g stroke={C.ink} strokeWidth={4.5} strokeLinecap="round">
-        {bones(sk, seg)}
-      </g>
-      <circle
-        cx={sk.head.x}
-        cy={sk.head.y}
-        r={sk.headR}
-        fill={C.surface}
+      {/* legs, then torso, then arms and head on top */}
+      <Limb pts={[hipL, sk.knL, sk.LF]} w={w.thigh} fill={C.ink} />
+      <Limb pts={[hipR, sk.knR, sk.RF]} w={w.thigh} fill={C.ink} />
+      {shoe(sk.LF, sk.knL)}
+      {shoe(sk.RF, sk.knR)}
+      <path
+        d={`M${torso.map((p) => `${p.x} ${p.y}`).join(" L")} Z`}
+        fill={C.accent}
         stroke={C.ink}
-        strokeWidth={4.5}
+        strokeWidth={2.6}
+        strokeLinejoin="round"
       />
-      {joints.map((j, i) => (
-        <circle key={i} cx={j.x} cy={j.y} r={7} fill={C.accent} stroke={C.ink} strokeWidth={2} />
-      ))}
-      {ends.map((j, i) => (
-        <circle
-          key={`e${i}`}
-          cx={j.x}
-          cy={j.y}
-          r={10}
-          fill={C.accent}
-          stroke={C.surface}
-          strokeWidth={3}
-        />
-      ))}
+      {/* waistband */}
+      <path
+        d={`M${torso[3].x} ${torso[3].y} L${torso[2].x} ${torso[2].y}`}
+        stroke={C.ink}
+        strokeWidth={0.1 * T}
+        strokeLinecap="round"
+      />
+      <Limb pts={[shL, sk.elL, sk.LH]} w={w.upper} fill={SKIN} />
+      <Limb pts={[shR, sk.elR, sk.RH]} w={w.upper} fill={SKIN} />
+      {/* short sleeves */}
+      <Limb pts={[shL, at(shL, sub(sk.elL, shL), 0.35)]} w={w.upper + 3} fill={C.accent} />
+      <Limb pts={[shR, at(shR, sub(sk.elR, shR), 0.35)]} w={w.upper + 3} fill={C.accent} />
+      {hand(sk.LH)}
+      {hand(sk.RH)}
+      <Limb pts={[sk.neck, neckTop]} w={0.13 * T} fill={SKIN} />
+      <circle cx={head.x} cy={head.y} r={headR} fill={HAIR} stroke={C.ink} strokeWidth={2.4} />
+      <path
+        d={`M${head.x - headR * 0.55} ${head.y - headR * 0.35} Q${head.x} ${head.y - headR * 0.85} ${head.x + headR * 0.55} ${head.y - headR * 0.35}`}
+        fill="none"
+        stroke={C.surface}
+        strokeOpacity={0.35}
+        strokeWidth={2}
+        strokeLinecap="round"
+      />
     </g>
   );
-}
-function bones(sk: Pose, seg: (a: Pt, b: Pt, k: string) => ReactNode) {
-  return [
-    seg(sk.neck, sk.hip, "spine"),
-    seg(sk.shL, sk.shR, "sh"),
-    seg(sk.hipL, sk.hipR, "hp"),
-    seg(sk.shL, sk.elL, "ual"),
-    seg(sk.elL, sk.LH, "fal"),
-    seg(sk.shR, sk.elR, "uar"),
-    seg(sk.elR, sk.RH, "far"),
-    seg(sk.hipL, sk.knL, "thl"),
-    seg(sk.knL, sk.LF, "shl"),
-    seg(sk.hipR, sk.knR, "thr"),
-    seg(sk.knR, sk.RF, "shr"),
-  ];
 }
 
 export function PlayScreen({
@@ -136,9 +254,14 @@ export function PlayScreen({
   beta: real,
   resolving,
   solveError,
-  example,
+  strength,
+  setStrength,
+  viewer: viewerInput,
 }: Props) {
   const beta = useBeta(real, height, wallH, angle);
+  const stage = useRef<HTMLDivElement>(null);
+  const v3d = useViewer3D(viewerInput, stage);
+  const in3d = v3d.status === "ready";
   const n = beta.moves.length;
   const g = beta.grade;
   const [t, setT] = useState(Math.min(initialMove, n));
@@ -148,7 +271,23 @@ export function PlayScreen({
 
   useEffect(() => setT((v) => Math.min(v, n)), [n]);
   useEffect(() => {
-    if (!playing) return;
+    v3d.handlers.current = {
+      move: (i) => setT(i + 0.5),
+      end: () => {
+        setT(n);
+        setPlaying(false);
+      },
+    };
+  });
+  useEffect(() => {
+    if (!in3d) return;
+    const v = v3d.viewer.current!;
+    v.setSpeed(speed);
+    if (playing) v.play();
+    else v.pause();
+  }, [in3d, playing, speed]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (!playing || in3d) return;
     let last = performance.now();
     const tick = (now: number) => {
       const dt = now - last;
@@ -173,28 +312,62 @@ export function PlayScreen({
   const trail = Array.from({ length: move + 1 - Math.max(0, move - 3) }, (_, i) =>
     beta.poseAt(Math.max(0, move - 3) + i)[active],
   );
+  const loads = beta.loadsAt?.(t) ?? null;
   const go = (k: number) => {
     setPlaying(false);
-    setT(Math.max(0, Math.min(n, k)));
+    const kk = Math.max(0, Math.min(n, k));
+    setT(kk);
+    // 3D: play move k (ends in the pose after it); move 0 = the start position
+    if (in3d) v3d.viewer.current!.seek(Math.max(0, kk - 1), { animate: kk > 0 });
   };
 
   return (
     <Screen name="screen/4-play">
       <TopBar step={4} />
       <div data-name="play/photo" className="relative h-[calc(58%-var(--sat)*0.42-74px)] shrink-0">
+        {/* Krishna's 3D viewer when it loads; the 2D drawing underneath otherwise */}
+        {viewerInput && v3d.status !== "failed" && (
+          <div
+            ref={stage}
+            data-name="play/3d"
+            className={`absolute inset-0 z-[1] bg-paper transition-opacity duration-300 ${in3d ? "opacity-100" : "opacity-0"}`}
+          />
+        )}
         <WallPhoto photo={photo} dim={0.3} aspect={beta.aspect}>
-          <RouteOverlay strokeWidth={1.5} route={beta.route} others={beta.others} />
+          <RouteOverlay
+            strokeWidth={1.5}
+            route={beta.route}
+            others={beta.others}
+            start={beta.start}
+            finish={beta.finish}
+            tags
+          />
+          {/* where the moving limb is going: pulsing rings on the next hold */}
+          {t < n && (
+            <g data-name="play/next-hold" pointerEvents="none">
+              {[0, 0.8].map((d) => (
+                <circle
+                  key={d}
+                  cx={m.at.x}
+                  cy={m.at.y}
+                  r={(m.hold?.r ?? 14) * 1.3 + 14}
+                  fill="none"
+                  stroke={C.surface}
+                  strokeWidth={3}
+                  className="anim-ring"
+                  style={{ transformOrigin: `${m.at.x}px ${m.at.y}px`, animationDelay: `${d}s` }}
+                />
+              ))}
+            </g>
+          )}
           <Climber pose={beta.poseAt(t)} activeLimb={active} trail={trail} />
         </WallPhoto>
-        <span className={`${MONO} absolute top-3 left-3 rounded-[4px] bg-surface px-2 py-1`}>
+        <span className={`${MONO} absolute top-3 left-3 z-[2] rounded-[4px] bg-surface px-2 py-1`}>
           {height.toFixed(2)} m · {wallH.toFixed(1)} m wall
         </span>
-        {example && (
-          <span
-            data-name="play/example-badge"
-            className={`${MONO} absolute top-3 right-3 rounded-[4px] bg-tape-yellow px-2 py-1 text-ink`}
-          >
-            Example answer
+        {in3d && (
+          <span className={`${MONO} absolute top-3 right-3 z-[2] rounded-[4px] bg-ink px-2 py-1 text-surface`}>
+            3D · drag to turn
           </span>
         )}
       </div>
@@ -269,8 +442,26 @@ export function PlayScreen({
             </span>{" "}
             {m.text}
           </p>
+          {m.effort != null && (
+            <div data-name="play/effort" className="mt-3">
+              <div className="flex items-baseline justify-between">
+                <span className={`${MONO} text-[11px] text-muted`}>Effort</span>
+                <span className={`text-[12px] ${m.effort >= 0.82 ? "text-alert" : "text-muted"}`}>
+                  {m.effort >= 1
+                    ? "Too hard to hold at this strength"
+                    : `${Math.round(m.effort * 100)}% of full grip strength`}
+                </span>
+              </div>
+              <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-hairline">
+                <div
+                  className={`h-full rounded-full ${m.effort >= 0.82 ? "bg-alert" : "bg-accent"}`}
+                  style={{ width: `${Math.min(100, Math.round(m.effort * 100))}%`, transition: "width 400ms ease" }}
+                />
+              </div>
+            </div>
+          )}
           {(m.fall != null || beta.finishChance != null) && (
-            <p data-name="play/risk" className={`${MONO} mt-1 flex flex-wrap gap-x-4 text-muted`}>
+            <p data-name="play/risk" className={`${MONO} mt-2 flex flex-wrap gap-x-4 text-muted`}>
               {m.fall != null && (
                 <span className={m.fall >= 0.2 ? "text-alert" : ""}>
                   {Math.round(m.fall * 100)}% fall chance
@@ -280,6 +471,30 @@ export function PlayScreen({
                 <span>{Math.round(beta.finishChance * 100)}% chance to top</span>
               )}
             </p>
+          )}
+          {loads && (
+            <div data-name="play/weight" className="mt-3">
+              <p className={`${MONO} text-[11px] text-muted`}>Weight on</p>
+              <div className="mt-1.5 grid grid-cols-4 gap-3">
+                {(["LH", "RH", "LF", "RF"] as const).map((l) => {
+                  const pct = Math.round(loads[l] * 100);
+                  return (
+                    <div key={l} data-name={`weight/${l}`}>
+                      <div className="flex items-baseline justify-between">
+                        <span className="text-[12px] text-muted">{WEIGHT_LABEL[l]}</span>
+                        <span className="font-mono text-[12px] font-medium">{pct}%</span>
+                      </div>
+                      <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-hairline">
+                        <div
+                          className={`h-full rounded-full ${l === active ? "bg-accent-ink" : "bg-accent"}`}
+                          style={{ width: `${pct}%`, transition: "width 400ms ease" }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           )}
         </div>
 
@@ -295,25 +510,24 @@ export function PlayScreen({
               id="play-height"
               label="Climber height"
               compact
-              min={1.4}
-              max={2}
+              min={HEIGHT_RANGE[0]}
+              max={HEIGHT_RANGE[1]}
               step={0.01}
               value={height}
               onChange={setHeight}
             />
           </div>
+          {setStrength && <StrengthPicker compact value={strength ?? 1} onChange={setStrength} />}
           <p
             data-name="play/height-status"
             className={`${MONO} mt-2 ${solveError ? "text-alert" : "text-muted"}`}
             aria-live="polite"
           >
             {resolving
-              ? "Solving for this height..."
+              ? "Solving for this climber..."
               : solveError
                 ? solveError
-                : example
-                  ? "Example answer: start the solver to re-solve"
-                  : "Drag to resolve: the sequence changes"}
+                : "Change height or strength: the climb re-solves"}
           </p>
         </div>
       </div>
@@ -363,6 +577,8 @@ export function PlayScreen({
     </Screen>
   );
 }
+
+const WEIGHT_LABEL = { LH: "L hand", RH: "R hand", LF: "L foot", RF: "R foot" } as const;
 
 export type Voice = "idle" | "listening" | "speaking";
 

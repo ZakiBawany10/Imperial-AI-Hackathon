@@ -4,9 +4,7 @@
 // Overlay space: 1000 units wide, 1000 * (h / w) high, so one photo pixel is
 // 1000 / image.w units. Screens keep their sizes in those units.
 
-import analyzeJson from "@contract/analyze.json";
 import holdTypesJson from "@contract/hold_types.json";
-import wallUrl from "@contract/wall.jpg";
 import type { SolveRequest } from "./api";
 import { HOLD_COLOURS, HOLD_TYPES, type Hold, type HoldType } from "./wall";
 
@@ -33,7 +31,6 @@ export type ApiHoldType = {
 };
 
 export const HOLD_DB = holdTypesJson as ApiHoldType[];
-export const EXAMPLE_WALL = { photo: wallUrl, analyze: analyzeJson as Analyze };
 
 const isType = (t: string): t is HoldType =>
   t === "unknown" || (HOLD_TYPES as readonly string[]).includes(t);
@@ -70,6 +67,8 @@ export type Prepared = {
   unsure: string[];
   groups: Record<string, { hex: string; count: number }>;
   image: Analyze["image"];
+  /** the /analyze answer as it came (the 3D viewer draws from it) */
+  raw: Analyze;
   /** the detector's hold behind each overlay hold, by overlay id */
   api: Record<string, ApiHold>;
 };
@@ -117,13 +116,19 @@ export function prepare(photo: string, a: Analyze): Prepared {
     .filter((h) => h.needs_review || h.type === "unknown")
     .map((h) => `h${h.id}`);
   const api = Object.fromEntries(a.holds.map((h) => [`h${h.id}`, h]));
-  return { photo, aspect: a.image.h / a.image.w, holds, unsure, groups, image: a.image, api };
+  return { photo, aspect: a.image.h / a.image.w, holds, unsure, groups, image: a.image, raw: a, api };
 }
 
 /* ---- route selection ----
    Tapping a hold selects its route: holds of a close colour that link to it
-   in a chain at climbing distances, minus duplicate detections. Plain hue
-   buckets leak across the whole wall (25 "yellow" holds on the example). */
+   in a chain at climbing distances, minus duplicate detections.
+   - Colour: white, cream and grey are one family (low saturation), matched on
+     brightness; colours match on hue (within 18 deg), and must be clearly
+     coloured and not in deep shadow.
+   - Distance: a link is at most 24% of the photo's HEIGHT (about a metre on a
+     4 m wall), vertical gaps counted at 0.6. Height tracks the wall, so this
+     works for portrait close-ups and landscape wide shots alike; a fraction of
+     the width broke routes on portrait photos. */
 function hsv(hex: string) {
   const [r, g, b] = rgb(hex).map((v) => v / 255);
   const max = Math.max(r, g, b);
@@ -136,24 +141,31 @@ function hsv(hex: string) {
   }
   return { h: h * 60, s: max ? d / max : 0, v: max };
 }
-const NEUTRAL = new Set(["black", "white", "grey"]);
-/** Longest link between two holds of one route, as a share of photo width.
- *  Vertical gaps count for less: routes climb, so holds sit far apart vertically. */
-const LINK = 0.19;
+const LINK = 0.24;
 const V_WEIGHT = 0.6;
+const HUE = 18;
 
-export function selectRoute(holds: Hold[], tapped: Hold): string[] {
-  const t = hsv(tapped.own ?? tapped.hex ?? "#888888");
-  const neutral = NEUTRAL.has(tapped.colour);
+/** `aspect` is photo height / width, so the photo is 1000 * aspect overlay units tall. */
+export function selectRoute(holds: Hold[], tapped: Hold, aspect: number): string[] {
+  const colourOf = (h: Hold) => hsv(h.own ?? h.hex ?? "#888888");
+  // The detector can find one hold twice, e.g. a white hold and the dark shadow
+  // under it. If the tap landed on a stack, take its colour from the brightest copy.
+  const same = (a: Hold, b: Hold) => Math.hypot(a.x - b.x, a.y - b.y) < Math.max(a.r, b.r) * 0.6;
+  const seed = holds
+    .filter((h) => h === tapped || same(h, tapped))
+    .reduce((best, h) => (colourOf(h).v > colourOf(best).v ? h : best), tapped);
+  tapped = seed;
+  const t = colourOf(tapped);
+  const neutral = t.s < 0.3;
   const alike = (h: Hold) => {
     if (h === tapped) return true;
-    const c = hsv(h.own ?? h.hex ?? "#888888");
-    if (neutral) return h.colour === tapped.colour && Math.abs(c.v - t.v) < 0.25;
+    const c = colourOf(h);
+    if (neutral) return c.s < 0.32 && Math.abs(c.v - t.v) < 0.2;
     const dh = Math.abs(((c.h - t.h + 540) % 360) - 180);
-    return !NEUTRAL.has(h.colour) && dh <= 14 && c.s >= Math.max(0.25, t.s * 0.5) && c.v >= t.v * 0.6;
+    return c.s >= 0.3 && dh <= HUE && c.v >= Math.max(0.45, t.v * 0.6);
   };
   const pool = holds.filter(alike);
-  const link = LINK * 1000;
+  const link = LINK * 1000 * aspect;
   const near = (a: Hold, b: Hold) => Math.hypot(a.x - b.x, (a.y - b.y) * V_WEIGHT) <= link;
   const picked = new Set<Hold>([tapped]);
   const queue = [tapped];
@@ -162,11 +174,12 @@ export function selectRoute(holds: Hold[], tapped: Hold): string[] {
     for (const b of pool) if (!picked.has(b) && near(a, b)) (picked.add(b), queue.push(b));
   }
   // The detector sometimes finds one hold two or three times: drop a hold whose
-  // centre lies inside a bigger picked hold.
+  // centre lies inside a bigger picked hold, or that sits on a same-size copy
+  // that's brighter.
   const list = [...picked];
   const inside = (h: Hold, o: Hold) =>
     o !== h &&
-    o.r > h.r &&
+    (o.r > h.r || (o.r === h.r && colourOf(o).v > colourOf(h).v)) &&
     Math.abs(o.x - h.x) < o.r * (o.sx ?? 1) &&
     Math.abs(o.y - h.y) < o.r * (o.sy ?? 1);
   return list.filter((h) => h === tapped || !list.some((o) => inside(h, o))).map((h) => h.id);
@@ -187,7 +200,7 @@ export type RoutePick = {
 export function buildSolve(
   p: Prepared,
   pick: RoutePick,
-  o: { height: number; wallH: number; angleDeg: number },
+  o: { height: number; wallH: number; angleDeg: number; strength: number },
   qualityOf: (type: string) => number,
 ): { req: SolveRequest; byId: Map<number, Hold> } {
   const k = 1000 / p.image.w;
@@ -226,6 +239,7 @@ export function buildSolve(
       start: ids(pick.start),
       finish: ids(pick.finish),
       climber_height_m: +o.height.toFixed(2),
+      strength: o.strength,
       wall_height_m: +o.wallH.toFixed(1),
       wall_angle_deg: o.angleDeg,
     },

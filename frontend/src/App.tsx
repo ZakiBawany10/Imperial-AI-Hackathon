@@ -9,18 +9,13 @@ import {
   type ReactNode,
 } from "react";
 import { PHOTOS } from "./lib/wall";
+import { buildSolve, prepare, type Prepared, type RoutePick } from "./lib/contract";
 import {
-  EXAMPLE_WALL,
-  buildSolve,
-  prepare,
-  type Analyze,
-  type Prepared,
-  type RoutePick,
-} from "./lib/contract";
-import {
+  API_URL,
   ApiError,
-  EXAMPLE_SOLVE,
+  HEIGHT_RANGE,
   analyze,
+  depth,
   getHoldTypes,
   loadHoldTypes,
   qualityOf,
@@ -32,35 +27,19 @@ import {
 import { realBeta, type BetaView } from "./lib/beta";
 import { useCoach } from "./lib/coach";
 import { MONO } from "./ui/kit";
+import { Wordmark } from "./ui/Logo";
 import { UploadScreen } from "./screens/Upload";
 import { ReviewScreen, type ReviewPreset } from "./screens/Review";
 import { ANGLES, RouteScreen, type Angle } from "./screens/Route";
 import { LiveScreen, PlayScreen, type Voice } from "./screens/Play";
 
 const WALL = PHOTOS.wall01;
-// The contract example (photo + its /analyze answer): the example wall, and
-// the fallback when the server can't be reached.
-const REAL = prepare(EXAMPLE_WALL.photo, EXAMPLE_WALL.analyze);
-const BASE = import.meta.env.BASE_URL;
-const SEATTLE_CREDIT = "Seattle walls: Joe Mabel, Wikimedia Commons, CC BY-SA 4.0";
-const REAL_EXAMPLES = [
-  { id: "example", label: "Example wall", photo: EXAMPLE_WALL.photo },
-  // public/examples/: go through /analyze unless <name>.analyze.json sits next to the photo
-  { id: "seattle-05", label: "Seattle 05", photo: `${BASE}examples/seattle-bp-05.jpg`, credit: SEATTLE_CREDIT },
-  { id: "seattle-06", label: "Seattle 06", photo: `${BASE}examples/seattle-bp-06.jpg`, credit: SEATTLE_CREDIT },
+// Krishna's face-on gym walls, served by the backend (backend/demo/walls/), with the
+// height of wall each one shows. They go through the live POST /analyze like any upload.
+const EXAMPLES = [
+  { id: "wall-1", label: "Wall 1", photo: `${API_URL}/demo/walls/wall-1.jpg`, wallM: 4.3 },
+  { id: "wall-2", label: "Wall 2", photo: `${API_URL}/demo/walls/wall-2.jpg`, wallM: 4.0 },
 ];
-
-/** A saved /analyze answer shipped next to an example photo, if there is one. */
-async function savedAnalyze(photo: string): Promise<Analyze | null> {
-  try {
-    const r = await fetch(photo.replace(/\.[a-z]+$/i, ".analyze.json"));
-    if (!r.ok || !r.headers.get("content-type")?.includes("json")) return null;
-    const a = (await r.json()) as Analyze;
-    return Array.isArray(a?.holds) && a.image ? a : null;
-  } catch {
-    return null;
-  }
-}
 
 function useMedia(q: string) {
   const [m, setM] = useState(() => window.matchMedia(q).matches);
@@ -75,7 +54,7 @@ function useMedia(q: string) {
 
 /* ---------- prototype: the real flow ---------- */
 type Step = "upload" | "finding" | "review" | "route" | "solving" | "play" | "live";
-type Solved = { beta: BetaView; req: SolveRequest; res: SolveResponse; example?: boolean };
+type Solved = { beta: BetaView; req: SolveRequest; res: SolveResponse };
 
 const errText = (e: unknown) =>
   e instanceof ApiError ? e.message : "Something went wrong talking to the server.";
@@ -90,19 +69,22 @@ const aspectOf = (url: string) =>
 
 function Flow() {
   const [step, setStep] = useState<Step>("upload");
-  const [photo, setPhoto] = useState<string>(REAL.photo);
+  const [photo, setPhoto] = useState<string>("");
   const [height, setHeight] = useState(1.75);
+  const [strength, setStrength] = useState(1.0);
   const [wallH, setWallH] = useState(4.0);
   const [angle, setAngle] = useState<Angle>("vertical");
   const [move, setMove] = useState(0);
-  // the wall being worked on: the example, or a photo /analyze answered for
-  const [wall, setWall] = useState<Prepared>(REAL);
+  // the wall being worked on: a photo /analyze answered for, and the photo itself
+  const [wall, setWall] = useState<Prepared | null>(null);
+  const photoBlob = useRef<Blob | null>(null);
+  const [relief, setRelief] = useState<string | null>(null);
   const [found, setFound] = useState<{ wall: Prepared | null; aspect?: number; error?: string | null }>({
     wall: null,
   });
   const [pick, setPick] = useState<RoutePick | null>(null);
   const [solved, setSolved] = useState<Solved | null>(null);
-  const [solveErr, setSolveErr] = useState<{ msg: string; offline: boolean } | null>(null);
+  const [solveErr, setSolveErr] = useState<string | null>(null);
   const [resolving, setResolving] = useState(false);
   const [resolveErr, setResolveErr] = useState<string | null>(null);
   const inflight = useRef<AbortController | null>(null);
@@ -114,42 +96,32 @@ function Flow() {
     loadHoldTypes(); // quality per type comes from GET /hold-types when the server is up
   }, []);
 
-  /* ---- 1. photo -> POST /analyze ---- */
+  /* ---- 1. photo -> POST /analyze (examples too: no saved answers) ---- */
   const onPhoto = async (src: string, file?: File) => {
     finding.current?.abort();
-    setStep("finding");
-    if (!file && src === REAL.photo) {
-      setPhoto(REAL.photo);
-      setFound({ wall: REAL, aspect: REAL.aspect });
-      return;
-    }
     const ctl = new AbortController();
     finding.current = ctl;
+    setStep("finding");
+    setPhoto(src);
+    setFound({ wall: null });
+    const example = EXAMPLES.find((e) => e.photo === src);
+    if (example) setWallH(example.wallM);
     if (!file) {
-      // a bundled example photo: its saved answer if shipped, else treat it as an upload
-      setPhoto(src);
-      setFound({ wall: null, aspect: await aspectOf(src) });
-      const saved = await savedAnalyze(src);
-      if (ctl.signal.aborted) return;
-      if (saved) {
-        setFound({ wall: prepare(src, saved), aspect: saved.image.h / saved.image.w });
-        return;
-      }
       try {
         const b = await (await fetch(src)).blob();
         file = new File([b], "wall.jpg", { type: b.type || "image/jpeg" });
       } catch {
-        setFound({ wall: null, error: "Couldn't load the example photo." });
+        setFound({ wall: null, error: `Couldn't load the example wall from ${API_URL}. Is backend/run.sh running?` });
         return;
       }
       if (ctl.signal.aborted) return;
     }
-    setPhoto(src);
-    setFound({ wall: null });
     const blob = await shrinkPhoto(file);
-    const url = blob === file ? src : URL.createObjectURL(blob);
+    const url = blob === file ? (src.startsWith("blob:") ? src : URL.createObjectURL(blob)) : URL.createObjectURL(blob);
     const aspect = await aspectOf(url);
     if (ctl.signal.aborted) return;
+    photoBlob.current = blob;
+    setRelief(null);
     setPhoto(url);
     setFound({ wall: null, aspect });
     try {
@@ -179,19 +151,19 @@ function Flow() {
   };
 
   /* ---- 2. picked route -> POST /solve ---- */
-  const runSolve = async (h: number, signal: AbortSignal): Promise<Solved> => {
+  const runSolve = async (h: number, s: number, signal: AbortSignal): Promise<Solved> => {
     const deg = ANGLES.find((a) => a.k === angle)!.deg;
-    const { req, byId } = buildSolve(wall, pick!, { height: h, wallH, angleDeg: deg }, qualityOf);
+    const { req, byId } = buildSolve(wall!, pick!, { height: h, wallH, angleDeg: deg, strength: s }, qualityOf);
     const res = await solve(req, signal);
     const beta = realBeta(res, {
       req,
       holdTypes: getHoldTypes(),
-      imageW: wall.image.w,
-      aspect: wall.aspect,
+      imageW: wall!.image.w,
+      aspect: wall!.aspect,
       wallH,
       colour: pick!.colour,
       route: pick!.holds,
-      others: others(wall, pick!.holds),
+      others: others(wall!, pick!.holds),
       byId,
     });
     return { beta, req, res };
@@ -203,10 +175,12 @@ function Flow() {
     inflight.current = ctl;
     setSolveErr(null);
     setStep("solving");
+    // The 3D wall's relief map, fetched once per photo while the solver runs.
+    if (!relief && photoBlob.current) depth(photoBlob.current).then((u) => u && setRelief(u));
     // Hold the tracing animation long enough to read; the solver takes ~0.1 s.
     const minWait = new Promise((r) => setTimeout(r, 1200));
     try {
-      const out = await runSolve(height, ctl.signal);
+      const out = await runSolve(height, strength, ctl.signal);
       await minWait;
       if (ctl.signal.aborted) return;
       setSolved(out);
@@ -216,41 +190,15 @@ function Flow() {
     } catch (e) {
       if (isAbort(e)) return;
       await minWait;
-      setSolveErr({ msg: errText(e), offline: e instanceof ApiError && e.offline });
+      setSolveErr(errText(e));
     }
   };
 
-  // The fixed contract pair, for demos with no server. Its route and wall replace the pick.
-  const showExample = () => {
-    const { req, res } = EXAMPLE_SOLVE;
-    const byId = new Map(req.holds.map((h) => [h.id, REAL.holds.find((x) => x.id === `h${h.id}`)!]));
-    const route = [...byId.values()].sort((a, b) => b.y - a.y);
-    const beta = realBeta(res, {
-      req,
-      holdTypes: getHoldTypes(),
-      imageW: req.image.w,
-      aspect: req.image.h / req.image.w,
-      wallH: req.wall_height_m,
-      colour: route[0].colour,
-      route,
-      others: others(REAL, route),
-      byId,
-    });
-    setWall(REAL);
-    setPhoto(REAL.photo);
-    setHeight(req.climber_height_m);
-    setWallH(req.wall_height_m);
-    setSolved({ beta, req, res, example: true });
-    setSolveErr(null);
-    setMove(0);
-    setStep("play");
-  };
-
-  /* ---- 3. height changes re-solve (Play slider, or the coach) ---- */
-  const resolveAt = async (h: number, signal: AbortSignal) => {
+  /* ---- 3. height or strength changes re-solve (Play controls, or the coach) ---- */
+  const resolveAt = async (h: number, s: number, signal: AbortSignal) => {
     setResolving(true);
     try {
-      const out = await runSolve(h, signal);
+      const out = await runSolve(h, s, signal);
       if (signal.aborted) return;
       solvedRef.current = out; // the coach reads it straight after
       setSolved(out);
@@ -263,21 +211,20 @@ function Flow() {
       if (!signal.aborted) setResolving(false);
     }
   };
-  const pendingHeight = useRef<number | null>(null);
+  const dirty = useRef(false);
   useEffect(() => {
-    if (step !== "play" || !solved || solved.example || pendingHeight.current === null) return;
-    const h = pendingHeight.current;
+    if (step !== "play" || !solved || !dirty.current) return;
     const ctl = new AbortController();
     setResolving(true);
     const t = setTimeout(() => {
-      pendingHeight.current = null;
-      resolveAt(h, ctl.signal).catch(() => {});
+      dirty.current = false;
+      resolveAt(height, strength, ctl.signal).catch(() => {});
     }, 300);
     return () => {
       clearTimeout(t);
       ctl.abort();
     };
-  }, [height]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [height, strength]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /* ---- voice coach (coach/coachTools.js over the current solve) ---- */
   const coach = useCoach({
@@ -286,9 +233,10 @@ function Flow() {
         ? { request: solvedRef.current.req, solve: solvedRef.current.res, holdTypes: getHoldTypes() }
         : null,
     onHeightChange: async (h) => {
-      if (solvedRef.current?.example) throw new Error("the example answer can't be re-solved offline");
+      if (h < HEIGHT_RANGE[0] || h > HEIGHT_RANGE[1])
+        throw new Error(`height must be between ${HEIGHT_RANGE[0]} and ${HEIGHT_RANGE[1]} m`);
       setHeight(h);
-      await resolveAt(h, new AbortController().signal);
+      await resolveAt(h, strength, new AbortController().signal);
     },
     onStep: (i) => setMove(i + 1),
   });
@@ -299,7 +247,7 @@ function Flow() {
       return (
         <UploadScreen
           photo={step === "finding" ? photo : null}
-          examples={REAL_EXAMPLES}
+          examples={EXAMPLES}
           real={{ found: found.wall, aspect: found.aspect, error: found.error }}
           onPhoto={onPhoto}
           onCancel={() => {
@@ -307,15 +255,14 @@ function Flow() {
             setStep("upload");
           }}
           onFound={onFound}
-          onExample={() => onPhoto(REAL.photo)}
         />
       );
     case "review":
       return (
         <ReviewScreen
-          key={wall.photo}
-          photo={wall.photo}
-          data={wall}
+          key={wall!.photo}
+          photo={wall!.photo}
+          data={wall!}
           onNext={(p) => {
             setPick(p);
             setStep("route");
@@ -326,35 +273,41 @@ function Flow() {
     case "solving":
       return (
         <RouteScreen
-          {...{ height, setHeight, wallH, setWallH, angle, setAngle }}
-          photo={wall.photo}
-          aspect={wall.aspect}
+          {...{ height, setHeight, wallH, setWallH, angle, setAngle, strength, setStrength }}
+          photo={wall!.photo}
+          aspect={wall!.aspect}
           route={pick?.holds}
-          others={pick ? others(wall, pick.holds) : wall.holds}
+          start={pick?.start}
+          finish={pick?.finish}
+          others={pick ? others(wall!, pick.holds) : wall!.holds}
           colour={pick?.colour}
           solving={step === "solving"}
-          error={solveErr?.msg}
+          error={solveErr}
           onSolve={startSolve}
           onCancel={() => {
             inflight.current?.abort();
             setSolveErr(null);
             setStep("route");
           }}
-          onExample={solveErr?.offline ? showExample : undefined}
         />
       );
     case "play":
       return (
         <PlayScreen
           {...{ wallH, angle }}
-          photo={wall.photo}
+          photo={wall!.photo}
           height={height}
           setHeight={(h) => {
-            pendingHeight.current = h;
+            dirty.current = true;
             setHeight(h);
           }}
+          strength={strength}
+          setStrength={(s) => {
+            dirty.current = true;
+            setStrength(s);
+          }}
           beta={solved!.beta}
-          example={solved!.example}
+          viewer={{ imageUrl: wall!.photo, analyze: wall!.raw, reliefUrl: relief, req: solved!.req, res: solved!.res }}
           resolving={resolving}
           solveError={resolveErr}
           initialMove={move}
@@ -373,7 +326,7 @@ function Flow() {
         <LiveScreen
           {...{ height, wallH }}
           move={Math.max(1, move)}
-          photo={wall.photo}
+          photo={wall!.photo}
           beta={solved!.beta}
           coach={coach}
           onExit={() => {
@@ -591,7 +544,7 @@ export default function App() {
     <div data-name="board" className="min-h-screen bg-paper text-ink">
       <header className="sticky top-0 z-[60] flex items-center justify-between border-b border-hairline bg-paper px-16 py-4">
         <div className="flex items-baseline gap-6">
-          <span className="font-display text-[20px] font-bold tracking-[0.005em]">BetaCrux</span>
+          <Wordmark />
           <span className={`${MONO} text-muted`}>Mobile · 390 x 844 · 4 screens</span>
         </div>
         <div

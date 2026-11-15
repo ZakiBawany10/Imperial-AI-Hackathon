@@ -20,6 +20,82 @@ export const DETAIL: Record<PinKind, string> = {
   crimp: "M11 25L53 22",
 };
 
+/** The hold drawing itself, in a 64 x 64 box: flat colour, ink outline, surface
+ *  detail, a chalky highlight, and either the bolt or a tick in the middle. */
+export function HoldGlyph({
+  kind,
+  colour,
+  mark = "bolt",
+  faded = false,
+}: {
+  kind: PinKind;
+  colour: string;
+  mark?: "bolt" | "tick" | "none";
+  /** outline at half strength, for holds still to come */
+  faded?: boolean;
+}) {
+  const ink = { stroke: C.ink, strokeOpacity: faded ? 0.45 : 1 };
+  return (
+    <>
+      <path d={BODY[kind]} fill={colour} {...ink} strokeWidth={2.4} strokeLinejoin="round" />
+      {mark !== "tick" &&
+        (kind === "jug" ? (
+          <path d={DETAIL.jug} fill={C.ink} fillOpacity={faded ? 0.1 : 0.22} {...ink} strokeWidth={1.6} />
+        ) : (
+          <path
+            d={DETAIL[kind]}
+            fill="none"
+            stroke={C.ink}
+            strokeOpacity={faded ? 0.25 : 0.45}
+            strokeWidth={1.8}
+            strokeLinecap="round"
+          />
+        ))}
+      {/* chalky highlight */}
+      <path
+        d="M16 22C19 15 26 12 32 12"
+        fill="none"
+        stroke={C.surface}
+        strokeOpacity={0.55}
+        strokeWidth={3}
+        strokeLinecap="round"
+      />
+      {mark === "bolt" && (
+        <>
+          <circle cx={32} cy={33} r={5.2} fill={C.surface} stroke={C.ink} strokeWidth={2} />
+          <path d="M29.2 35.8L34.8 30.2" stroke={C.ink} strokeWidth={1.8} strokeLinecap="round" />
+        </>
+      )}
+      {mark === "tick" && (
+        // a chunky chalk-white tick, inked like the outline
+        <>
+          <path d="M20 33.5L28.5 42L45 24" fill="none" stroke={C.ink} strokeWidth={10} strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M20 33.5L28.5 42L45 24" fill="none" stroke={C.surface} strokeWidth={5.5} strokeLinecap="round" strokeLinejoin="round" />
+        </>
+      )}
+    </>
+  );
+}
+
+/** "Done": a bolted hold with a tick through it. */
+export function HoldTick({
+  size = 20,
+  kind = "jug",
+  colour = C.accent,
+  className = "",
+}: {
+  size?: number;
+  kind?: PinKind;
+  colour?: string;
+  className?: string;
+}) {
+  return (
+    <svg data-name="icon/hold-tick" aria-hidden viewBox="0 0 64 64" width={size} height={size} className={className}>
+      <HoldGlyph kind={kind} colour={colour} mark="tick" />
+    </svg>
+  );
+}
+
 export function HoldPin({
   kind,
   colour,
@@ -43,24 +119,7 @@ export function HoldPin({
       className={`pointer-events-none absolute z-10 ${className}`}
       style={{ transform: `rotate(${rotate}deg)` }}
     >
-      <path d={BODY[kind]} fill={colour} stroke={C.ink} strokeWidth={2.4} strokeLinejoin="round" />
-      {kind === "jug" ? (
-        <path d={DETAIL.jug} fill={C.ink} fillOpacity={0.22} stroke={C.ink} strokeWidth={1.6} />
-      ) : (
-        <path d={DETAIL[kind]} fill="none" stroke={C.ink} strokeOpacity={0.45} strokeWidth={1.8} strokeLinecap="round" />
-      )}
-      {/* chalky highlight */}
-      <path
-        d="M16 22C19 15 26 12 32 12"
-        fill="none"
-        stroke={C.surface}
-        strokeOpacity={0.55}
-        strokeWidth={3}
-        strokeLinecap="round"
-      />
-      {/* the bolt that pins the sheet down */}
-      <circle cx={32} cy={33} r={5.2} fill={C.surface} stroke={C.ink} strokeWidth={2} />
-      <path d="M29.2 35.8L34.8 30.2" stroke={C.ink} strokeWidth={1.8} strokeLinecap="round" />
+      <HoldGlyph kind={kind} colour={colour} />
     </svg>
   );
 }

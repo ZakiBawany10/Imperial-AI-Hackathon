@@ -1,5 +1,5 @@
 // Upload dropzone art: a setter's ink sketch of a wall panel showing what
-// BetaCrux does to a photo. Taped start holds, a dashed beta line to the TOP,
+// Ascend does to a photo. Taped start holds, a dashed beta line to the TOP,
 // and the app's own stick figure mid-move. Hand-plotted paths plus a small
 // displacement filter on the background ink give it a drawn-by-hand wobble;
 // text, tape and the climber stay crisp.

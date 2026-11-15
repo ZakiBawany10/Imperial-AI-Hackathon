@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Ascend app icon: a bold, summit-shaped capital A. -->
+  <rect width="512" height="512" fill="#243E36"/>
+  <path transform="translate(256 262) scale(1.22) translate(-256 -250)"
+        d="M256 96 L372 404 H316 L297 352 H215 L196 404 H140 Z M232 308 H280 L256 240 Z"
+        fill="#FFFFFF" fill-rule="evenodd"/>
+</svg>

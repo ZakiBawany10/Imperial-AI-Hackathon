@@ -1,5 +1,5 @@
-// BetaCrux service worker: the app shell works offline; API calls never cache.
-const CACHE = "betacrux-v1";
+// Ascend service worker: the app shell works offline; API calls never cache.
+const CACHE = "ascend-v2"; // bumped so installed apps pick up the new name and icons
 const SHELL = ["/", "/manifest.webmanifest", "/icon-192.png", "/icon-512.png", "/favicon.png"];
 const API = /^\/(analyze|solve|hold-types|demo)(\/|$)/;
 
